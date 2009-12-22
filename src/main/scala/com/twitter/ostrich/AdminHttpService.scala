@@ -20,14 +20,14 @@ import java.io._
 import java.net.{ServerSocket, Socket, SocketException, SocketTimeoutException}
 import java.util.concurrent.CountDownLatch
 import com.twitter.json.Json
-import net.lag.configgy.{Configgy, RuntimeEnvironment}
+import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
 
 
-class AdminHttpService(server: ServerInterface, runtime: RuntimeEnvironment) {
+class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
   val log = Logger.get
 
-  val port = Configgy.config.getInt("admin_http_port", 9990)
+  val port = config.getInt("admin_http_port", 9990)
   val serverSocket = new ServerSocket(port)
   var startupLatch: CountDownLatch = null
 

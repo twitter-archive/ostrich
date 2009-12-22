@@ -19,9 +19,8 @@ package com.twitter.ostrich
 import java.io.InputStream
 import java.net.{ConnectException, Socket}
 import com.twitter.json.Json
-import com.twitter.stats.Stats
 import com.twitter.xrayspecs.Eventually
-import net.lag.configgy.RuntimeEnvironment
+import net.lag.configgy.{Config, RuntimeEnvironment}
 import org.specs._
 
 
@@ -42,15 +41,13 @@ object AdminHttpServiceSpec extends Specification with Eventually {
     doBefore {
       new Socket("localhost", 9990) must throwA[ConnectException]
       server = new MockServerInterface
-      service = new AdminHttpService(server, new RuntimeEnvironment(getClass))
-      AdminService.webServer = service
+      service = new AdminHttpService(server, Config.fromMap(Map.empty), new RuntimeEnvironment(getClass))
       service.start()
     }
 
     doAfter {
       service.stop()
       new Socket("localhost", 9990) must eventually(throwA[ConnectException])
-      AdminService.webServer = null
     }
 
     "start and stop" in {

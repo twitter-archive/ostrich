@@ -33,6 +33,6 @@
     <dependency org="cglib" name="cglib" rev="2.1_3" conf="test->*" /> <!--auto-->
     <dependency org="asm" name="asm" rev="1.5.3" conf="test->*" /> <!--auto-->
     <dependency org="org.objenesis" name="objenesis" rev="1.1" conf="test->*" /> <!--auto-->
-    <dependency org="com.twitter" name="xrayspecs" rev="1.0.7" conf="test->*" /> <!--auto-->
+    <dependency org="com.twitter" name="xrayspecs" rev="1.0.7" conf="*" /> <!--auto-->
   </dependencies>
 </ivy-module>
