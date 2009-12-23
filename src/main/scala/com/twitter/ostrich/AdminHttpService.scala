@@ -24,6 +24,20 @@ import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
 
 
+/**
+ * A simple web server that responds to the following paths:
+ *
+ *   - ping
+ *   - reload
+ *   - shutdown
+ *   - quiesce
+ *   - stats
+ *   - server_info
+ *
+ * It can be used from curl like so:
+ *
+ *     $ curl http://localhost:9990/shutdown
+ */
 class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
   val log = Logger.get
 
