@@ -40,7 +40,7 @@ import net.lag.logging.Logger
  */
 class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
       extends BackgroundProcess("AdminHttpService") {
-  val log = Logger.get
+  val log = Logger.get(getClass.getName)
 
   val port = config.getInt("admin_http_port", 9990)
   val serverSocket = new ServerSocket(port)
@@ -61,116 +61,27 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
   }
 
   def runLoop() {
-    try {
-      val client = serverSocket.accept()
-      execute("AdminHttpService client") {
+    val socket = try {
+      serverSocket.accept()
+    } catch {
+      case e: SocketException => throw new InterruptedException()
+    }
+    execute("AdminHttpService client") {
+      try {
+        new Client(socket).handleRequest()
+      } catch {
+        case e: Exception =>
+          log.warning("AdminHttpService client %s raised %s", socket, e)
+      } finally {
         try {
-          handleRequest(client)
-        } catch {
-          case _ =>
-        }
-        try {
-          client.close()
+          socket.close()
         } catch {
           case _ =>
         }
       }
-    } catch {
-      case e: SocketException =>
-        throw new InterruptedException()
     }
   }
 
-  case class Request(command: String, parameters: List[String], format: String)
-
-  private def readRequest(client: Socket): Request = {
-    val in = new BufferedReader(new InputStreamReader(client.getInputStream()))
-    val requestLine = in.readLine()
-    if (requestLine == null) {
-      throw new IOException("EOF")
-    }
-    val segments = requestLine.split(" ", 3)
-    if (segments.length == 3) {
-      // read the "headers", which we will ignore.
-      while (in.readLine() != "") { }
-    }
-    if (segments.length < 2) {
-      sendError(client, "Malformed request line: " + requestLine)
-      throw new IOException("Bad request")
-    }
-    val command = segments(0).toLowerCase()
-    if (command != "get") {
-      sendError(client, "Request must be GET.")
-      throw new IOException("Bad request")
-    }
-    val pathSegments = segments(1).split("/").filter(_.length > 0)
-    if (pathSegments.length < 1) {
-      sendError(client, "Malformed request path: " + segments(1))
-      throw new IOException("Bad request")
-    }
-    if (pathSegments.last contains ".") {
-      val filenameSegments = pathSegments.last.split("\\.", 2)
-      val params = pathSegments.slice(0, pathSegments.size - 1) ++ List(filenameSegments(0))
-      Request(params(0), params.drop(1).toList, filenameSegments(1).toLowerCase())
-    } else {
-      Request(pathSegments(0), pathSegments.drop(1).toList, "json")
-    }
-  }
-
-  def handleRequest(client: Socket) {
-    val request = readRequest(client)
-    request.command match {
-      case "ping" =>
-        send(client, "pong")
-      case "reload" =>
-        send(client, "ok")
-        Configgy.reload
-      case "shutdown" =>
-        send(client, "ok")
-        Server.shutdown()
-      case "quiesce" =>
-        send(client, "ok")
-        execute("quiesce request") {
-          Thread.sleep(100)
-          Server.quiesce()
-        }
-      case "stats" =>
-        val reset = request.parameters.contains("reset")
-        request.format match {
-          case "txt" =>
-            sendRaw(client, Stats.stats(reset))
-          case _ =>
-            send(client, Map("jvm" -> Stats.getJvmStats, "counters" -> Stats.getCounterStats(reset),
-                             "timings" -> Stats.getTimingStats(reset), "gauges" -> Stats.getGaugeStats(reset)))
-        }
-      case "server_info" =>
-        send(client, Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
-                         "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision))
-      case x =>
-        sendError(client, "Unknown command: " + x)
-    }
-  }
-
-  private def send(client: Socket, data: Any): Unit = send(client, "200", "OK", data)
-
-  private def sendError(client: Socket, message: String) {
-    log.info("Admin http client error: %s", message)
-    send(client, "400", "ERROR", Map("error" -> message))
-  }
-
-  private def send(client: Socket, code: String, codeDescription: String, data: Any): Unit = sendRaw(client, code, codeDescription, Json.build(data).toString + "\n")
-
-  private def sendRaw(client: Socket, data: String): Unit = sendRaw(client, "200", "OK", data)
-
-  private def sendRaw(client: Socket, code: String, codeDescription: String, data: String) {
-    val out = new OutputStreamWriter(client.getOutputStream())
-    out.write("HTTP/1.0 %s %s\n".format(code, codeDescription))
-    out.write("Server: %s/%s %s %s\n".format(runtime.jarName, runtime.jarVersion, runtime.jarBuild, runtime.jarBuildRevision))
-    out.write("Content-Type: text/plain\n")
-    out.write("\n")
-    out.write(data)
-    out.flush()
-  }
 
   override def shutdown() {
     try {
@@ -179,5 +90,101 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
       case _ =>
     }
     super.shutdown()
+  }
+
+
+  class Client(val socket: Socket) {
+    case class Request(command: String, parameters: List[String], format: String)
+
+    private def readRequest(): Request = {
+      val in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+      val requestLine = in.readLine()
+      if (requestLine == null) {
+        throw new IOException("EOF")
+      }
+      val segments = requestLine.split(" ", 3)
+      if (segments.length == 3) {
+        // read the "headers", which we will ignore.
+        while (in.readLine() != "") { }
+      }
+      if (segments.length < 2) {
+        sendError("Malformed request line: " + requestLine)
+        throw new IOException("Bad request")
+      }
+      val command = segments(0).toLowerCase()
+      if (command != "get") {
+        sendError("Request must be GET.")
+        throw new IOException("Bad request")
+      }
+      val pathSegments = segments(1).split("/").filter(_.length > 0)
+      if (pathSegments.length < 1) {
+        sendError("Malformed request path: " + segments(1))
+        throw new IOException("Bad request")
+      }
+      if (pathSegments.last contains ".") {
+        val filenameSegments = pathSegments.last.split("\\.", 2)
+        val params = pathSegments.slice(0, pathSegments.size - 1) ++ List(filenameSegments(0))
+        Request(params(0), params.drop(1).toList, filenameSegments(1).toLowerCase())
+      } else {
+        Request(pathSegments(0), pathSegments.drop(1).toList, "json")
+      }
+    }
+
+    def handleRequest() {
+      val request = readRequest()
+      request.command match {
+        case "ping" =>
+          send("pong")
+        case "reload" =>
+          send("ok")
+          Configgy.reload
+        case "shutdown" =>
+          send("ok")
+          Server.shutdown()
+        case "quiesce" =>
+          send("ok")
+          execute("quiesce request") {
+            Thread.sleep(100)
+            Server.quiesce()
+          }
+        case "stats" =>
+          val reset = request.parameters.contains("reset")
+          request.format match {
+            case "txt" =>
+              sendRaw(Stats.stats(reset))
+            case _ =>
+              send(Map("jvm" -> Stats.getJvmStats, "counters" -> Stats.getCounterStats(reset),
+                       "timings" -> Stats.getTimingStats(reset), "gauges" -> Stats.getGaugeStats(reset)))
+          }
+        case "server_info" =>
+          send(Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
+                   "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision))
+        case x =>
+          sendError("Unknown command: " + x)
+      }
+    }
+
+    private def sendError(message: String) {
+      log.info("Admin http client error: %s", message)
+      send("400", "ERROR", Map("error" -> message))
+    }
+
+    private def send(data: Any): Unit = send("200", "OK", data)
+
+    private def send(code: String, codeDescription: String, data: Any): Unit =
+      sendRaw(code, codeDescription, Json.build(data).toString + "\n")
+
+    private def sendRaw(data: String): Unit = sendRaw("200", "OK", data)
+
+    private def sendRaw(code: String, codeDescription: String, data: String) {
+      val out = new OutputStreamWriter(socket.getOutputStream())
+      out.write("HTTP/1.0 %s %s\n".format(code, codeDescription))
+      out.write("Server: %s/%s %s %s\n".format(runtime.jarName, runtime.jarVersion,
+        runtime.jarBuild, runtime.jarBuildRevision))
+      out.write("Content-Type: text/plain\n")
+      out.write("\n")
+      out.write(data)
+      out.flush()
+    }
   }
 }
