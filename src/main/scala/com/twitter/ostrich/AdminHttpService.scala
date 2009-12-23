@@ -38,53 +38,46 @@ import net.lag.logging.Logger
  *
  *     $ curl http://localhost:9990/shutdown
  */
-class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
+class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
+      extends BackgroundProcess("AdminHttpService") {
   val log = Logger.get
 
   val port = config.getInt("admin_http_port", 9990)
   val serverSocket = new ServerSocket(port)
-  var startupLatch: CountDownLatch = null
 
   serverSocket.setReuseAddress(true)
 
-  private def execute(threadName: String)(f: => Unit) {
-    new Thread(threadName) {
+  Server.register(this)
+  Server.register(server)
+
+  private def execute(threadName: String)(f: => Unit) = {
+    val t = new Thread(threadName) {
       override def run() {
         f
       }
-    }.start()
+    }
+    t.start()
+    t
   }
 
-  val thread = new Thread("AdminHttpService") {
-    override def run() {
-      log.info("Starting admin http service on port %d", port)
-      startupLatch.countDown()
-      try {
-        while (true) {
-          val client = serverSocket.accept()
-          execute("AdminHttpService client") {
-            try {
-              handleRequest(client)
-            } catch {
-              case _ =>
-            }
-            try {
-              client.close()
-            } catch {
-              case _ =>
-            }
-          }
+  def runLoop() {
+    try {
+      val client = serverSocket.accept()
+      execute("AdminHttpService client") {
+        try {
+          handleRequest(client)
+        } catch {
+          case _ =>
         }
-      } catch {
-        case e: InterruptedException =>
-          log.error("Shutting down admin http service.")
-          // silently die.
-        case e: SocketException =>
-          log.error("Shutting down admin http service.")
-          // silently die.
-        case e: Exception =>
-          log.error(e, "AdminHttpService uncaught exception; dying: %s", e.toString)
+        try {
+          client.close()
+        } catch {
+          case _ =>
+        }
       }
+    } catch {
+      case e: SocketException =>
+        throw new InterruptedException()
     }
   }
 
@@ -134,14 +127,12 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
         Configgy.reload
       case "shutdown" =>
         send(client, "ok")
-        stop()
-        server.shutdown()
+        Server.shutdown()
       case "quiesce" =>
         send(client, "ok")
-        server.quiesce()
         execute("quiesce request") {
           Thread.sleep(100)
-          stop()
+          Server.quiesce()
         }
       case "stats" =>
         val reset = request.parameters.contains("reset")
@@ -181,19 +172,12 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
     out.flush()
   }
 
-  def start() {
-    startupLatch = new CountDownLatch(1)
-    thread.start()
-    startupLatch.await()
-  }
-
-  def stop() {
+  override def shutdown() {
     try {
       serverSocket.close()
     } catch {
       case _ =>
     }
-    thread.interrupt()
-    thread.join()
+    super.shutdown()
   }
 }

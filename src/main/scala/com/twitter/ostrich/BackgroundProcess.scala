@@ -28,13 +28,14 @@ import net.lag.logging.Logger
  * call a method that can be interrupted (like sleep) or block for a low
  * timeout.
  */
-abstract class BackgroundProcess(name: String) extends Thread(name) {
+abstract class BackgroundProcess(name: String) extends Thread(name) with ServerInterface {
   private val log = Logger.get
 
   @volatile var running = false
   val startLatch = new CountDownLatch(1)
 
   override def start() {
+    log.info("Starting %s", name)
     running = true
     super.start()
     startLatch.await()
@@ -47,7 +48,7 @@ abstract class BackgroundProcess(name: String) extends Thread(name) {
         runLoop()
       } catch {
         case e: InterruptedException =>
-          log.info("Background process %s exiting by request.", name)
+          log.info("%s exiting by request.", name)
           running = false
         case e: Throwable =>
           log.error(e, "Background process %s died with unexpected exception: %s", name, e)
@@ -62,5 +63,9 @@ abstract class BackgroundProcess(name: String) extends Thread(name) {
     running = false
     interrupt()
     join()
+  }
+
+  def quiesce() {
+    shutdown()
   }
 }
