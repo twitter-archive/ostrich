@@ -17,7 +17,7 @@
 package com.twitter.ostrich
 
 import java.io.InputStream
-import java.net.{ConnectException, Socket}
+import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
@@ -39,7 +39,7 @@ object AdminHttpServiceSpec extends Specification with Eventually {
     var server: MockServerInterface = null
 
     doBefore {
-      new Socket("localhost", 9990) must throwA[ConnectException]
+      new Socket("localhost", 9990) must throwA[SocketException]
       server = new MockServerInterface
       service = new AdminHttpService(server, Config.fromMap(Map.empty), new RuntimeEnvironment(getClass))
       service.start()
@@ -52,7 +52,7 @@ object AdminHttpServiceSpec extends Specification with Eventually {
     "start and stop" in {
       new Socket("localhost", 9990) must notBeNull
       service.stop()
-      new Socket("localhost", 9990) must throwA[ConnectException]
+      new Socket("localhost", 9990) must throwA[SocketException]
     }
 
     "answer pings" in {
@@ -60,7 +60,7 @@ object AdminHttpServiceSpec extends Specification with Eventually {
       socket.getOutputStream().write("get /ping\n".getBytes)
       socket.getInputStream().readString(1024).split("\n").last mustEqual "\"pong\""
       service.stop()
-      new Socket("localhost", 9990) must eventually(throwA[ConnectException])
+      new Socket("localhost", 9990) must eventually(throwA[SocketException])
     }
 
     "shutdown" in {
@@ -68,7 +68,7 @@ object AdminHttpServiceSpec extends Specification with Eventually {
       val socket = new Socket("localhost", 9990)
       socket.getOutputStream().write("get /shutdown\n".getBytes)
       server.askedToShutdown must eventually(beTrue)
-      new Socket("localhost", 9990) must eventually(throwA[ConnectException])
+      new Socket("localhost", 9990) must eventually(throwA[SocketException])
     }
 
     "quiesce" in {
@@ -76,14 +76,13 @@ object AdminHttpServiceSpec extends Specification with Eventually {
       val socket = new Socket("localhost", 9990)
       socket.getOutputStream().write("get /quiesce\n".getBytes)
       server.askedToQuiesce must eventually(beTrue)
-      new Socket("localhost", 9990) must eventually(throwA[ConnectException])
+      new Socket("localhost", 9990) must eventually(throwA[SocketException])
     }
 
     "provide stats" in {
-    //  doAfter {
-  //      service.stop()
-//        new Socket("localhost", 9990) must eventually(throwA[ConnectException])
-      //}
+      doAfter {
+        service.stop()
+      }
 
       "in json" in {
         // make some statsy things happen
