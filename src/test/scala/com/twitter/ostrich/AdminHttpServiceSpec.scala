@@ -47,7 +47,6 @@ object AdminHttpServiceSpec extends Specification with Eventually {
 
     doAfter {
       service.stop()
-      new Socket("localhost", 9990) must eventually(throwA[ConnectException])
     }
 
     "start and stop" in {
@@ -60,6 +59,8 @@ object AdminHttpServiceSpec extends Specification with Eventually {
       val socket = new Socket("localhost", 9990)
       socket.getOutputStream().write("get /ping\n".getBytes)
       socket.getInputStream().readString(1024).split("\n").last mustEqual "\"pong\""
+      service.stop()
+      new Socket("localhost", 9990) must eventually(throwA[ConnectException])
     }
 
     "shutdown" in {
@@ -79,6 +80,11 @@ object AdminHttpServiceSpec extends Specification with Eventually {
     }
 
     "provide stats" in {
+    //  doAfter {
+  //      service.stop()
+//        new Socket("localhost", 9990) must eventually(throwA[ConnectException])
+      //}
+
       "in json" in {
         // make some statsy things happen
         Stats.clearAll()

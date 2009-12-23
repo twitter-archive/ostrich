@@ -120,12 +120,14 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
         Configgy.reload
       case "shutdown" =>
         send(client, "ok")
+        stop()
         server.shutdown()
       case "quiesce" =>
         send(client, "ok")
         server.quiesce()
         execute("quiesce request") {
           Thread.sleep(100)
+          stop()
         }
       case "stats" =>
         val reset = request.parameters.contains("reset")
