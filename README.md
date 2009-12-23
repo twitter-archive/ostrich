@@ -1,4 +1,4 @@
-= Ostrich
+# Ostrich
 
 Ostrich is a small library for collecting and reporting runtime statistics from a scala server. It
 can collect counters, gauges, and timings, and it can report them via JMX, a simple web interface, a
@@ -11,7 +11,7 @@ This library is released under the Apache Software License, version 2, which sho
 the source in a file named `LICENSE`.
 
 
-== Web/socket commands
+## Web/socket commands
 
 Commands over the web interface take the form of a "get" request:
 
@@ -43,12 +43,12 @@ The commands are:
 FIXME: describe those commands.
 
 
-== API
+## API
 
 FIXME.
 
 
-== Credits
+## Credits
 
 This started out as several smaller projects that began to overlap so much, we decided to merge
 them. Major contributers include, in alphabetical order:
