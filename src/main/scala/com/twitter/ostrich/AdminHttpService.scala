@@ -82,7 +82,6 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
     }
   }
 
-
   override def shutdown() {
     try {
       serverSocket.close()

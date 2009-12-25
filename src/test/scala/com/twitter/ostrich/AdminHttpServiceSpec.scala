@@ -21,10 +21,11 @@ import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
-import org.specs._
+import org.specs.Specification
+import org.specs.mock.{ClassMocker, JMocker}
 
 
-object AdminHttpServiceSpec extends Specification with Eventually {
+object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
   class PimpedInputStream(stream: InputStream) {
     def readString(maxBytes: Int) = {
       val buffer = new Array[Byte](maxBytes)
@@ -36,16 +37,19 @@ object AdminHttpServiceSpec extends Specification with Eventually {
 
   "AdminHttpService" should {
     var service: AdminHttpService = null
-    var server: MockServerInterface = null
+    var server: ServerInterface = null
 
     doBefore {
       new Socket("localhost", 9990) must throwA[SocketException]
-      server = new MockServerInterface
+      server = mock[ServerInterface]
       service = new AdminHttpService(server, Config.fromMap(Map.empty), new RuntimeEnvironment(getClass))
       service.start()
     }
 
     doAfter {
+      expect {
+        allowing(server).shutdown()
+      }
       service.shutdown()
     }
 
@@ -64,18 +68,22 @@ object AdminHttpServiceSpec extends Specification with Eventually {
     }
 
     "shutdown" in {
-      server.askedToShutdown mustBe false
+      expect {
+        one(server).shutdown()
+      }
+
       val socket = new Socket("localhost", 9990)
       socket.getOutputStream().write("get /shutdown\n".getBytes)
-      server.askedToShutdown must eventually(beTrue)
       new Socket("localhost", 9990) must eventually(throwA[SocketException])
     }
 
     "quiesce" in {
-      server.askedToQuiesce mustBe false
+      expect {
+        one(server).quiesce()
+      }
+
       val socket = new Socket("localhost", 9990)
       socket.getOutputStream().write("get /quiesce\n".getBytes)
-      server.askedToQuiesce must eventually(beTrue)
       new Socket("localhost", 9990) must eventually(throwA[SocketException])
     }
 
