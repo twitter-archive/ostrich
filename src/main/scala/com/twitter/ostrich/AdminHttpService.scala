@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
+import Conversions._
 
 
 /**
@@ -94,6 +95,7 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
 
   class Client(val socket: Socket) {
     case class Request(command: String, parameters: List[String], format: String)
+    var request: Request = null
 
     private def readRequest(): Request = {
       val in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
@@ -130,7 +132,7 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
     }
 
     def handleRequest() {
-      val request = readRequest()
+      request = readRequest()
       request.command match {
         case "ping" =>
           send("pong")
@@ -148,13 +150,8 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
           }
         case "stats" =>
           val reset = request.parameters.contains("reset")
-          request.format match {
-            case "txt" =>
-              sendRaw(Stats.stats(reset))
-            case _ =>
-              send(Map("jvm" -> Stats.getJvmStats, "counters" -> Stats.getCounterStats(reset),
-                       "timings" -> Stats.getTimingStats(reset), "gauges" -> Stats.getGaugeStats(reset)))
-          }
+          send(Map("jvm" -> Stats.getJvmStats, "counters" -> Stats.getCounterStats(reset),
+                   "timings" -> Stats.getTimingStats(reset), "gauges" -> Stats.getGaugeStats(reset)))
         case "server_info" =>
           send(Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
                    "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision))
@@ -170,8 +167,15 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
 
     private def send(data: Any): Unit = send("200", "OK", data)
 
-    private def send(code: String, codeDescription: String, data: Any): Unit =
-      sendRaw(code, codeDescription, Json.build(data).toString + "\n")
+    private def send(code: String, codeDescription: String, data: Any) {
+      val rawData = request.format match {
+        case "txt" =>
+          data.flatten
+        case _ => // json
+          Json.build(data).toString + "\n"
+      }
+      sendRaw(code, codeDescription, rawData)
+    }
 
     private def sendRaw(data: String): Unit = sendRaw("200", "OK", data)
 

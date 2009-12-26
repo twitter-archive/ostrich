@@ -46,5 +46,5 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
     case _ => false
   }
 
-  override def toString = "TimingStat(count=%d, maximum=%d, minimum=%d, sum=%d, sum_squares=%d)".format(count, maximum, minimum, sum, sumSquares)
+  override def toString = "(count=%d, maximum=%d, minimum=%d, sum=%d, sum_squares=%d)".format(count, maximum, minimum, sum, sumSquares)
 }

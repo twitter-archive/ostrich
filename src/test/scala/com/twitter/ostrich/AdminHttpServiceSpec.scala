@@ -136,7 +136,7 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
         val socket = new Socket("localhost", 9990)
         socket.getOutputStream().write("get /stats.txt\n".getBytes)
         val response = socket.getInputStream().readString(1024).split("\n")
-        response mustContain "kangaroos: 1"
+        response mustContain "  kangaroos: 1"
       }
     }
   }
