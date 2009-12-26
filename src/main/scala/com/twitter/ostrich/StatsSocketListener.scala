@@ -20,6 +20,7 @@ import net.lag.logging.Logger
 import java.net.{ServerSocket, Socket}
 import java.io.{BufferedReader, InputStream, InputStreamReader, IOException, PrintWriter, Writer}
 import java.util.concurrent.Executors
+import Conversions._
 
 
 /**
@@ -80,7 +81,7 @@ class StatsSocketListener(val port: Int, threads: Int, fn: (String) => String) e
 
   def this(port: Int) = this(port, cmd => {
     cmd match {
-      case "stats" => Stats.stats(true)
+      case "stats" => Stats.stats(true).flatten
       case cmd => "Error! Unknown command: " + cmd
     }
   })

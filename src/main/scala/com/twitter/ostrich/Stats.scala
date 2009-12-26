@@ -170,32 +170,10 @@ object Stats extends StatsProvider {
    * Returns a Map[String, Double] of current gauge readings.
    */
   def getGaugeStats(reset: Boolean): Map[String, Double] = {
-    immutable.HashMap(gaugeMap.map(x => (x._1, x._2(reset))).toList: _*)
+    immutable.Map(gaugeMap.map(x => (x._1, x._2(reset))).toList: _*)
   }
 
-  /**
-   * Returns a formatted String containing Memory statistics of the form
-   * name: value
-   */
-  def stats(reset: Boolean): String = {
-    val out = new mutable.ListBuffer[String]()
-    for ((key, value) <- getJvmStats()) {
-      out += (key + ": " + value.toString)
-    }
-    for ((key, value) <- getCounterStats()) {
-      out += (key + ": " + value.toString)
-    }
-    for ((key, value) <- getTimingStats(reset)) {
-      out += (key + ": " + value.toString)
-    }
-    for ((key, value) <- getGaugeStats(reset)) {
-      out += (key + ": " + value.toString)
-    }
-    out.mkString("\n")
+  override def stats(reset: Boolean): immutable.Map[String, Map[String, Any]] = {
+    super.stats(reset) ++ immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> getGaugeStats(reset))
   }
-
-  def stats(): String = stats(true)
-
-  def jsonStats(reset: Boolean): String = Json.build(stats(reset)).toString
-  def jsonStats(): String = jsonStats(true)
 }

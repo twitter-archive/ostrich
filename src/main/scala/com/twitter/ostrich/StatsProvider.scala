@@ -88,6 +88,14 @@ trait StatsProvider {
   def getTimingStats(): Map[String, TimingStat] = getTimingStats(false)
 
   /**
+   * Return a nested map containing counters, timings, gauges, and the JVM stats, suitable for
+   * encoding into JSON or XML, or flattening into text.
+   */
+  def stats(reset: Boolean): immutable.Map[String, Map[String, Any]] = {
+    immutable.Map("counters" -> getCounterStats(reset), "timings" -> getTimingStats(reset))
+  }
+
+  /**
    * Reset all collected stats and erase the history.
    */
   def clearAll()
