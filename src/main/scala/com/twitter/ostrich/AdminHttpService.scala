@@ -40,7 +40,7 @@ import Conversions._
  *     $ curl http://localhost:9990/shutdown
  */
 class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
-      extends BackgroundProcess("AdminHttpService") {
+      extends BackgroundProcess("AdminHttpService") with AdminService {
   val log = Logger.get(getClass.getName)
 
   val port = config.getInt("admin_http_port", 9990)
@@ -51,23 +51,13 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
   Server.register(this)
   Server.register(server)
 
-  private def execute(threadName: String)(f: => Unit) = {
-    val t = new Thread(threadName) {
-      override def run() {
-        f
-      }
-    }
-    t.start()
-    t
-  }
-
   def runLoop() {
     val socket = try {
       serverSocket.accept()
     } catch {
       case e: SocketException => throw new InterruptedException()
     }
-    execute("AdminHttpService client") {
+    BackgroundProcess.spawn("AdminHttpService client") {
       try {
         new Client(socket).handleRequest()
       } catch {
@@ -144,14 +134,13 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
           Server.shutdown()
         case "quiesce" =>
           send("ok")
-          execute("quiesce request") {
+          BackgroundProcess.spawn("quiesce request") {
             Thread.sleep(100)
             Server.quiesce()
           }
         case "stats" =>
           val reset = request.parameters.contains("reset")
-          send(Map("jvm" -> Stats.getJvmStats, "counters" -> Stats.getCounterStats(reset),
-                   "timings" -> Stats.getTimingStats(reset), "gauges" -> Stats.getGaugeStats(reset)))
+          send(Stats.stats(reset))
         case "server_info" =>
           send(Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
                    "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision))

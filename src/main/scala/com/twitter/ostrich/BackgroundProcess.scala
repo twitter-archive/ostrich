@@ -20,6 +20,33 @@ import java.util.concurrent.CountDownLatch
 import net.lag.logging.Logger
 
 
+object BackgroundProcess {
+  val log = Logger.get(getClass.getName)
+
+  /**
+   * Spawn a short-lived thread for a throw-away task.
+   */
+  def spawn(threadName: String, daemon: Boolean)(f: => Unit): Thread = {
+    val thread = new Thread(threadName) {
+      override def run() {
+        try {
+          f
+        } catch {
+          case e: Throwable =>
+            log.error(e, "Spawned thread %s died with a terminal exception", Thread.currentThread)
+        }
+      }
+    }
+    thread.setDaemon(daemon)
+    thread.start
+    thread
+  }
+
+  def spawn(threadName: String)(f: => Unit): Thread = spawn(threadName, false)(f)
+  def spawnDaemon(threadName: String)(f: => Unit): Thread = spawn(threadName, true)(f)
+}
+
+
 /**
  * Generalization of a background process that runs in a thread, and can be
  * stopped. Stopping the thread waits for it to finish running.
