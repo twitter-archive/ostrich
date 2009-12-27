@@ -173,7 +173,8 @@ object Stats extends StatsProvider {
     immutable.Map(gaugeMap.map(x => (x._1, x._2(reset))).toList: _*)
   }
 
-  override def stats(reset: Boolean): immutable.Map[String, Map[String, Any]] = {
-    super.stats(reset) ++ immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> getGaugeStats(reset))
+  override def stats(reset: Boolean): Map[String, Map[String, Any]] = {
+    val out = super.stats(reset) ++ immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> getGaugeStats(reset))
+    immutable.Map(out.toSeq: _*)
   }
 }
