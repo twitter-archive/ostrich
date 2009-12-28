@@ -38,7 +38,7 @@ object BackgroundProcess {
       }
     }
     thread.setDaemon(daemon)
-    thread.start
+    thread.start()
     thread
   }
 

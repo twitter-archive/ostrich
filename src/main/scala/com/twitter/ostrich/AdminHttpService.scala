@@ -26,20 +26,12 @@ import Conversions._
 
 
 /**
- * A simple web server that responds to the following paths:
- *
- *   - ping
- *   - reload
- *   - shutdown
- *   - quiesce
- *   - stats
- *   - server_info
- *
+ * A simple web server that responds to the admin commands defined in `AdminService`.
  * It can be used from curl like so:
  *
  *     $ curl http://localhost:9990/shutdown
  */
-class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
+class AdminHttpService(server: ServerInterface, config: ConfigMap, val runtime: RuntimeEnvironment)
       extends BackgroundProcess("AdminHttpService") with AdminService {
   val log = Logger.get(getClass.getName)
 
@@ -123,29 +115,11 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
 
     def handleRequest() {
       request = readRequest()
-      request.command match {
-        case "ping" =>
-          send("pong")
-        case "reload" =>
-          send("ok")
-          Configgy.reload
-        case "shutdown" =>
-          send("ok")
-          Server.shutdown()
-        case "quiesce" =>
-          send("ok")
-          BackgroundProcess.spawn("quiesce request") {
-            Thread.sleep(100)
-            Server.quiesce()
-          }
-        case "stats" =>
-          val reset = request.parameters.contains("reset")
-          send(Stats.stats(reset))
-        case "server_info" =>
-          send(Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
-                   "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision))
-        case x =>
-          sendError("Unknown command: " + x)
+      try {
+        send(handleCommand(request.command, request.parameters))
+      } catch {
+        case e: UnknownCommandError =>
+          sendError(e.getMessage())
       }
     }
 
