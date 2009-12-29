@@ -139,7 +139,6 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats\n".getBytes)
         val response = socket.getInputStream().readString(1024).split("\n")
-        println(response.mkString("\n", "\n", "\n"))
         response mustContain "  kangaroos: 1"
       }
     }
