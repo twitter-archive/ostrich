@@ -21,7 +21,6 @@ import java.net.{ServerSocket, Socket, SocketException, SocketTimeoutException}
 import java.util.concurrent.CountDownLatch
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
-import net.lag.logging.Logger
 import Conversions._
 
 
@@ -31,49 +30,13 @@ import Conversions._
  *
  *     $ curl http://localhost:9990/shutdown
  */
-class AdminHttpService(server: ServerInterface, config: ConfigMap, val runtime: RuntimeEnvironment)
-      extends BackgroundProcess("AdminHttpService") with AdminService {
-  val log = Logger.get(getClass.getName)
+class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
+      extends AdminService("AdminHttpService", server, runtime) {
+  val port = config.getInt("admin_http_port")
 
-  val port = config.getInt("admin_http_port", 9990)
-  val serverSocket = new ServerSocket(port)
-
-  serverSocket.setReuseAddress(true)
-
-  Server.register(this)
-  Server.register(server)
-
-  def runLoop() {
-    val socket = try {
-      serverSocket.accept()
-    } catch {
-      case e: SocketException => throw new InterruptedException()
-    }
-    BackgroundProcess.spawn("AdminHttpService client") {
-      try {
-        new Client(socket).handleRequest()
-      } catch {
-        case e: Exception =>
-          log.warning("AdminHttpService client %s raised %s", socket, e)
-      } finally {
-        try {
-          socket.close()
-        } catch {
-          case _ =>
-        }
-      }
-    }
+  def handleRequest(socket: Socket) {
+    new Client(socket).handleRequest()
   }
-
-  override def shutdown() {
-    try {
-      serverSocket.close()
-    } catch {
-      case _ =>
-    }
-    super.shutdown()
-  }
-
 
   class Client(val socket: Socket) {
     case class Request(command: String, parameters: List[String], format: String)

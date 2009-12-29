@@ -20,85 +20,28 @@ import java.io._
 import java.net._
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
-import net.lag.logging.Logger
 import Conversions._
 
 
 class AdminSocketService(server: ServerInterface, config: ConfigMap, val runtime: RuntimeEnvironment)
-  extends BackgroundProcess("AdminSocketService") with AdminService {
+      extends AdminService("AdminSocketService", server, runtime) {
+  val port = config.getInt("admin_text_port")
 
-  val log = Logger.get(getClass.getName)
-
-  val port = config.getInt("admin_text_port", 9989)
-  val serverSocket = new ServerSocket(port)
-
-  serverSocket.setReuseAddress(true)
-
-  Server.register(this)
-  Server.register(server)
-
-  def runLoop() {
-    val socket = try {
-      serverSocket.accept()
-    } catch {
-      case e: SocketException => throw new InterruptedException()
+  def handleRequest(socket: Socket) {
+    var out = new PrintWriter(socket.getOutputStream(), true)
+    var in = new BufferedReader(new InputStreamReader(socket.getInputStream))
+    val line = in.readLine()
+    val request = line.split("\\s+").toList
+    val (command, format) = request.head.split("/").toList match {
+      case Nil => throw new IOException("impossible")
+      case x :: Nil => (x, "text")
+      case x :: y :: xs => (x, y)
     }
-    BackgroundProcess.spawn("AdminSocketService client") {
-      try {
-        new Client(socket).handleRequest()
-      } catch {
-        case e: Exception =>
-          log.warning("AdminSocketService client %s raised %s", socket, e)
-      } finally {
-        try {
-          socket.close()
-        } catch {
-          case _ =>
-        }
-      }
+    val response = handleCommand(command, request.tail)
+    format match {
+      case "json" => out.print(Json.build(response).toString + "\n")
+      case _ => out.print(response.flatten + "\n")
     }
-  }
-
-  override def shutdown() {
-    try {
-      serverSocket.close()
-    } catch {
-      case _ =>
-    }
-    super.shutdown()
-  }
-
-  class Client(val socket: Socket) {
-    socket.setSoTimeout(1000)
-
-    def handleRequest() {
-      log.debug("Client has connected to AdminSocketService from %s:%s", socket.getInetAddress, socket.getPort)
-      var out: PrintWriter = null
-      var in: BufferedReader = null
-      try {
-        out = new PrintWriter(socket.getOutputStream(), true)
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream))
-        val line = in.readLine()
-        val request = line.split("\\s+").toList
-        val (command, format) = request.head.split("/").toList match {
-          case Nil => throw new IOException("impossible")
-          case x :: Nil => (x, "text")
-          case x :: y :: xs => (x, y)
-        }
-        val response = handleCommand(command, request.tail)
-        format match {
-          case "json" => out.print(Json.build(response).toString + "\n")
-          case _ => out.print(response.flatten + "\n")
-        }
-        out.flush()
-      } catch {
-        case e: IOException =>
-          log.error(e, "Error writing to AdminSocketService client")
-      } finally {
-        out.close()
-        in.close()
-        socket.close()
-      }
-    }
+    out.flush()
   }
 }

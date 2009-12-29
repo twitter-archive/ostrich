@@ -16,8 +16,10 @@
 
 package com.twitter.ostrich
 
-import java.io.IOException
+import java.io._
+import java.net._
 import net.lag.configgy.{Configgy, RuntimeEnvironment}
+import net.lag.logging.Logger
 
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
@@ -26,8 +28,59 @@ class UnknownCommandError(command: String) extends IOException("Unknown command:
 /**
  * Common functionality between the admin interfaces.
  */
-trait AdminService {
-  def runtime: RuntimeEnvironment
+abstract class AdminService(name: String, server: ServerInterface, runtime: RuntimeEnvironment) extends BackgroundProcess(name) {
+  def port: Option[Int]
+  def handleRequest(socket: Socket): Unit
+
+  val log = Logger.get(getClass.getName)
+
+  var serverSocket: Option[ServerSocket] = None
+
+  override def start() {
+    port map { port =>
+      serverSocket = Some(new ServerSocket(port))
+      serverSocket.map { _.setReuseAddress(true) }
+      Server.register(this)
+      Server.register(server)
+      super.start()
+    }
+  }
+
+  override def shutdown() {
+    try {
+      serverSocket.map { _.close() }
+    } catch {
+      case _ =>
+    }
+    super.shutdown()
+  }
+
+  def runLoop() {
+    val socket = try {
+      serverSocket.get.accept()
+    } catch {
+      case e: SocketException =>
+        throw new InterruptedException()
+    }
+    val address = "%s:%s".format(socket.getInetAddress, socket.getPort)
+    log.debug("Client has connected to %s from %s", name, address)
+    BackgroundProcess.spawn("%s client %s".format(name, address)) {
+      try {
+        socket.setSoTimeout(1000)
+        handleRequest(socket)
+      } catch {
+        case e: Exception =>
+          log.warning("%s client %s raised %s", name, address, e)
+      } finally {
+        try {
+          socket.close()
+        } catch {
+          case _ =>
+        }
+      }
+    }
+  }
+
 
   def handleCommand(command: String, parameters: List[String]): Any = {
     command match {
