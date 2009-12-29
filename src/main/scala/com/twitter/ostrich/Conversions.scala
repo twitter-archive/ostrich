@@ -30,11 +30,11 @@ object Conversions {
           Sorting.stableSort(m.keys.toList, { (a: Any, b: Any) => a.toString < b.toString }).map { k =>
             m(k) match {
               case m: Map[_, _] =>
-                "%s:\n".format(k) + new RichAny(m).flatten.split("\n").map { "  " + _ }.mkString("\n") + "\n"
+                "%s:\n".format(k) + new RichAny(m).flatten.split("\n").map { "  " + _ }.mkString("\n")
               case x =>
                 "%s: %s".format(k, new RichAny(x).flatten)
             }
-          }.mkString("\n") + "\n"
+          }.mkString("\n")
         case x =>
           x.toString
       }
