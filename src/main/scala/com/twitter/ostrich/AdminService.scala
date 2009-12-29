@@ -90,10 +90,10 @@ abstract class AdminService(name: String, server: ServerInterface, runtime: Runt
         BackgroundProcess.spawn("admin:reload") { Configgy.reload }
         "ok"
       case "shutdown" =>
-        BackgroundProcess.spawn("admin:shutdown") { Server.shutdown() }
+        BackgroundProcess.spawn("admin:shutdown") { Thread.sleep(100); Server.shutdown() }
         "ok"
       case "quiesce" =>
-        BackgroundProcess.spawn("admin:quiesce") { Server.quiesce() }
+        BackgroundProcess.spawn("admin:quiesce") { Thread.sleep(100); Server.quiesce() }
         "ok"
       case "stats" =>
         val reset = parameters.contains("reset")

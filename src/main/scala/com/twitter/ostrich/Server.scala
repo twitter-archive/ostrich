@@ -17,6 +17,7 @@
 package com.twitter.ostrich
 
 import scala.collection.mutable
+import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
 
 
 /**
@@ -38,5 +39,10 @@ object Server extends ServerInterface {
   def quiesce() {
     servers.foreach { _.quiesce() }
     servers.clear()
+  }
+
+  def startAdmin(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
+    new AdminHttpService(server, config, runtime).start()
+    new AdminSocketService(server, config, runtime).start()
   }
 }
