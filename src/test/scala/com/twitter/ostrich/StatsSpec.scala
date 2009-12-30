@@ -16,10 +16,9 @@
 
 package com.twitter.ostrich
 
-//import Stats.TimingStat
+import scala.collection.immutable
 import net.lag.extensions._
 import org.specs._
-import scala.collection.immutable
 
 
 object StatsSpec extends Specification {
