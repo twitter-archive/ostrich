@@ -43,7 +43,7 @@ class StatsMBean(resetTimings: Boolean, resetGauges: Boolean, resetCounters: Boo
   def this() = this(false, false, false)
 
   def getMBeanInfo() = {
-    new jmx.MBeanInfo("com.twitter.service.Stats", "running statistics", getAttributeInfo(),
+    new jmx.MBeanInfo("com.twitter.ostrich.Stats", "running statistics", getAttributeInfo(),
       null, null, null, new jmx.ImmutableDescriptor("immutableInfo=false"))
   }
 
