@@ -30,7 +30,11 @@ object StatsMBean {
   def apply(packageName: String, resetTimings: Boolean, resetGauges: Boolean, resetCounters: Boolean,
             mbeanServer: jmx.MBeanServer): Unit = {
     val stats = new StatsMBean(resetTimings, resetGauges, resetCounters)
-    mbeanServer.registerMBean(stats, new jmx.ObjectName(packageName + ":type=Stats"))
+    try {
+      mbeanServer.registerMBean(stats, new jmx.ObjectName(packageName + ":type=Stats"))
+    } catch {
+      case e: jmx.InstanceAlreadyExistsException => // pass
+    }
   }
 }
 
@@ -54,7 +58,8 @@ class StatsMBean(resetTimings: Boolean, resetGauges: Boolean, resetCounters: Boo
         Stats.getCounterStats(resetCounters)(segments(1)).asInstanceOf[java.lang.Long]
       case "timing" =>
         val prefix = segments(1).split("_", 2)
-        val timing = Stats.getTimingStats(resetTimings)(prefix(1))
+        val timing = Stats.getTimingStats(resetTimings)(prefix(0))
+        timing.toMap
       case "gauge" =>
         Stats.getGaugeStats(resetGauges)(segments(1)).asInstanceOf[java.lang.Double]
     }

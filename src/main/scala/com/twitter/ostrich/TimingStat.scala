@@ -16,6 +16,7 @@
 
 package com.twitter.ostrich
 
+import scala.collection.Map
 import scala.collection.immutable
 import com.twitter.json.{Json, JsonSerializable}
 
@@ -47,4 +48,8 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   }
 
   override def toString = "(count=%d, maximum=%d, minimum=%d, sum=%d, sum_squares=%d)".format(count, maximum, minimum, sum, sumSquares)
+
+  def toMap: Map[String, Long] =
+    immutable.Map("count" -> count, "maximum" -> maximum, "minimum" -> minimum, "sum" -> sum, "sum_squares" -> sumSquares,
+                  "average" -> average, "standard_deviation" -> standardDeviation)
 }

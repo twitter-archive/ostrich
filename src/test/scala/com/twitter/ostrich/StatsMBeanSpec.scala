@@ -31,20 +31,42 @@ object StatsMBeanSpec extends Specification {
     doBefore {
       Stats.clearAll()
       StatsMBean("com.example.foo")
-      Stats.incr("emo_tears")
-      Stats.incr("clown_tears", 2)
     }
 
-    "report stats" in {
+    def getMBean() = {
       val mbeans = jcl.Set(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
       mbeans.size mustEqual 1
-      val mbean = mbeans.toList.first
+      mbeans.toList.first
+    }
+
+    def getAttributeNames(mbean: jmx.ObjectInstance) = {
       val mbeanInfo = mbeanServer.getMBeanInfo(mbean.getObjectName())
-      Sorting.stableSort(mbeanInfo.getAttributes().map { _.getName() }.toList).toList mustEqual
-        List("counter_clown_tears", "counter_emo_tears")
+      Sorting.stableSort(mbeanInfo.getAttributes().map { _.getName() }.toList).toList
+    }
+
+    "report counters" in {
+      Stats.incr("emo_tears")
+      Stats.incr("clown_tears", 2)
+
+      val mbean = getMBean()
+      getAttributeNames(mbean) mustEqual List("counter_clown_tears", "counter_emo_tears")
 
       mbeanServer.getAttribute(mbean.getObjectName(), "counter_clown_tears") mustEqual 2
       mbeanServer.getAttribute(mbean.getObjectName(), "counter_emo_tears") mustEqual 1
+    }
+
+    "report timings" in {
+      Stats.time("procrastinate") {
+        Thread.sleep(10)
+      }
+
+      val mbean = getMBean()
+      getAttributeNames(mbean) mustEqual List("timing_procrastinate")
+
+      val x = mbeanServer.getAttribute(mbean.getObjectName(), "timing_procrastinate_average").asInstanceOf[Map[String, Any]]
+      x("average").asInstanceOf[Long] must be_>=(10L)
+      x("count") mustEqual 1
+      println(x)
     }
   }
 }
