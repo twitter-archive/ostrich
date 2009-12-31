@@ -57,9 +57,7 @@ class StatsMBean(resetTimings: Boolean, resetGauges: Boolean, resetCounters: Boo
       case "counter" =>
         Stats.getCounterStats(resetCounters)(segments(1)).asInstanceOf[java.lang.Long]
       case "timing" =>
-        val prefix = segments(1).split("_", 2)
-        val timing = Stats.getTimingStats(resetTimings)(prefix(0))
-        timing.toMap
+        Stats.getTimingStats(resetTimings)(segments(1)).toMap
       case "gauge" =>
         Stats.getGaugeStats(resetGauges)(segments(1)).asInstanceOf[java.lang.Double]
     }

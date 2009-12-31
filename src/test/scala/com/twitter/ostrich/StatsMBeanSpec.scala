@@ -63,8 +63,8 @@ object StatsMBeanSpec extends Specification {
       val mbean = getMBean()
       getAttributeNames(mbean) mustEqual List("timing_procrastinate")
 
-      val x = mbeanServer.getAttribute(mbean.getObjectName(), "timing_procrastinate_average").asInstanceOf[Map[String, Any]]
-      x("average").asInstanceOf[Long] must be_>=(10L)
+      val x = mbeanServer.getAttribute(mbean.getObjectName(), "timing_procrastinate").asInstanceOf[Map[String, Long]]
+      x("average") must be_>=(10L)
       x("count") mustEqual 1
     }
   }
