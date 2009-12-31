@@ -66,7 +66,6 @@ object StatsMBeanSpec extends Specification {
       val x = mbeanServer.getAttribute(mbean.getObjectName(), "timing_procrastinate_average").asInstanceOf[Map[String, Any]]
       x("average").asInstanceOf[Long] must be_>=(10L)
       x("count") mustEqual 1
-      println(x)
     }
   }
 }
