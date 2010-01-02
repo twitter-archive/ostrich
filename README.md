@@ -87,7 +87,7 @@ call to `shutdown` if the distinction makes no sense for your server.
 
 An example:
 
-    import com.twitter.ostrich.ServerInterface
+    import com.twitter.ostrich.{Server, ServerInterface}
     import net.lag.configgy.{Configgy, RuntimeEnvironment}
 
     object Main extends ServerInterface {
