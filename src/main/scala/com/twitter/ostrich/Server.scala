@@ -44,5 +44,6 @@ object Server extends ServerInterface {
   def startAdmin(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
     new AdminHttpService(server, config, runtime).start()
     new AdminSocketService(server, config, runtime).start()
+    config.getString("admin_jmx_package").map(StatsMBean(_))
   }
 }
