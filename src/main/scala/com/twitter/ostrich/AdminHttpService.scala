@@ -19,9 +19,7 @@ package com.twitter.ostrich
 import java.io._
 import java.net.{ServerSocket, Socket, SocketException, SocketTimeoutException}
 import java.util.concurrent.CountDownLatch
-import com.twitter.json.Json
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
-import Conversions._
 
 
 /**
@@ -78,8 +76,12 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
 
     def handleRequest() {
       request = readRequest()
+      val format = request.format match {
+        case "txt" => Format.PlainText
+        case _ => Format.Json
+      }
       try {
-        send(handleCommand(request.command, request.parameters))
+        send("200", "OK", handleCommand(request.command, request.parameters, format))
       } catch {
         case e: UnknownCommandError =>
           sendError(e.getMessage())
@@ -88,24 +90,10 @@ class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: Runt
 
     private def sendError(message: String) {
       log.info("Admin http client error: %s", message)
-      send("400", "ERROR", Map("error" -> message))
+      send("400", "ERROR", message)
     }
 
-    private def send(data: Any): Unit = send("200", "OK", data)
-
-    private def send(code: String, codeDescription: String, data: Any) {
-      val rawData = request.format match {
-        case "txt" =>
-          data.flatten
-        case _ => // json
-          Json.build(data).toString + "\n"
-      }
-      sendRaw(code, codeDescription, rawData)
-    }
-
-    private def sendRaw(data: String): Unit = sendRaw("200", "OK", data)
-
-    private def sendRaw(code: String, codeDescription: String, data: String) {
+    private def send(code: String, codeDescription: String, data: String) {
       val out = new OutputStreamWriter(socket.getOutputStream())
       out.write("HTTP/1.0 %s %s\n".format(code, codeDescription))
       out.write("Server: %s/%s %s %s\n".format(runtime.jarName, runtime.jarVersion,

@@ -65,7 +65,7 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
     "answer pings" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("get /ping\n".getBytes)
-      socket.getInputStream().readString(1024).split("\n").last mustEqual "\"pong\""
+      socket.getInputStream().readString(1024).split("\n").last mustEqual "{\"response\":\"pong\"}"
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
     }

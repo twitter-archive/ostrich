@@ -18,11 +18,22 @@ package com.twitter.ostrich
 
 import java.io._
 import java.net._
+import scala.collection.Map
+import scala.collection.immutable
+import com.twitter.json.Json
 import net.lag.configgy.{Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
+import Conversions._
 
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
+
+
+sealed abstract case class Format()
+object Format {
+  case object PlainText extends Format
+  case object Json extends Format
+}
 
 
 /**
@@ -81,8 +92,21 @@ abstract class AdminService(name: String, server: ServerInterface, runtime: Runt
     }
   }
 
+  def handleCommand(command: String, parameters: List[String], format: Format): String = {
+    val rv = handleRawCommand(command, parameters)
+    format match {
+      case Format.PlainText =>
+        rv.flatten
+      case Format.Json =>
+        // force it into a map because some json clients expect the top-level object to be a map.
+        Json.build(rv match {
+          case x: Map[_, _] => x
+          case _ => immutable.Map("response" -> rv)
+        }).toString + "\n"
+    }
+  }
 
-  def handleCommand(command: String, parameters: List[String]): Any = {
+  def handleRawCommand(command: String, parameters: List[String]): Any = {
     command match {
       case "ping" =>
         "pong"
@@ -99,8 +123,8 @@ abstract class AdminService(name: String, server: ServerInterface, runtime: Runt
         val reset = parameters.contains("reset")
         Stats.stats(reset)
       case "server_info" =>
-        Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
-            "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision)
+        immutable.Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
+                      "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision)
       case x =>
         throw new UnknownCommandError(x)
     }

@@ -20,7 +20,6 @@ import java.io._
 import java.net._
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
-import Conversions._
 
 
 class AdminSocketService(server: ServerInterface, config: ConfigMap, val runtime: RuntimeEnvironment)
@@ -32,16 +31,16 @@ class AdminSocketService(server: ServerInterface, config: ConfigMap, val runtime
     var in = new BufferedReader(new InputStreamReader(socket.getInputStream))
     val line = in.readLine()
     val request = line.split("\\s+").toList
-    val (command, format) = request.head.split("/").toList match {
+    val (command, textFormat) = request.head.split("/").toList match {
       case Nil => throw new IOException("impossible")
       case x :: Nil => (x, "text")
       case x :: y :: xs => (x, y)
     }
-    val response = handleCommand(command, request.tail)
-    format match {
-      case "json" => out.print(Json.build(response).toString + "\n")
-      case _ => out.print(response.flatten + "\n")
+    val format = textFormat match {
+      case "json" => Format.Json
+      case _ => Format.PlainText
     }
+    out.println(handleCommand(command, request.tail, format))
     out.flush()
   }
 }
