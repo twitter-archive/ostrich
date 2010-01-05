@@ -37,6 +37,7 @@ object Stats extends StatsProvider {
   trait Gauge extends ((Boolean) => Double)
 
   private val gaugeMap = new mutable.HashMap[String, Gauge]()
+  private val timingSourceList = new mutable.ListBuffer[() => Map[String, TimingStat]]()
 
   private val collection = new StatsCollection
   private val forkedCollections = new mutable.ListBuffer[StatsCollection]
@@ -58,7 +59,12 @@ object Stats extends StatsProvider {
 
   def getCounterStats(reset: Boolean) = collection.getCounterStats(reset)
 
-  def getTimingStats(reset: Boolean) = collection.getTimingStats(reset)
+  def getTimingStats(reset: Boolean) = {
+    val stats = new mutable.HashMap[String, TimingStat]()
+    stats ++= collection.getTimingStats(reset)
+    timingSourceList.foreach { stats ++= _() }
+    stats
+  }
 
   def getCounter(name: String): Counter = collection.getCounter(name)
 
@@ -69,6 +75,7 @@ object Stats extends StatsProvider {
     forkedCollections.foreach { _.clearAll() }
     forkedCollections.clear()
     gaugeMap.synchronized { gaugeMap.clear() }
+    timingSourceList.clear()
   }
 
   /**
@@ -83,6 +90,16 @@ object Stats extends StatsProvider {
     val x = new StatsCollection
     forkedCollections += x
     x
+  }
+
+  /**
+   * Register an external source of timings. When timing stats are fetched for reporting, each
+   * registered source will be called, and the resulting map will be merged into the report.
+   *
+   * This method is not thread-safe. Register timing sources before going multi-threaded.
+   */
+  def registerTimingSource(f: () => Map[String, TimingStat]) = {
+    timingSourceList += f
   }
 
   /**

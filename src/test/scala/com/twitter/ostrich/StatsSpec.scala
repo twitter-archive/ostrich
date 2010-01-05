@@ -128,6 +128,13 @@ object StatsSpec extends Specification {
         Stats.addTiming("foobar", new TimingStat(3, 0, 0, 0, 0))
         Stats.getTimingStats(false)("foobar").count mustEqual 3
       }
+
+      "timing stats can be pulled from a passive external source" in {
+        Stats.registerTimingSource { () => Map("made_up" -> new TimingStat(1, 1, 1, 1, 1)) }
+        Stats.getTimingStats(false).size mustEqual 1
+        Stats.getTimingStats(false)("made_up").count mustEqual 1
+        Stats.getTimingStats(false)("made_up").average mustEqual 1
+      }
     }
 
     "gauges" in {
