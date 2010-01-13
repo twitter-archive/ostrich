@@ -80,6 +80,8 @@ abstract class AdminService(name: String, server: ServerInterface, runtime: Runt
         socket.setSoTimeout(1000)
         handleRequest(socket)
       } catch {
+        case e: IOException =>
+          log.debug("%s client %s raised %s", name, address, e)
         case e: Exception =>
           log.warning("%s client %s raised %s", name, address, e)
       } finally {
