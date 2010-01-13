@@ -33,6 +33,7 @@ import java.text.SimpleDateFormat
 class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvider {
   val log = Logger.get(getClass.getName)
   val reporter = new W3CReporter(logger)
+  var complainAboutUnregisteredFields = true
 
   /**
    * Store our map of named events.
@@ -57,7 +58,7 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
    * Private method to ensure that fields being inserted are actually being tracked, throwing an exception otherwise.
    */
   private def log_safe[T](name: String, value: T) {
-    if (!fields.contains(name)) {
+    if (complainAboutUnregisteredFields && !fields.contains(name)) {
       log.error("trying to log unregistered field: %s".format(name))
     }
     get + (name -> value)
