@@ -17,10 +17,10 @@
 package com.twitter.ostrich
 
 import java.io._
-import java.net.{ServerSocket, Socket, SocketException, SocketTimeoutException}
+import java.net.{InetSocketAddress, ServerSocket, Socket, SocketException, SocketTimeoutException}
 import java.util.concurrent.CountDownLatch
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
-
+import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 /**
  * A simple web server that responds to the admin commands defined in `AdminService`.
@@ -30,78 +30,38 @@ import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
  */
 class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
       extends AdminService("AdminHttpService", server, runtime) {
-  val port = config.getInt("admin_http_port")
-
-  def handleRequest(socket: Socket) {
-    new Client(socket).handleRequest()
+  override def port = Some(config.getInt("admin_http_port", 9990))
+  val backlog = config.getInt("admin_http_backlog", 20)
+  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
+  
+  def handleRequest(socket: Socket) { }
+    
+  httpServer.createContext("/", new HttpHandler {
+    def handle(exchange: HttpExchange) {
+      val requestURI = exchange.getRequestURI
+      val command = requestURI.getPath.split('/').last
+      val parameters = requestURI.getQuery.split('&').toList
+      val body = handleCommand(command, parameters, Format.Json).getBytes
+      val output = exchange.getResponseBody()
+      
+      output.write(body)
+      output.close()
+    }
+  })
+  httpServer.setExecutor(null)
+  
+  override def start() = {
+    super.start()
+    httpServer.start()
   }
 
-  class Client(val socket: Socket) {
-    case class Request(command: String, parameters: List[String], format: String)
-    var request: Request = null
-
-    private def readRequest(): Request = {
-      val in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
-      val requestLine = in.readLine()
-      if (requestLine == null) {
-        throw new IOException("EOF")
-      }
-      val segments = requestLine.split(" ", 3)
-      if (segments.length == 3) {
-        // read the "headers", which we will ignore.
-        while (in.readLine() != "") { }
-      }
-      if (segments.length < 2) {
-        sendError("Malformed request line: " + requestLine)
-        throw new IOException("Bad request")
-      }
-      val command = segments(0).toLowerCase()
-      if (command != "get") {
-        sendError("Request must be GET.")
-        throw new IOException("Bad request")
-      }
-      val pathSegments = segments(1).split("/").filter(_.length > 0)
-      if (pathSegments.length < 1) {
-        sendError("Malformed request path: " + segments(1))
-        throw new IOException("Bad request")
-      }
-      if (pathSegments.last contains ".") {
-        val filenameSegments = pathSegments.last.split("\\.", 2)
-        val params = pathSegments.slice(0, pathSegments.size - 1) ++ List(filenameSegments(0))
-        Request(params(0), params.drop(1).toList, filenameSegments(1).toLowerCase())
-      } else {
-        Request(pathSegments(0), pathSegments.drop(1).toList, "json")
-      }
-    }
-
-    def handleRequest() {
-      request = readRequest()
-      val format = request.format match {
-        case "txt" => Format.PlainText
-        case _ => Format.Json
-      }
-      try {
-        send("200", "OK", handleCommand(request.command, request.parameters, format))
-      } catch {
-        case e: UnknownCommandError =>
-          sendError(e.getMessage())
-      }
-    }
-
-    private def sendError(message: String) {
-      log.info("Admin http client error: %s", message)
-      send("400", "ERROR", message)
-    }
-
-    private def send(code: String, codeDescription: String, data: String) {
-      val out = new OutputStreamWriter(socket.getOutputStream())
-      out.write("HTTP/1.0 %s %s\n".format(code, codeDescription))
-      out.write("Server: %s/%s %s %s\n".format(runtime.jarName, runtime.jarVersion,
-        runtime.jarBuild, runtime.jarBuildRevision))
-      out.write("Content-Type: text/plain\n")
-      out.write("\n")
-      out.write(data)
-      out.flush()
-    }
+  override def shutdown() = {
+    super.shutdown()
+    httpServer.stop(0) // argument is in seconds
+  }
+  
+  override def quiesce() = {
+    super.quiesce()
+    httpServer.stop(1) // argument is in seconds
   }
 }
