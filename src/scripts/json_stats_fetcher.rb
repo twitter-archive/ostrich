@@ -16,8 +16,8 @@ end
 
 $report_to_ganglia = true
 $ganglia_prefix = ''
+$stat_timeout = 86400
 
-stat_timeout = 86400
 hostname = "localhost"
 port = 9989
 use_web = false
