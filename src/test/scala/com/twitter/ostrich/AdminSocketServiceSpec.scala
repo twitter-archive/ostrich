@@ -26,7 +26,6 @@ import org.specs.Specification
 import org.specs.mock.Mockito
 
 
-
 object AdminSocketServiceSpec extends Specification with Mockito with Eventually {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
@@ -45,7 +44,7 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
 
     doBefore {
       new Socket("localhost", PORT) must throwA[SocketException]
-      service = new AdminSocketService(config, new RuntimeEnvironment(getClass))
+      service = spy(new AdminSocketService(config, new RuntimeEnvironment(getClass)))
       service.start()
     }
 
@@ -63,20 +62,24 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("ping\n".getBytes)
       socket.getInputStream().readString(1024) mustEqual "pong\n"
+
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.shutdown() was called
     }
 
     "shutdown" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("shutdown\n".getBytes)
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.shutdown() was called
     }
 
     "quiesce" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("quiesce\n".getBytes)
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.quiesce() was called
     }
 
     "provide stats" in {
@@ -91,11 +94,13 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
 
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats/json\n".getBytes)
+
         val stats = Json.parse(socket.getInputStream().readString(1024)).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats("jvm") must haveKey("uptime")
         stats("jvm") must haveKey("heap_used")
         stats("counters") must haveKey("kangaroos")
         stats("timings") must haveKey("kangaroo_time")
+
         val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")
@@ -127,6 +132,7 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
 
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats\n".getBytes)
+
         val response = socket.getInputStream().readString(1024).split("\n")
         response mustContain "  kangaroos: 1"
       }
