@@ -16,44 +16,34 @@
 
 package com.twitter.ostrich
 
-import java.io.InputStream
-import java.net.{Socket, SocketException}
+import java.io.{DataInputStream, InputStream}
+import java.net.{Socket, SocketException, URL}
+import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
 import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
 
 
-object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
+object AdminHttpServiceSpec extends Specification with Eventually {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_http_port" -> PORT.toString))
 
-  class PimpedInputStream(stream: InputStream) {
-    def readString(maxBytes: Int) = {
-      val buffer = new Array[Byte](maxBytes)
-      val len = stream.read(buffer)
-      new String(buffer, 0, len, "UTF-8")
-    }
+  def get(path: String): String = {
+    val url = new URL("http://localhost:%s%s".format(PORT, path))
+    Source.fromURL(url).getLines.mkString("\n")
   }
-
-  implicit def pimpInputStream(stream: InputStream) = new PimpedInputStream(stream)
 
   "AdminHttpService" should {
     var service: AdminHttpService = null
-    var server: ServerInterface = null
 
     doBefore {
-      new Socket("localhost", PORT) must throwA[SocketException]
-      server = mock[ServerInterface]
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
       service = new AdminHttpService(config, new RuntimeEnvironment(getClass))
       service.start()
     }
 
     doAfter {
-      expect {
-        allowing(server).shutdown()
-      }
       service.shutdown()
     }
 
@@ -65,29 +55,18 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
 
     "answer pings" in {
       val socket = new Socket("localhost", PORT)
-      socket.getOutputStream().write("get /ping\n".getBytes)
-      socket.getInputStream().readString(1024).split("\n").last mustEqual "{\"response\":\"pong\"}"
+      get("/ping.json").trim mustEqual """{"response":"pong"}"""
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
     }
 
     "shutdown" in {
-      expect {
-        one(server).shutdown()
-      }
-
-      val socket = new Socket("localhost", PORT)
-      socket.getOutputStream().write("get /shutdown\n".getBytes)
+      get("/shutdown.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
     }
 
     "quiesce" in {
-      expect {
-        one(server).quiesce()
-      }
-
-      val socket = new Socket("localhost", PORT)
-      socket.getOutputStream().write("get /quiesce\n".getBytes)
+      get("/quiesce.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
     }
 
@@ -101,9 +80,7 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
-        val socket = new Socket("localhost", PORT)
-        socket.getOutputStream().write("get /stats\n".getBytes)
-        val stats = Json.parse(socket.getInputStream().readString(1024).split("\n").last).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats("jvm") must haveKey("uptime")
         stats("jvm") must haveKey("heap_used")
         stats("counters") must haveKey("kangaroos")
@@ -119,15 +96,11 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
-        val socket = new Socket("localhost", PORT)
-        socket.getOutputStream().write("get /stats/reset\n".getBytes)
-        val stats = Json.parse(socket.getInputStream().readString(1024).split("\n").last).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
 
-        val socket2 = new Socket("localhost", PORT)
-        socket2.getOutputStream().write("get /stats/reset\n".getBytes)
-        val stats2 = Json.parse(socket2.getInputStream().readString(1024).split("\n").last).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats2 = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         val timing2 = stats2("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing2("count") mustEqual 0
       }
@@ -137,10 +110,7 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
-        val socket = new Socket("localhost", PORT)
-        socket.getOutputStream().write("get /stats.txt\n".getBytes)
-        val response = socket.getInputStream().readString(1024).split("\n")
-        response mustContain "  kangaroos: 1"
+        get("/stats.txt") must beMatching("  kangaroos: 1")
       }
     }
   }

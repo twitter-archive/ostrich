@@ -40,19 +40,14 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
 
   "AdminSocketService" should {
     var service: AdminSocketService = null
-    var server: ServerInterface = null
 
     doBefore {
       new Socket("localhost", PORT) must throwA[SocketException]
-      server = mock[ServerInterface]
       service = new AdminSocketService(config, new RuntimeEnvironment(getClass))
       service.start()
     }
 
     doAfter {
-      expect {
-        allowing(server).shutdown()
-      }
       service.shutdown()
     }
 
@@ -71,20 +66,12 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
     }
 
     "shutdown" in {
-      expect {
-        one(server).shutdown()
-      }
-
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("shutdown\n".getBytes)
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
     }
 
     "quiesce" in {
-      expect {
-        one(server).quiesce()
-      }
-
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("quiesce\n".getBytes)
       new Socket("localhost", PORT) must eventually(throwA[SocketException])

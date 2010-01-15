@@ -25,6 +25,14 @@ import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 class RequestHandler extends HttpHandler {
   def handle(exchange: HttpExchange) {
+    try {
+      _handle(exchange)
+    } catch {
+      case e: Exception => println("woah: " + e.getMessage()); e.printStackTrace()
+    }
+  }
+
+  def _handle(exchange: HttpExchange) {
     val input: InputStream = exchange.getRequestBody()
 
     val requestURI = exchange.getRequestURI
@@ -32,13 +40,20 @@ class RequestHandler extends HttpHandler {
     println("requestURI.getPath: " + requestURI.getPath)
     println("requestURI.getQuery: " + requestURI.getQuery)
 
-    val command = requestURI.getPath.split('/').last
+    val command = requestURI.getPath.split('/').last.split('.').first
     println("command: " + command)
-    val parameters = requestURI.getQuery.split('&').toList
+
+    val parameters: List[String] = {
+      val params = requestURI.getQuery
+      if (params != null) {
+        params.split('&').toList
+      } else {
+        Nil
+      }
+    }
     println("parameters: " + parameters)
 
-    //val response = handleCommand(command, parameters, Format.Json).getBytes
-    val response = "luls"
+    val response = CommandHandler.handleCommand(command, parameters, Format.Json)
     println("body: " + response)
 
     exchange.sendResponseHeaders(200, response.length)
