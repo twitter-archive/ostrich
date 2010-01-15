@@ -22,10 +22,12 @@ import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
+import org.mockito.Matchers._
 import org.specs.Specification
+import org.specs.mock.Mockito
 
 
-object AdminHttpServiceSpec extends Specification with Eventually {
+object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_http_port" -> PORT.toString))
 
@@ -39,7 +41,7 @@ object AdminHttpServiceSpec extends Specification with Eventually {
 
     doBefore {
       new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
-      service = new AdminHttpService(config, new RuntimeEnvironment(getClass))
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
       service.start()
     }
 
@@ -56,18 +58,22 @@ object AdminHttpServiceSpec extends Specification with Eventually {
     "answer pings" in {
       val socket = new Socket("localhost", PORT)
       get("/ping.json").trim mustEqual """{"response":"pong"}"""
+
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.shutdown() was called
     }
 
     "shutdown" in {
       get("/shutdown.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.shutdown() was called
     }
 
     "quiesce" in {
       get("/quiesce.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.quiesce() was called
     }
 
     "provide stats" in {
@@ -85,6 +91,7 @@ object AdminHttpServiceSpec extends Specification with Eventually {
         stats("jvm") must haveKey("heap_used")
         stats("counters") must haveKey("kangaroos")
         stats("timings") must haveKey("kangaroo_time")
+
         val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")

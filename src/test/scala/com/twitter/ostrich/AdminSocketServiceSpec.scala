@@ -21,11 +21,13 @@ import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
+import org.mockito.Matchers._
 import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
+import org.specs.mock.Mockito
 
 
-object AdminSocketServiceSpec extends Specification with JMocker with Eventually {
+
+object AdminSocketServiceSpec extends Specification with Mockito with Eventually {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
 

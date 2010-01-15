@@ -43,6 +43,12 @@ class RequestHandler extends HttpHandler {
     val command = requestURI.getPath.split('/').last.split('.').first
     println("command: " + command)
 
+    val format: Format  = requestURI.getPath.split('.').last match {
+      case "json" => Format.Json
+      case _ => Format.PlainText
+    }
+    println("format: " + format)
+
     val parameters: List[String] = {
       val params = requestURI.getQuery
       if (params != null) {
@@ -50,10 +56,10 @@ class RequestHandler extends HttpHandler {
       } else {
         Nil
       }
-    }
+    }.map({ _.split('=').first })
     println("parameters: " + parameters)
 
-    val response = CommandHandler.handleCommand(command, parameters, Format.Json)
+    val response = CommandHandler.handleCommand(command, parameters, format)
     println("body: " + response)
 
     exchange.sendResponseHeaders(200, response.length)

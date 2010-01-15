@@ -21,7 +21,7 @@ class OstrichProject(info: ProjectInfo) extends DefaultProject(info) {
   val configgy = "net.lag" % "configgy" % "1.4.7"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
-  val jmock = "org.jmock" % "jmock" % "2.4.0"
+  val mockito = "org.mockito" % "mockito-core" % "1.8.1"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val xrayspecs = "com.twitter" % "xrayspecs" % "1.0.7"
   val cglib = "cglib" % "cglib" % "2.1_3"
