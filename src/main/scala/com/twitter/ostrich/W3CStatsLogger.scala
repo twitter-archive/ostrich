@@ -25,7 +25,7 @@ import net.lag.logging.Logger
 /**
  * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.
  */
-class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvmStats: Boolean) extends BackgroundProcess("W3CStatsLogger") {
+class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvmStats: Boolean) {
   def this(logger: Logger, frequencyInSeconds: Int) = this(logger, frequencyInSeconds, true)
 
   val collection = Stats.fork()
@@ -34,20 +34,25 @@ class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvm
 
   def runLoop() {
     val delay = (nextRun - Time.now).inMilliseconds
+
     if (delay > 0) {
       Thread.sleep(delay)
     }
+
     nextRun += frequencyInSeconds.seconds
     logStats()
   }
 
   def logStats() {
     val report = new mutable.HashMap[String, Any]
+
     if (includeJvmStats) {
       Stats.getJvmStats() foreach { case (key, value) => report("jvm_" + key) = value }
     }
+
     collection.getCounterStats(true) foreach { case (key, value) => report(key) = value }
     Stats.getGaugeStats(true) foreach { case (key, value) => report(key) = value }
+
     collection.getTimingStats(true) foreach { case (key, timing) =>
       report(key + "_count") = timing.count
       report(key + "_min") = timing.minimum
