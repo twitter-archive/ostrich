@@ -22,46 +22,57 @@ import java.util.concurrent.CountDownLatch
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
+
+class RequestHandler extends HttpHandler {
+  def handle(exchange: HttpExchange) {
+    val input: InputStream = exchange.getRequestBody()
+
+    val requestURI = exchange.getRequestURI
+    println("requestURI: " + requestURI)
+    println("requestURI.getPath: " + requestURI.getPath)
+    println("requestURI.getQuery: " + requestURI.getQuery)
+
+    val command = requestURI.getPath.split('/').last
+    println("command: " + command)
+    val parameters = requestURI.getQuery.split('&').toList
+    println("parameters: " + parameters)
+
+    //val response = handleCommand(command, parameters, Format.Json).getBytes
+    val response = "luls"
+    println("body: " + response)
+
+    exchange.sendResponseHeaders(200, response.length)
+
+    val output: OutputStream = exchange.getResponseBody()
+    output.write(response.getBytes)
+    output.flush()
+    exchange.close()
+  }
+}
+
+
 /**
  * A simple web server that responds to the admin commands defined in `AdminService`.
  * It can be used from curl like so:
  *
  *     $ curl http://localhost:9990/shutdown
  */
-class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
-      extends AdminService("AdminHttpService", server, runtime) {
+class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
   override def port = Some(config.getInt("admin_http_port", 9990))
   val backlog = config.getInt("admin_http_backlog", 20)
+
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
-  
-  def handleRequest(socket: Socket) { }
-    
-  httpServer.createContext("/", new HttpHandler {
-    def handle(exchange: HttpExchange) {
-      val requestURI = exchange.getRequestURI
-      val command = requestURI.getPath.split('/').last
-      val parameters = requestURI.getQuery.split('&').toList
-      val body = handleCommand(command, parameters, Format.Json).getBytes
-      val output = exchange.getResponseBody()
-      
-      output.write(body)
-      output.close()
-    }
-  })
+  httpServer.createContext("/", new RequestHandler())
   httpServer.setExecutor(null)
-  
+
+  def handleRequest(socket: Socket) { }
+
   override def start() = {
-    super.start()
+    ServiceTracker.register(this)
     httpServer.start()
   }
 
-  override def shutdown() = {
-    super.shutdown()
-    httpServer.stop(0) // argument is in seconds
-  }
-  
-  override def quiesce() = {
-    super.quiesce()
-    httpServer.stop(1) // argument is in seconds
-  }
+  override def shutdown() = httpServer.stop(0) // argument is in seconds
+
+  override def quiesce() = httpServer.stop(1) // argument is in seconds
 }

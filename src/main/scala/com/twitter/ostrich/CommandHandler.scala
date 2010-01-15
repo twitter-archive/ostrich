@@ -20,6 +20,7 @@ import java.io._
 import java.net._
 import scala.collection.Map
 import scala.collection.immutable
+import scala.concurrent.ops._
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
@@ -36,61 +37,8 @@ object Format {
 }
 
 
-/**
- * Common functionality between the admin interfaces.
- */
-abstract class AdminService(name: String, server: ServerInterface, runtime: RuntimeEnvironment) extends BackgroundProcess(name) {
-  def port: Option[Int]
-  def handleRequest(socket: Socket): Unit
-
-  val log = Logger.get(getClass.getName)
-
-  var serverSocket: Option[ServerSocket] = None
-
-  override def start() {
-    port map { port =>
-      serverSocket = Some(new ServerSocket(port))
-      serverSocket.map { _.setReuseAddress(true) }
-      Server.register(this)
-      Server.register(server)
-      super.start()
-    }
-  }
-
-  override def shutdown() {
-    try {
-      serverSocket.map { _.close() }
-    } catch {
-      case _ =>
-    }
-    super.shutdown()
-  }
-
-  def runLoop() {
-    val socket = try {
-      serverSocket.get.accept()
-    } catch {
-      case e: SocketException =>
-        throw new InterruptedException()
-    }
-    val address = "%s:%s".format(socket.getInetAddress, socket.getPort)
-    log.debug("Client has connected to %s from %s", name, address)
-    BackgroundProcess.spawn("%s client %s".format(name, address)) {
-      try {
-        socket.setSoTimeout(1000)
-        handleRequest(socket)
-      } catch {
-        case e: Exception =>
-          log.warning("%s client %s raised %s", name, address, e)
-      } finally {
-        try {
-          socket.close()
-        } catch {
-          case _ =>
-        }
-      }
-    }
-  }
+object CommandHandler {
+  val runtime = new RuntimeEnvironment(getClass)
 
   def handleCommand(command: String, parameters: List[String], format: Format): String = {
     val rv = handleRawCommand(command, parameters)
@@ -111,13 +59,13 @@ abstract class AdminService(name: String, server: ServerInterface, runtime: Runt
       case "ping" =>
         "pong"
       case "reload" =>
-        BackgroundProcess.spawn("admin:reload") { Configgy.reload }
+        spawn { Configgy.reload }
         "ok"
       case "shutdown" =>
-        BackgroundProcess.spawn("admin:shutdown") { Thread.sleep(100); Server.shutdown() }
+        spawn { Thread.sleep(100); ServiceTracker.shutdown() }
         "ok"
       case "quiesce" =>
-        BackgroundProcess.spawn("admin:quiesce") { Thread.sleep(100); Server.quiesce() }
+        spawn { Thread.sleep(100); ServiceTracker.quiesce() }
         "ok"
       case "stats" =>
         val reset = parameters.contains("reset")

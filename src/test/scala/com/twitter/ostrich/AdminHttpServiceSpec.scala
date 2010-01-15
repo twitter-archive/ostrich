@@ -36,6 +36,7 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
       new String(buffer, 0, len, "UTF-8")
     }
   }
+
   implicit def pimpInputStream(stream: InputStream) = new PimpedInputStream(stream)
 
   "AdminHttpService" should {
@@ -45,7 +46,7 @@ object AdminHttpServiceSpec extends Specification with JMocker with Eventually {
     doBefore {
       new Socket("localhost", PORT) must throwA[SocketException]
       server = mock[ServerInterface]
-      service = new AdminHttpService(server, config, new RuntimeEnvironment(getClass))
+      service = new AdminHttpService(config, new RuntimeEnvironment(getClass))
       service.start()
     }
 

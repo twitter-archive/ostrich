@@ -45,7 +45,7 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
     doBefore {
       new Socket("localhost", PORT) must throwA[SocketException]
       server = mock[ServerInterface]
-      service = new AdminSocketService(server, config, new RuntimeEnvironment(getClass))
+      service = new AdminSocketService(config, new RuntimeEnvironment(getClass))
       service.start()
     }
 

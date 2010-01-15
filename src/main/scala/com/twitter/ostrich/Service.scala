@@ -20,30 +20,41 @@ import scala.collection.mutable
 import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
 
 
+abstract class Service {
+  def port: Option[Int]
+
+  def start(): Unit
+
+  def shutdown(): Unit
+
+  def quiesce(): Unit
+}
+
+
 /**
- * Single server object that can track multiple ServerInterface implementations and multiplex the
+ * Single server object that can track multiple Service implementations and multiplex the
  * shutdown & quiesce commands.
  */
-object Server extends ServerInterface {
-  val servers = new mutable.HashSet[ServerInterface]
+object ServiceTracker {
+  val services = new mutable.HashSet[Service]
 
-  def register(server: ServerInterface) {
-    servers += server
+  def register(service: Service) {
+    services += service
   }
 
   def shutdown() {
-    servers.foreach { _.shutdown() }
-    servers.clear()
+    services.foreach { _.shutdown() }
+    services.clear()
   }
 
   def quiesce() {
-    servers.foreach { _.quiesce() }
-    servers.clear()
+    services.foreach { _.quiesce() }
+    services.clear()
   }
 
-  def startAdmin(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
-    new AdminHttpService(server, config, runtime).start()
-    new AdminSocketService(server, config, runtime).start()
+  def startAdmin(service: Service, config: ConfigMap, runtime: RuntimeEnvironment) {
+    new AdminHttpService(config, runtime).start()
+    new AdminSocketService(config, runtime).start()
     config.getString("admin_jmx_package").map(StatsMBean(_))
   }
 }
