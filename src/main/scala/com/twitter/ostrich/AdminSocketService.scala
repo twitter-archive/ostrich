@@ -94,7 +94,7 @@ class AdminSocketServiceHandler extends SimpleChannelUpstreamHandler {
     }
 
     val response: String = CommandHandler(command, request.tail, format)
-    event.getChannel().write(response + "\n")
+    event.getChannel.write(response + "\n")
   }
 
   override def exceptionCaught(context: ChannelHandlerContext, event: ExceptionEvent) {
