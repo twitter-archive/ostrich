@@ -36,18 +36,12 @@ class RequestHandler extends HttpHandler {
     val input: InputStream = exchange.getRequestBody()
 
     val requestURI = exchange.getRequestURI
-    println("requestURI: " + requestURI)
-    println("requestURI.getPath: " + requestURI.getPath)
-    println("requestURI.getQuery: " + requestURI.getQuery)
-
     val command = requestURI.getPath.split('/').last.split('.').first
-    println("command: " + command)
 
     val format: Format  = requestURI.getPath.split('.').last match {
       case "json" => Format.Json
       case _ => Format.PlainText
     }
-    println("format: " + format)
 
     val parameters: List[String] = {
       val params = requestURI.getQuery
@@ -57,10 +51,8 @@ class RequestHandler extends HttpHandler {
         Nil
       }
     }.map({ _.split('=').first })
-    println("parameters: " + parameters)
 
-    val response = CommandHandler.handleCommand(command, parameters, format)
-    println("body: " + response)
+    val response = CommandHandler(command, parameters, format)
 
     exchange.sendResponseHeaders(200, response.length)
 
@@ -79,7 +71,7 @@ class RequestHandler extends HttpHandler {
  *     $ curl http://localhost:9990/shutdown
  */
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
-  override def port = Some(config.getInt("admin_http_port", 9990))
+  val port = Some(config.getInt("admin_http_port", 9990))
   val backlog = config.getInt("admin_http_backlog", 20)
 
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
@@ -88,7 +80,7 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
 
   def handleRequest(socket: Socket) { }
 
-  override def start() = {
+  def start() = {
     ServiceTracker.register(this)
     httpServer.start()
   }
