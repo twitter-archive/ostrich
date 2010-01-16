@@ -14,7 +14,6 @@ object AdminSocketServiceSpec extends Specification with Eventually with Mockito
   val PORT = 9995
   val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
 
-
   class PimpedInputStream(stream: InputStream) {
     def readString(maxBytes: Int) = {
       val buffer = new Array[Byte](maxBytes)
@@ -25,11 +24,11 @@ object AdminSocketServiceSpec extends Specification with Eventually with Mockito
 
   implicit def pimpInputStream(stream: InputStream) = new PimpedInputStream(stream)
 
-
   "AdminSocketService" should {
     var service: AdminSocketService = null
 
     doBefore {
+      Stats.clearAll()
       new Socket("localhost", PORT) must throwA[SocketException]
       service = spy(new AdminSocketService(config, new RuntimeEnvironment(getClass)))
       service.start()

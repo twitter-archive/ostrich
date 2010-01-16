@@ -41,6 +41,7 @@ object W3CReporterSpec extends Specification {
     def expectedHeader(crc: Long) = "w3c: #Version: 1.0" :: "w3c: #Date: 03-Aug-2009 19:23:04" :: ("w3c: #CRC: " + crc) :: Nil
 
     doBefore {
+      Stats.clearAll()
       handler.clear()
       Time.now = Time.at("2009-08-03 19:23:04 +0000")
       reporter = new W3CReporter(logger)

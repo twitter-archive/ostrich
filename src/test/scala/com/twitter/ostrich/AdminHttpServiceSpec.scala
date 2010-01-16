@@ -40,6 +40,7 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
     var service: AdminHttpService = null
 
     doBefore {
+      Stats.clearAll()
       new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
       service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
       service.start()
