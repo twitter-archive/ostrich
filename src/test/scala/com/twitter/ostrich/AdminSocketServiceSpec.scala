@@ -42,7 +42,7 @@ object AdminSocketServiceSpec extends Specification with Eventually with Mockito
       new Socket("localhost", PORT) must notBeNull
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
+      service.shutdown() was called.atLeastOnce
     }
 
     "answer pings" in {
