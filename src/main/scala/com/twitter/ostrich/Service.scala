@@ -32,9 +32,9 @@ trait Service {
  * shutdown & quiesce commands.
  */
 object ServiceTracker {
-  val services = new mutable.HashSet[AdminService]
+  val services = new mutable.HashSet[Service]
 
-  def register(service: AdminService) {
+  def register(service: Service) {
     services += service
   }
 
@@ -50,7 +50,6 @@ object ServiceTracker {
 
   def startAdmin(service: Service, config: ConfigMap, runtime: RuntimeEnvironment) {
     new AdminHttpService(config, runtime).start()
-    new AdminSocketService(service, config, runtime).start()
     config.getString("admin_jmx_package").map(StatsMBean(_))
   }
 }
