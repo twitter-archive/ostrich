@@ -23,15 +23,19 @@ import net.lag.logging.Logger
 import org.jboss.netty.bootstrap.ServerBootstrap
 import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.channel.Channels
-import org.jboss.netty.channel.group.DefaultChannelGroup
+import org.jboss.netty.channel.group.{ChannelGroupFuture, ChannelGroupFutureListener, DefaultChannelGroup}
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory
-import org.jboss.netty.channel.{ChannelHandler, ChannelHandlerContext, ChannelPipeline, ChannelPipelineCoverage, ExceptionEvent, MessageEvent, SimpleChannelUpstreamHandler}
+import org.jboss.netty.channel.{ChannelHandler, ChannelHandlerContext, ChannelPipeline, ChannelPipelineCoverage, ExceptionEvent, MessageEvent, SimpleChannelUpstreamHandler, ChannelStateEvent}
 import org.jboss.netty.handler.codec.string.{StringDecoder, StringEncoder}
+
+
+object AdminSocketService {
+  val allChannels = new DefaultChannelGroup("AdminSocketService")
+}
 
 
 class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
   val port = config.getInt("admin_text_port", 9990)
-  val allChannels = new DefaultChannelGroup()
 
   val bootstrap = new ServerBootstrap(
     new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool())
@@ -45,7 +49,7 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
 
   def start() {
     val channel = bootstrap.bind(new InetSocketAddress(port))
-    allChannels.add(channel)
+    AdminSocketService.allChannels.add(channel)
     ServiceTracker.register(this)
   }
 
@@ -54,14 +58,25 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
   }
 
   override def shutdown() {
-    allChannels.close.awaitUninterruptibly()
-    bootstrap.releaseExternalResources()
+    val future: ChannelGroupFuture = AdminSocketService.allChannels.close()
+
+    future.addListener(new ChannelGroupFutureListener() {
+      def operationComplete(future: ChannelGroupFuture) {
+        future.awaitUninterruptibly(200)
+        bootstrap.releaseExternalResources()
+      }
+    })
   }
 }
+
 
 @ChannelPipelineCoverage("all")
 class AdminSocketServiceHandler extends SimpleChannelUpstreamHandler {
   private val log = Logger.get
+
+  override def channelOpen(context: ChannelHandlerContext, event: ChannelStateEvent) {
+    AdminSocketService.allChannels.add(context.getChannel())
+  }
 
   override def messageReceived(context: ChannelHandlerContext, event: MessageEvent) {
     val line: String = event.getMessage().asInstanceOf[String]
