@@ -20,7 +20,6 @@ import java.io._
 import java.net._
 import scala.collection.Map
 import scala.collection.immutable
-import scala.concurrent.ops._
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
@@ -40,7 +39,7 @@ object Format {
 object CommandHandler {
   val runtime = new RuntimeEnvironment(getClass)
 
-  def handleCommand(command: String, parameters: List[String], format: Format): String = {
+  def apply(command: String, parameters: List[String], format: Format): String = {
     val rv = handleRawCommand(command, parameters)
     format match {
       case Format.PlainText =>
@@ -59,13 +58,21 @@ object CommandHandler {
       case "ping" =>
         "pong"
       case "reload" =>
-        spawn { Configgy.reload }
+        BackgroundProcess.spawn("admin:reload") { Configgy.reload }
         "ok"
       case "shutdown" =>
-        spawn { Thread.sleep(100); ServiceTracker.shutdown() }
+        BackgroundProcess.spawn("admin:shutdown") {
+          Thread.sleep(100)
+          ServiceTracker.shutdown()
+        }
+
         "ok"
       case "quiesce" =>
-        spawn { Thread.sleep(100); ServiceTracker.quiesce() }
+        BackgroundProcess.spawn("admin:quiesce") {
+          Thread.sleep(100)
+          ServiceTracker.quiesce()
+        }
+
         "ok"
       case "stats" =>
         val reset = parameters.contains("reset")

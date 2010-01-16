@@ -20,11 +20,7 @@ import scala.collection.mutable
 import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
 
 
-abstract class Service {
-  def port: Option[Int]
-
-  def start(): Unit
-
+trait Service {
   def shutdown(): Unit
 
   def quiesce(): Unit
@@ -36,9 +32,9 @@ abstract class Service {
  * shutdown & quiesce commands.
  */
 object ServiceTracker {
-  val services = new mutable.HashSet[Service]
+  val services = new mutable.HashSet[AdminService]
 
-  def register(service: Service) {
+  def register(service: AdminService) {
     services += service
   }
 
@@ -54,7 +50,7 @@ object ServiceTracker {
 
   def startAdmin(service: Service, config: ConfigMap, runtime: RuntimeEnvironment) {
     new AdminHttpService(config, runtime).start()
-    new AdminSocketService(config, runtime).start()
+    new AdminSocketService(service, config, runtime).start()
     config.getString("admin_jmx_package").map(StatsMBean(_))
   }
 }

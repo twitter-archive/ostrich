@@ -21,12 +21,11 @@ import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
-import org.mockito.Matchers._
 import org.specs.Specification
-import org.specs.mock.Mockito
+import org.specs.mock.{ClassMocker, JMocker}
 
 
-object AdminSocketServiceSpec extends Specification with Mockito with Eventually {
+object AdminSocketServiceSpec extends Specification with JMocker with Eventually {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
 
@@ -41,14 +40,19 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
 
   "AdminSocketService" should {
     var service: AdminSocketService = null
+    var server: Service = null
 
     doBefore {
       new Socket("localhost", PORT) must throwA[SocketException]
-      service = spy(new AdminSocketService(config, new RuntimeEnvironment(getClass)))
+      server = mock[Service]
+      service = new AdminSocketService(server, config, new RuntimeEnvironment(getClass))
       service.start()
     }
 
     doAfter {
+      expect {
+        allowing(server).shutdown()
+      }
       service.shutdown()
     }
 
@@ -62,24 +66,28 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("ping\n".getBytes)
       socket.getInputStream().readString(1024) mustEqual "pong\n"
-
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
     }
 
     "shutdown" in {
+      expect {
+        one(server).shutdown()
+      }
+
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("shutdown\n".getBytes)
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
     }
 
     "quiesce" in {
+      expect {
+        one(server).quiesce()
+      }
+
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("quiesce\n".getBytes)
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.quiesce() was called
     }
 
     "provide stats" in {
@@ -94,13 +102,11 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
 
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats/json\n".getBytes)
-
         val stats = Json.parse(socket.getInputStream().readString(1024)).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats("jvm") must haveKey("uptime")
         stats("jvm") must haveKey("heap_used")
         stats("counters") must haveKey("kangaroos")
         stats("timings") must haveKey("kangaroo_time")
-
         val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")
@@ -132,7 +138,6 @@ object AdminSocketServiceSpec extends Specification with Mockito with Eventually
 
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats\n".getBytes)
-
         val response = socket.getInputStream().readString(1024).split("\n")
         response mustContain "  kangaroos: 1"
       }

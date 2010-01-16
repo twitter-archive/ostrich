@@ -18,64 +18,13 @@ package com.twitter.ostrich
 
 import java.io._
 import java.net._
-import scala.concurrent.ops._
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
 
 
-class AdminSocketService(config: ConfigMap, val runtime: RuntimeEnvironment) extends Service {
+class AdminSocketService(service: Service, config: ConfigMap, val runtime: RuntimeEnvironment) extends AdminService("AdminSocketService", service, runtime) {
   val port = config.getInt("admin_text_port")
-  private val log = Logger.get(getClass.getName)
-  var serverSocket: Option[ServerSocket] = None
-
-  override def start() {
-    port map { port =>
-      serverSocket = Some(new ServerSocket(port))
-      serverSocket.map { _.setReuseAddress(true) }
-      ServiceTracker.register(this)
-    }
-  }
-
-  override def shutdown() {
-    try {
-      serverSocket.map { _.close() }
-    } catch {
-      case _ =>
-    }
-  }
-
-  override def quiesce() {
-    Thread.sleep(100)
-    shutdown()
-  }
-
-  def runLoop() {
-    val socket = try {
-      serverSocket.get.accept()
-    } catch {
-      case e: SocketException =>
-        throw new InterruptedException()
-    }
-    val address = "%s:%s".format(socket.getInetAddress, socket.getPort)
-    log.debug("Client has connected to socket service from %s", address)
-
-    spawn {
-      try {
-        socket.setSoTimeout(1000)
-        handleRequest(socket)
-      } catch {
-        case e: Exception =>
-          log.warning("socket service client %s raised %s", address, e)
-      } finally {
-        try {
-          socket.close()
-        } catch {
-          case _ =>
-        }
-      }
-    }
-  }
 
   def handleRequest(socket: Socket) {
     var out = new PrintWriter(socket.getOutputStream(), true)
@@ -94,7 +43,8 @@ class AdminSocketService(config: ConfigMap, val runtime: RuntimeEnvironment) ext
       case _ => Format.PlainText
     }
 
-    val response = CommandHandler.handleCommand(command, request.tail, format)
+    val response = CommandHandler(command, request.tail, format)
+
     out.println(response)
     out.flush()
   }
