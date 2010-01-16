@@ -28,4 +28,5 @@ class OstrichProject(info: ProjectInfo) extends DefaultProject(info) {
   val asm = "asm" % "asm" % "1.5.3"
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
   val jmock = "org.jmock" % "jmock" % "2.4.0"
+  val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
 }
