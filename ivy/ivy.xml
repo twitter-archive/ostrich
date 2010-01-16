@@ -28,7 +28,6 @@
     <dependency org="net.lag" name="configgy" rev="1.4" />
     <dependency org="commons-logging" name="commons-logging" rev="1.1" />
     <dependency org="commons-lang" name="commons-lang" rev="2.2" />
-    <dependency org="org.jmock" name="jmock" rev="2.4.0" conf="test->*" /> <!--auto-->
     <dependency org="org.hamcrest" name="hamcrest-all" rev="1.1" conf="test->*" /> <!--auto-->
     <dependency org="cglib" name="cglib" rev="2.1_3" conf="test->*" /> <!--auto-->
     <dependency org="asm" name="asm" rev="1.5.3" conf="test->*" /> <!--auto-->
