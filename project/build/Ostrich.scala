@@ -27,4 +27,5 @@ class OstrichProject(info: ProjectInfo) extends DefaultProject(info) {
   val cglib = "cglib" % "cglib" % "2.1_3"
   val asm = "asm" % "asm" % "1.5.3"
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
+  val jmock = "org.jmock" % "jmock" % "2.4.0"
 }
