@@ -29,10 +29,12 @@ import org.specs._
 object StatsMBeanSpec extends Specification {
   "StatsMBean" should {
     val mbeanServer = ManagementFactory.getPlatformMBeanServer()
+    val name = "com.example.foo"
 
     doBefore {
       Stats.clearAll()
-      StatsMBean("com.example.foo")
+      StatsMBean.clear(name)
+      StatsMBean(name)
     }
 
     def getMBean() = {

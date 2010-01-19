@@ -22,18 +22,34 @@ import net.lag.logging.Logger
 
 
 object StatsMBean {
+  def makeName(packageName: String): jmx.ObjectName = {
+    new jmx.ObjectName(packageName + ":type=Stats")
+  }
+
+  def mbeanServer = ManagementFactory.getPlatformMBeanServer()
+
   def apply(packageName: String): Unit = apply(packageName, false)
 
   def apply(packageName: String, resetTimings: Boolean): Unit =
-    apply(packageName, resetTimings, false, false, ManagementFactory.getPlatformMBeanServer())
+    apply(packageName, resetTimings, false, false, mbeanServer)
 
   def apply(packageName: String, resetTimings: Boolean, resetGauges: Boolean, resetCounters: Boolean,
             mbeanServer: jmx.MBeanServer): Unit = {
+    val name = makeName(packageName)
     val stats = new StatsMBean(resetTimings, resetGauges, resetCounters)
+
     try {
-      mbeanServer.registerMBean(stats, new jmx.ObjectName(packageName + ":type=Stats"))
+      mbeanServer.registerMBean(stats, name)
     } catch {
-      case e: jmx.InstanceAlreadyExistsException => // pass
+      case e: jmx.InstanceAlreadyExistsException => // test
+    }
+  }
+
+  def clear(packageName: String) {
+    try {
+      mbeanServer.unregisterMBean(makeName(packageName))
+    } catch {
+      case e: jmx.InstanceNotFoundException => // whatever bro
     }
   }
 }
