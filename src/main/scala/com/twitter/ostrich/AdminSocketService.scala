@@ -102,8 +102,3 @@ class AdminSocketServiceHandler extends SimpleChannelUpstreamHandler {
     event.getChannel.close()
   }
 }
-
-
-
-
-
