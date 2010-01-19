@@ -22,8 +22,33 @@ import java.util.concurrent.CountDownLatch
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
+class ReportRequestHandler extends HttpHandler {
+  val page = <html>
+    <head>
+      <title>Ostrich Stats Report</title>
+      <script type="text/javascript">{
+        """function statsCallback(statsJSON) {
+          alert("got this: " + statsJSON)
+        }"""
+      }</script>
+    </head>
+    <body>
+      <script src="http://localhost:9990/stats.json?callback=true" type="text/javascript"></script>
+      what it do
+    </body>
+  </html>.toString()
 
-class RequestHandler extends HttpHandler {
+  def handle(exchange: HttpExchange) {
+    val input: InputStream = exchange.getRequestBody()
+    val output: OutputStream = exchange.getResponseBody()
+    exchange.sendResponseHeaders(200, page.length)
+    output.write(page.getBytes)
+    output.flush()
+    exchange.close()
+  }
+}
+
+class CommandRequestHandler extends HttpHandler {
   def handle(exchange: HttpExchange) {
     try {
       _handle(exchange)
@@ -52,8 +77,15 @@ class RequestHandler extends HttpHandler {
       }
     }.map({ _.split('=').first })
 
-    val response = CommandHandler(command, parameters, format)
+    val response = {
+      val commandResponse = CommandHandler(command, parameters, format)
 
+      if (parameters.contains("callback") && (format == Format.Json)) {
+        "ostrichCallback(%s)".format(commandResponse)
+      } else {
+        commandResponse
+      }
+    }
     exchange.sendResponseHeaders(200, response.length)
 
     val output: OutputStream = exchange.getResponseBody()
@@ -75,8 +107,11 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   val backlog = config.getInt("admin_http_backlog", 20)
 
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
-  httpServer.createContext("/", new RequestHandler())
+  addContext("/", new CommandRequestHandler())
+  addContext("/report.html", new ReportRequestHandler())
   httpServer.setExecutor(null)
+
+  def addContext(path: String, handler: HttpHandler) = httpServer.createContext(path, handler)
 
   def handleRequest(socket: Socket) { }
 

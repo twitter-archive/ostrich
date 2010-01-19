@@ -113,6 +113,12 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
         timing2("count") mustEqual 0
       }
 
+      "in json, with callback" in {
+        val stats = get("/stats.json?callback=true")
+        stats.startsWith("ostrichCallback(") mustBe true
+        stats.endsWith(")") mustBe true
+      }
+
       "in text" in {
         // make some statsy things happen
         Stats.clearAll()
