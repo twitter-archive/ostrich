@@ -62,7 +62,7 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
 
     future.addListener(new ChannelGroupFutureListener() {
       def operationComplete(future: ChannelGroupFuture) {
-        future.awaitUninterruptibly(200)
+        future.awaitUninterruptibly(50)
         bootstrap.releaseExternalResources()
       }
     })
