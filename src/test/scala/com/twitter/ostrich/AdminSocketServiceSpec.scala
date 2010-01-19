@@ -4,6 +4,9 @@ import java.io.{DataInputStream, InputStream}
 import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
+import com.twitter.xrayspecs.Time
+import com.twitter.xrayspecs.TimeConversions._
+import net.lag.extensions._
 import net.lag.configgy.{Config, RuntimeEnvironment}
 import org.mockito.Matchers._
 import org.specs.Specification
@@ -51,21 +54,22 @@ object AdminSocketServiceSpec extends Specification with Eventually with Mockito
       socket.getInputStream().readString(1024) mustEqual "pong\n"
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
+      service.shutdown() was called.atLeastOnce
     }
 
     "shutdown" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("shutdown\n".getBytes)
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
+      new Socket("localhost", PORT) must eventually(2, 5.seconds)(throwA[SocketException])
+      service.shutdown() was called.atLeastOnce
     }
 
     "quiesce" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("quiesce\n".getBytes)
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.quiesce() was called
+      new Socket("localhost", PORT) must eventually(2, 5.seconds)(throwA[SocketException])
+      service.quiesce() was called.atLeastOnce
+      service.shutdown() was called.atLeastOnce
     }
 
     "provide stats" in {
