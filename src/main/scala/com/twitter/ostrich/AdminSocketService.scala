@@ -35,6 +35,7 @@ object AdminSocketService {
 
 
 class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
+  private val log = Logger.get
   val port = config.getInt("admin_text_port", 9990)
 
   val bootstrap = new ServerBootstrap(
@@ -62,7 +63,8 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
 
     future.addListener(new ChannelGroupFutureListener() {
       def operationComplete(future: ChannelGroupFuture) {
-        future.awaitUninterruptibly(50)
+        val completed = future.awaitUninterruptibly(500)
+        log.debug("shutdown completed: " + completed)
         bootstrap.releaseExternalResources()
       }
     })
