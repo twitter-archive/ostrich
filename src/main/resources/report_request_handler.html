@@ -2,14 +2,52 @@
 <html>
   <head>
     <title>Ostrich Stats Report</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.0/jquery.min.js" type="text/javascript"></script>
+    <style type="text/css">
+    body { font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; }
+    table { width: 90%; }
+    td { border-bottom: 1px solid #ccc; }
+    th { font-size: 14pt; line-height: 3em; text-align: left; }
+    tr { line-height: 1.5em; }
+    </style>
     <script type="text/javascript">
-     function statsCallback(statsJSON) {
-       alert("got this: " + statsJSON)
-     }
+    function spacify(str) {
+      return str.replace(/_/g, ' ');
+    }
+
+    function descendingDisplay(datapoint) {
+      if ((typeof datapoint === 'string') || (typeof datapoint === 'number')) {
+        return datapoint;
+      } else if (typeof datapoint === 'object') {
+        var stats = new Array;
+
+        for (key in datapoint) {
+          stats.push(spacify(key) + ': ' + datapoint[key]);
+        }
+
+        return stats.join(", ");
+      }
+    }
+
+    function loaded() {
+      $.getJSON("/stats.json", function(data) {
+        for (key in data) {
+          $("#contents").append('<table id="' + key + '"><tr><th>' + key + '</th></tr></table>');
+          for (datapoint in data[key]) {
+            $("#" + key).append('<tr><td width="30%">' + spacify(datapoint) + '</td><td width="70%">' + descendingDisplay(data[key][datapoint]) + '</td></tr>');
+          }
+        }
+      });
+    }
     </script>
   </head>
   <body>
-    <script src="http://localhost:9990/stats.json?callback=true" type="text/javascript"></script>
-    what it do
+    <h1>Ostrich Stats Report</h1>
+    <div id="contents"></div>
+    <script type="text/javascript">
+    $(document).ready(function() {
+      loaded();
+    });
+    </script>
   </body>
 </html>
