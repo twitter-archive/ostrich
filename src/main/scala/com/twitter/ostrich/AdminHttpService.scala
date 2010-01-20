@@ -18,33 +18,34 @@ package com.twitter.ostrich
 
 import java.io._
 import java.net.{InetSocketAddress, ServerSocket, Socket, SocketException, SocketTimeoutException}
-import java.util.concurrent.CountDownLatch
+import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
-class ReportRequestHandler extends HttpHandler {
-  val page = <html>
-    <head>
-      <title>Ostrich Stats Report</title>
-      <script type="text/javascript">{
-        """function statsCallback(statsJSON) {
-          alert("got this: " + statsJSON)
-        }"""
-      }</script>
-    </head>
-    <body>
-      <script src="http://localhost:9990/stats.json?callback=true" type="text/javascript"></script>
-      what it do
-    </body>
-  </html>.toString()
+abstract class CustomHttpHandler extends HttpHandler {
+  def renderWithExchange(body: String, exchange: HttpExchange)(f: (HttpExchange) => HttpExchange) {
+    val modifiedExchange = f(exchange)
+    render(body, modifiedExchange)
+  }
 
-  def handle(exchange: HttpExchange) {
+  def render(body: String, exchange: HttpExchange) {
     val input: InputStream = exchange.getRequestBody()
     val output: OutputStream = exchange.getResponseBody()
-    exchange.sendResponseHeaders(200, page.length)
-    output.write(page.getBytes)
+    exchange.sendResponseHeaders(200, body.length)
+    output.write(body.getBytes)
     output.flush()
     exchange.close()
+  }
+  
+  def handle(exchange: HttpExchange): Unit
+}
+
+class ReportRequestHandler extends CustomHttpHandler {
+  lazy val pageFilePath: java.net.URI = this.getClass.getResource("/report_request_handler.html").toURI
+  lazy val page: String = Source.fromFile(pageFilePath).mkString 
+
+  def handle(exchange: HttpExchange) {
+    render(page, exchange)
   }
 }
 

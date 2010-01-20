@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ostrich Stats Report</title>
+    <script type="text/javascript">
+     function statsCallback(statsJSON) {
+       alert("got this: " + statsJSON)
+     }
+    </script>
+  </head>
+  <body>
+    <script src="http://localhost:9990/stats.json?callback=true" type="text/javascript"></script>
+    what it do
+  </body>
+</html>
