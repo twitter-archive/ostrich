@@ -1,14 +1,26 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Ostrich Stats Report</title>
+    <title>Stats Report</title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.0/jquery.min.js" type="text/javascript"></script>
     <style type="text/css">
-    body { font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; }
-    table { width: 90%; }
+    body {
+      font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+      margin: 10px 5% 0 5%;
+    }
+    table { width: 100%; }
     td { border-bottom: 1px solid #ccc; }
     th { font-size: 14pt; line-height: 3em; text-align: left; }
     tr { line-height: 1.5em; }
+    #footer {
+      color: #ccc;
+      float: right;
+      font-size: 10pt;
+      line-height: 1.5em;
+      margin-top: 50px;
+      text-align: right;
+    }
+    #footer a, #footer a:visited { color: #999; }
     </style>
     <script type="text/javascript">
     function spacify(str) {
@@ -38,16 +50,22 @@
           }
         }
       });
+
+      $("#gendate").append(new Date().toString())
     }
     </script>
   </head>
   <body>
-    <h1>Ostrich Stats Report</h1>
+    <h1>Stats Report</h1>
     <div id="contents"></div>
     <script type="text/javascript">
     $(document).ready(function() {
       loaded();
     });
     </script>
+    <div id="footer">
+      generated at <span id="gendate"></span><br />
+      brought to you by <a href="http://github.com/stevej/ostrich/">Ostrich</a>
+    </div>
   </body>
 </html>
