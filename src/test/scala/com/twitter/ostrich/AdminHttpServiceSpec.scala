@@ -85,6 +85,10 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
       get("/favicon.ico") must throwA[java.io.FileNotFoundException]
     }
 
+    "return 404 for a missing command" in {
+      get("/bullshit.json") must throwA[java.io.FileNotFoundException]
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()
