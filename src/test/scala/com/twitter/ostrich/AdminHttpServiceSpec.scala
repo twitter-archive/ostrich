@@ -77,6 +77,14 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
       service.quiesce() was called
     }
 
+    "get a proper web page back for the report URL" in {
+      get("/report/") must beMatching("Stats Report")
+    }
+
+    "return 404 for favicon" in {
+      get("/favicon.ico") must throwA[java.io.FileNotFoundException]
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()

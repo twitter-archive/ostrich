@@ -16,51 +16,50 @@
 
 package com.twitter.ostrich
 
-import java.io._
-import java.net.{InetSocketAddress, ServerSocket, Socket, SocketException, SocketTimeoutException}
+import java.io.{InputStream, OutputStream}
+import java.net.{InetSocketAddress, Socket, URI, URL}
 import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 abstract class CustomHttpHandler extends HttpHandler {
-  def renderWithExchange(body: String, exchange: HttpExchange)(f: (HttpExchange) => HttpExchange) {
-    val modifiedExchange = f(exchange)
-    render(body, modifiedExchange)
+  def render(body: String, exchange: HttpExchange) {
+    render(body, exchange, 200)
   }
 
-  def render(body: String, exchange: HttpExchange) {
+  def render(body: String, exchange: HttpExchange, code: Int) {
     val input: InputStream = exchange.getRequestBody()
     val output: OutputStream = exchange.getResponseBody()
-    exchange.sendResponseHeaders(200, body.length)
+    exchange.sendResponseHeaders(code, body.length)
     output.write(body.getBytes)
     output.flush()
     exchange.close()
   }
-  
+
   def handle(exchange: HttpExchange): Unit
 }
 
+
+class MissingFileHandler extends CustomHttpHandler {
+  def handle(exchange: HttpExchange) {
+    render("no such file", exchange, 404)
+  }
+}
+
+
 class ReportRequestHandler extends CustomHttpHandler {
   lazy val pageFilePath: java.net.URI = this.getClass.getResource("/report_request_handler.html").toURI
-  lazy val page: String = Source.fromFile(pageFilePath).mkString 
+  lazy val page: String = Source.fromFile(pageFilePath).mkString
 
   def handle(exchange: HttpExchange) {
     render(page, exchange)
   }
 }
 
-class CommandRequestHandler extends HttpHandler {
+
+class CommandRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange) {
-    try {
-      _handle(exchange)
-    } catch {
-      case e: Exception => println("woah: " + e.getMessage()); e.printStackTrace()
-    }
-  }
-
-  def _handle(exchange: HttpExchange) {
-    val input: InputStream = exchange.getRequestBody()
-
+    var response: String = null
     val requestURI = exchange.getRequestURI
     val command = requestURI.getPath.split('/').last.split('.').first
 
@@ -71,6 +70,7 @@ class CommandRequestHandler extends HttpHandler {
 
     val parameters: List[String] = {
       val params = requestURI.getQuery
+
       if (params != null) {
         params.split('&').toList
       } else {
@@ -78,38 +78,34 @@ class CommandRequestHandler extends HttpHandler {
       }
     }.map({ _.split('=').first })
 
-    val response = {
-      val commandResponse = CommandHandler(command, parameters, format)
+    try {
+      response = {
+        val commandResponse = CommandHandler(command, parameters, format)
 
-      if (parameters.contains("callback") && (format == Format.Json)) {
-        "ostrichCallback(%s)".format(commandResponse)
-      } else {
-        commandResponse
+        if (parameters.contains("callback") && (format == Format.Json)) {
+          "ostrichCallback(%s)".format(commandResponse)
+        } else {
+          commandResponse
+        }
       }
+    } catch {
+      case e: UnknownCommandError => render("no such command", exchange, 404)
+    } finally {
+      render(response, exchange)
     }
-    exchange.sendResponseHeaders(200, response.length)
-
-    val output: OutputStream = exchange.getResponseBody()
-    output.write(response.getBytes)
-    output.flush()
-    exchange.close()
   }
 }
 
 
-/**
- * A simple web server that responds to the admin commands defined in `AdminService`.
- * It can be used from curl like so:
- *
- *     $ curl http://localhost:9990/shutdown
- */
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
   val port = Some(config.getInt("admin_http_port", 9990))
   val backlog = config.getInt("admin_http_backlog", 20)
-
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
+
   addContext("/", new CommandRequestHandler())
-  addContext("/report.html", new ReportRequestHandler())
+  addContext("/report/", new ReportRequestHandler())
+  addContext("/favicon.ico", new MissingFileHandler())
+
   httpServer.setExecutor(null)
 
   def addContext(path: String, handler: HttpHandler) = httpServer.createContext(path, handler)
