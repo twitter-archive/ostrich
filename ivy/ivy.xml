@@ -34,5 +34,6 @@
     <dependency org="org.objenesis" name="objenesis" rev="1.1" conf="test->*" /> <!--auto-->
     <dependency org="com.twitter" name="xrayspecs" rev="1.0.7" conf="*" /> <!--auto-->
     <dependency org="org.mockito" name="mockito-all" rev="1.8.1" />
+    <dependency org="org.jboss.netty" name="netty" rev="3.1.5.GA" />
   </dependencies>
 </ivy-module>

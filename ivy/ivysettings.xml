@@ -1,5 +1,6 @@
 <ivysettings>
   <settings defaultResolver="chain-repos" />
+  <property name="ivy.checksums" value="" override="true"/>
   <resolvers>
     <chain name="chain-repos" returnFirst="true">
       <filesystem name="local-libs" m2compatible="true" transactional="false" local="true" checkmodified="true">
