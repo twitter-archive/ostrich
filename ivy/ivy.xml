@@ -1,9 +1,4 @@
 <ivy-module version="1.0" xmlns:e="http://ant.apache.org/ivy/extra">
-  <!-- CONFIG: net.lag.example is the example project we're going to setup" -->
-  <!-- CONFIG: testclass is your test runner -->
-  <!-- CONFIG: jarclassname is the name of your main class to run via java -jar -->
-  <!-- CONFIG: thriftpackage is where generated thrift classes go.
-               Only matters if you're using thrift. -->
   <info organisation="com.twitter"
     module="ostrich"
     revision="1.1"
@@ -18,6 +13,12 @@
     <conf name="default" description="normal build" />
     <conf name="test" visibility="private" description="build and run tests" />
   </configurations>
+
+  <publications>
+    <artifact />
+    <artifact type="pom" />
+  </publications>
+
   <dependencies>
     <dependency org="org.scala-lang" name="scala-compiler" rev="2.7.7" />
     <dependency org="org.scala-lang" name="scala-library" rev="2.7.7" />
