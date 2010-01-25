@@ -22,6 +22,7 @@ import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
+
 abstract class CustomHttpHandler extends HttpHandler {
   def render(body: String, exchange: HttpExchange) {
     render(body, exchange, 200)
@@ -76,7 +77,7 @@ class CommandRequestHandler extends CustomHttpHandler {
       } else {
         Nil
       }
-    }.map({ _.split('=').first })
+    }.map { _.split('=').first }
 
     try {
       response = {
@@ -98,7 +99,7 @@ class CommandRequestHandler extends CustomHttpHandler {
 
 
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
-  val port = Some(config.getInt("admin_http_port", 9990))
+  val port = config.getInt("admin_http_port")
   val backlog = config.getInt("admin_http_backlog", 20)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
 
