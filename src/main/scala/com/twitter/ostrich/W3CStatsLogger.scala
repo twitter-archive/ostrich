@@ -25,7 +25,7 @@ import net.lag.logging.Logger
 /**
  * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.
  */
-class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvmStats: Boolean) {
+class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvmStats: Boolean) extends BackgroundProcess("W3CStatsLogger") {
   def this(logger: Logger, frequencyInSeconds: Int) = this(logger, frequencyInSeconds, true)
 
   val collection = Stats.fork()
