@@ -1,31 +1,19 @@
-/*
- * Copyright 2009 Twitter, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License. You may obtain
- * a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.twitter.ostrich
 
-import java.io.InputStream
+import java.io.{DataInputStream, InputStream}
 import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
+import com.twitter.xrayspecs.Time
+import com.twitter.xrayspecs.TimeConversions._
+import net.lag.extensions._
 import net.lag.configgy.{Config, RuntimeEnvironment}
+import org.mockito.Matchers._
 import org.specs.Specification
-import org.specs.mock.{ClassMocker, JMocker}
+import org.specs.mock.Mockito
 
 
-object AdminSocketServiceSpec extends Specification with JMocker with Eventually {
+object AdminSocketServiceSpec extends Specification with Eventually with Mockito {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
 
@@ -36,30 +24,28 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
       new String(buffer, 0, len, "UTF-8")
     }
   }
+
   implicit def pimpInputStream(stream: InputStream) = new PimpedInputStream(stream)
 
   "AdminSocketService" should {
     var service: AdminSocketService = null
-    var server: ServerInterface = null
 
     doBefore {
+      Stats.clearAll()
       new Socket("localhost", PORT) must throwA[SocketException]
-      server = mock[ServerInterface]
-      service = new AdminSocketService(server, config, new RuntimeEnvironment(getClass))
+      service = spy(new AdminSocketService(config, new RuntimeEnvironment(getClass)))
       service.start()
     }
 
     doAfter {
-      expect {
-        allowing(server).shutdown()
-      }
       service.shutdown()
     }
 
     "start and stop" in {
       new Socket("localhost", PORT) must notBeNull
       service.shutdown()
-      new Socket("localhost", PORT) must throwA[SocketException]
+      new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.shutdown() was called.atLeastOnce
     }
 
     "answer pings" in {
@@ -68,26 +54,22 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
       socket.getInputStream().readString(1024) mustEqual "pong\n"
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      service.shutdown() was called.atLeastOnce
     }
 
     "shutdown" in {
-      expect {
-        one(server).shutdown()
-      }
-
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("shutdown\n".getBytes)
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      new Socket("localhost", PORT) must eventually(2, 5.seconds)(throwA[SocketException])
+      service.shutdown() was called.atLeastOnce
     }
 
     "quiesce" in {
-      expect {
-        one(server).quiesce()
-      }
-
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("quiesce\n".getBytes)
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      new Socket("localhost", PORT) must eventually(2, 5.seconds)(throwA[SocketException])
+      service.quiesce() was called.atLeastOnce
+      service.shutdown() was called.atLeastOnce
     }
 
     "provide stats" in {
@@ -102,11 +84,13 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
 
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats/json\n".getBytes)
+
         val stats = Json.parse(socket.getInputStream().readString(1024)).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats("jvm") must haveKey("uptime")
         stats("jvm") must haveKey("heap_used")
         stats("counters") must haveKey("kangaroos")
         stats("timings") must haveKey("kangaroo_time")
+
         val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")
@@ -144,3 +128,4 @@ object AdminSocketServiceSpec extends Specification with JMocker with Eventually
     }
   }
 }
+

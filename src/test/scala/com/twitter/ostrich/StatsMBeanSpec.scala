@@ -20,6 +20,8 @@ import java.lang.management.ManagementFactory
 import javax.{management => jmx}
 import scala.collection.{immutable, jcl}
 import scala.util.Sorting
+import com.twitter.xrayspecs.Time
+import com.twitter.xrayspecs.TimeConversions._
 import net.lag.extensions._
 import org.specs._
 
@@ -27,10 +29,12 @@ import org.specs._
 object StatsMBeanSpec extends Specification {
   "StatsMBean" should {
     val mbeanServer = ManagementFactory.getPlatformMBeanServer()
+    val name = "com.example.foo"
 
     doBefore {
       Stats.clearAll()
-      StatsMBean("com.example.foo")
+      StatsMBean.clear(name)
+      StatsMBean(name)
     }
 
     def getMBean() = {
@@ -57,7 +61,7 @@ object StatsMBeanSpec extends Specification {
 
     "report timings" in {
       Stats.time("procrastinate") {
-        Thread.sleep(10)
+        Time.advance(10.millis)
       }
 
       val mbean = getMBean()

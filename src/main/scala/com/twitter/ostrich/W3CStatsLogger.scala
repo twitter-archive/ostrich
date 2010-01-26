@@ -34,20 +34,25 @@ class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvm
 
   def runLoop() {
     val delay = (nextRun - Time.now).inMilliseconds
+
     if (delay > 0) {
       Thread.sleep(delay)
     }
+
     nextRun += frequencyInSeconds.seconds
     logStats()
   }
 
   def logStats() {
     val report = new mutable.HashMap[String, Any]
+
     if (includeJvmStats) {
       Stats.getJvmStats() foreach { case (key, value) => report("jvm_" + key) = value }
     }
+
     collection.getCounterStats(true) foreach { case (key, value) => report(key) = value }
     Stats.getGaugeStats(true) foreach { case (key, value) => report(key) = value }
+
     collection.getTimingStats(true) foreach { case (key, timing) =>
       report(key + "_count") = timing.count
       report(key + "_min") = timing.minimum

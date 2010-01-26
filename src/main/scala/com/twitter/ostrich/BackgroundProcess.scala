@@ -37,6 +37,7 @@ object BackgroundProcess {
         }
       }
     }
+
     thread.setDaemon(daemon)
     thread.start()
     thread
@@ -46,7 +47,6 @@ object BackgroundProcess {
   def spawnDaemon(threadName: String)(f: => Unit): Thread = spawn(threadName, true)(f)
 }
 
-
 /**
  * Generalization of a background process that runs in a thread, and can be
  * stopped. Stopping the thread waits for it to finish running.
@@ -55,7 +55,7 @@ object BackgroundProcess {
  * call a method that can be interrupted (like sleep) or block for a low
  * timeout.
  */
-abstract class BackgroundProcess(name: String) extends Thread(name) with ServerInterface {
+abstract class BackgroundProcess(name: String) extends Thread(name) with Service {
   private val log = Logger.get
 
   @volatile var running = false

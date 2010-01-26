@@ -16,92 +16,109 @@
 
 package com.twitter.ostrich
 
-import java.io._
-import java.net.{ServerSocket, Socket, SocketException, SocketTimeoutException}
-import java.util.concurrent.CountDownLatch
+import java.io.{InputStream, OutputStream}
+import java.net.{InetSocketAddress, Socket, URI, URL}
+import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
+import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 
-/**
- * A simple web server that responds to the admin commands defined in `AdminService`.
- * It can be used from curl like so:
- *
- *     $ curl http://localhost:9990/shutdown
- */
-class AdminHttpService(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment)
-      extends AdminService("AdminHttpService", server, runtime) {
-  val port = config.getInt("admin_http_port")
-
-  def handleRequest(socket: Socket) {
-    new Client(socket).handleRequest()
+abstract class CustomHttpHandler extends HttpHandler {
+  def render(body: String, exchange: HttpExchange) {
+    render(body, exchange, 200)
   }
 
-  class Client(val socket: Socket) {
-    case class Request(command: String, parameters: List[String], format: String)
-    var request: Request = null
+  def render(body: String, exchange: HttpExchange, code: Int) {
+    val input: InputStream = exchange.getRequestBody()
+    val output: OutputStream = exchange.getResponseBody()
+    exchange.sendResponseHeaders(code, body.length)
+    output.write(body.getBytes)
+    output.flush()
+    exchange.close()
+  }
 
-    private def readRequest(): Request = {
-      val in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
-      val requestLine = in.readLine()
-      if (requestLine == null) {
-        throw new IOException("EOF")
-      }
-      val segments = requestLine.split(" ", 3)
-      if (segments.length == 3) {
-        // read the "headers", which we will ignore.
-        while (in.readLine() != "") { }
-      }
-      if (segments.length < 2) {
-        sendError("Malformed request line: " + requestLine)
-        throw new IOException("Bad request")
-      }
-      val command = segments(0).toLowerCase()
-      if (command != "get") {
-        sendError("Request must be GET.")
-        throw new IOException("Bad request")
-      }
-      val pathSegments = segments(1).split("/").filter(_.length > 0)
-      if (pathSegments.length < 1) {
-        sendError("Malformed request path: " + segments(1))
-        throw new IOException("Bad request")
-      }
-      if (pathSegments.last contains ".") {
-        val filenameSegments = pathSegments.last.split("\\.", 2)
-        val params = pathSegments.slice(0, pathSegments.size - 1) ++ List(filenameSegments(0))
-        Request(params(0), params.drop(1).toList, filenameSegments(1).toLowerCase())
+  def handle(exchange: HttpExchange): Unit
+}
+
+
+class MissingFileHandler extends CustomHttpHandler {
+  def handle(exchange: HttpExchange) {
+    render("no such file", exchange, 404)
+  }
+}
+
+
+class ReportRequestHandler extends CustomHttpHandler {
+  lazy val pageFilePath: java.net.URI = this.getClass.getResource("/report_request_handler.html").toURI
+  lazy val page: String = Source.fromFile(pageFilePath).mkString
+
+  def handle(exchange: HttpExchange) {
+    render(page, exchange)
+  }
+}
+
+
+class CommandRequestHandler extends CustomHttpHandler {
+  def handle(exchange: HttpExchange) {
+    var response: String = null
+    val requestURI = exchange.getRequestURI
+    val command = requestURI.getPath.split('/').last.split('.').first
+
+    val format: Format  = requestURI.getPath.split('.').last match {
+      case "json" => Format.Json
+      case _ => Format.PlainText
+    }
+
+    val parameters: List[String] = {
+      val params = requestURI.getQuery
+
+      if (params != null) {
+        params.split('&').toList
       } else {
-        Request(pathSegments(0), pathSegments.drop(1).toList, "json")
+        Nil
       }
-    }
+    }.map { _.split('=').first }
 
-    def handleRequest() {
-      request = readRequest()
-      val format = request.format match {
-        case "txt" => Format.PlainText
-        case _ => Format.Json
+    try {
+      response = {
+        val commandResponse = CommandHandler(command, parameters, format)
+
+        if (parameters.contains("callback") && (format == Format.Json)) {
+          "ostrichCallback(%s)".format(commandResponse)
+        } else {
+          commandResponse
+        }
       }
-      try {
-        send("200", "OK", handleCommand(request.command, request.parameters, format))
-      } catch {
-        case e: UnknownCommandError =>
-          sendError(e.getMessage())
-      }
-    }
-
-    private def sendError(message: String) {
-      log.info("Admin http client error: %s", message)
-      send("400", "ERROR", message)
-    }
-
-    private def send(code: String, codeDescription: String, data: String) {
-      val out = new OutputStreamWriter(socket.getOutputStream())
-      out.write("HTTP/1.0 %s %s\n".format(code, codeDescription))
-      out.write("Server: %s/%s %s %s\n".format(runtime.jarName, runtime.jarVersion,
-        runtime.jarBuild, runtime.jarBuildRevision))
-      out.write("Content-Type: text/plain\n")
-      out.write("\n")
-      out.write(data)
-      out.flush()
+    } catch {
+      case e: UnknownCommandError => render("no such command", exchange, 404)
+    } finally {
+      render(response, exchange)
     }
   }
+}
+
+
+class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
+  val port = config.getInt("admin_http_port")
+  val backlog = config.getInt("admin_http_backlog", 20)
+  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
+
+  addContext("/", new CommandRequestHandler())
+  addContext("/report/", new ReportRequestHandler())
+  addContext("/favicon.ico", new MissingFileHandler())
+
+  httpServer.setExecutor(null)
+
+  def addContext(path: String, handler: HttpHandler) = httpServer.createContext(path, handler)
+
+  def handleRequest(socket: Socket) { }
+
+  def start() = {
+    ServiceTracker.register(this)
+    httpServer.start()
+  }
+
+  override def shutdown() = httpServer.stop(0) // argument is in seconds
+
+  override def quiesce() = httpServer.stop(1) // argument is in seconds
 }

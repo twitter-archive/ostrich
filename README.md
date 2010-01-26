@@ -5,7 +5,7 @@ can collect counters, gauges, and timings, and it can report them via JMX, a sim
 plain-text socket, or a "W3C" log file. A server can also be asked to shutdown or reload its config
 files using these interfaces.
 
-The only dependencies are scala-json and configgy.
+Dependencies: scala-json, Configgy, Netty. These dependencies are managed by the build system.
 
 This library is released under the Apache Software License, version 2, which should be included with
 the source in a file named `LICENSE`.

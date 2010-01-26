@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2010 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -21,29 +21,29 @@ import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
 
 
 /**
- * Single server object that can track multiple ServerInterface implementations and multiplex the
+ * Single server object that can track multiple Service implementations and multiplex the
  * shutdown & quiesce commands.
  */
-object Server extends ServerInterface {
-  val servers = new mutable.HashSet[ServerInterface]
+object ServiceTracker {
+  val services = new mutable.HashSet[Service]
 
-  def register(server: ServerInterface) {
-    servers += server
+  def register(service: Service) {
+    services += service
   }
 
   def shutdown() {
-    servers.foreach { _.shutdown() }
-    servers.clear()
+    services.foreach { _.shutdown() }
+    services.clear()
   }
 
   def quiesce() {
-    servers.foreach { _.quiesce() }
-    servers.clear()
+    services.foreach { _.quiesce() }
+    services.clear()
   }
 
-  def startAdmin(server: ServerInterface, config: ConfigMap, runtime: RuntimeEnvironment) {
-    new AdminHttpService(server, config, runtime).start()
-    new AdminSocketService(server, config, runtime).start()
+  def startAdmin(config: ConfigMap, runtime: RuntimeEnvironment) {
+    new AdminHttpService(config, runtime).start()
+    new AdminSocketService(config, runtime).start()
     config.getString("admin_jmx_package").map(StatsMBean(_))
   }
 }

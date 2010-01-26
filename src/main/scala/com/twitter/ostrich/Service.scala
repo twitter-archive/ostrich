@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2010 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -17,7 +17,7 @@
 package com.twitter.ostrich
 
 
-trait ServerInterface {
+trait Service {
   /**
    * Shutdown this server.
    */

@@ -17,6 +17,8 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
+import com.twitter.xrayspecs.Time
+import com.twitter.xrayspecs.TimeConversions._
 import net.lag.extensions._
 import org.specs._
 
@@ -91,7 +93,7 @@ object StatsSpec extends Specification {
 
       "handle code blocks" in {
         Stats.time("test") {
-          Thread.sleep(10)
+          Time.advance(10.millis)
         }
         val test = Stats.getTiming("test")
         test.get(true).average must be_>=(10)
