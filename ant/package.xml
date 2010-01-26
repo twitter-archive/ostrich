@@ -66,7 +66,7 @@
   <target name="jars" depends="test, make-non-executable-jar, make-executable-jar, generate-scripts"
     description="build jar(s)">
     <ivy:makepom ivyfile="${basedir}/ivy/ivy.xml" pomfile="${dist.dir}/${jar.name}.pom">
-      <mapping conf="*" scope="runtime" />
+      <mapping conf="*" scope="compile" />
       <mapping conf="bootstrap" scope="provided" />
       <mapping conf="test" scope="provided" />
     </ivy:makepom>
