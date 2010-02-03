@@ -34,6 +34,7 @@ abstract class CustomHttpHandler extends HttpHandler {
     exchange.sendResponseHeaders(code, body.length)
     output.write(body.getBytes)
     output.flush()
+    output.close()
     exchange.close()
   }
 
@@ -65,8 +66,8 @@ class CommandRequestHandler extends CustomHttpHandler {
     val command = requestURI.getPath.split('/').last.split('.').first
 
     val format: Format  = requestURI.getPath.split('.').last match {
-      case "json" => Format.Json
-      case _ => Format.PlainText
+      case "txt" => Format.PlainText
+      case _ => Format.Json
     }
 
     val parameters: List[String] = {
