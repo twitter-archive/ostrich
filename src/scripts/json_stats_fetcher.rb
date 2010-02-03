@@ -77,7 +77,7 @@ File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 begin
   socket = TCPSocket.new(hostname, port)
   if use_web
-    socket.write("GET /stats#{'/reset' if $report_to_ganglia} HTTP/1.0\r\n\r\n")
+    socket.write("GET /stats#{'?reset=1' if $report_to_ganglia} HTTP/1.0\r\n\r\n")
     while socket.gets != "\r\n"; end
   else
     socket.puts("stats/json#{' reset' if $report_to_ganglia}")
