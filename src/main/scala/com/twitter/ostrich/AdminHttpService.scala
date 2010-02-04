@@ -98,9 +98,9 @@ class CommandRequestHandler extends CustomHttpHandler {
 
 
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
-  val port = Some(config.getInt("admin_http_port", 9990))
+  val port = config.getInt("admin_http_port", 9990)
   val backlog = config.getInt("admin_http_backlog", 20)
-  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
+  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
 
   addContext("/", new CommandRequestHandler())
   addContext("/report/", new ReportRequestHandler())
