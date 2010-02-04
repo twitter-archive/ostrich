@@ -16,8 +16,8 @@ end
 
 $report_to_ganglia = true
 $ganglia_prefix = ''
+$stat_timeout = 86400
 
-stat_timeout = 86400
 hostname = "localhost"
 port = 9989
 use_web = false
@@ -77,12 +77,12 @@ File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 begin
   socket = TCPSocket.new(hostname, port)
   if use_web
-    socket.puts("GET /stats#{'/reset' if $report_to_ganglia}")
-    while socket.gets != "\n"; end
+    socket.write("GET /stats#{'?reset=1' if $report_to_ganglia} HTTP/1.0\r\n\r\n")
+    while socket.gets != "\r\n"; end
   else
     socket.puts("stats/json#{' reset' if $report_to_ganglia}")
   end
-  stats = JSON.parse(socket.read)
+  stats = JSON.parse(socket.gets)
 
   report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
   report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")

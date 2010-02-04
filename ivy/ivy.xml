@@ -1,12 +1,7 @@
 <ivy-module version="1.0" xmlns:e="http://ant.apache.org/ivy/extra">
-  <!-- CONFIG: net.lag.example is the example project we're going to setup" -->
-  <!-- CONFIG: testclass is your test runner -->
-  <!-- CONFIG: jarclassname is the name of your main class to run via java -jar -->
-  <!-- CONFIG: thriftpackage is where generated thrift classes go.
-               Only matters if you're using thrift. -->
   <info organisation="com.twitter"
     module="ostrich"
-    revision="1.1"
+    revision="1.1.2"
     e:buildpackage="com.twitter.ostrich"
     e:testclass="com.twitter.ostrich.TestRunner"
     e:jarclassname="com.twitter.ostrich.Main"
@@ -16,8 +11,14 @@
   <configurations>
     <conf name="bootstrap" visibility="private" description="load scala compiler and libraries" />
     <conf name="default" description="normal build" />
-    <conf name="test" visibility="private" description="build and run tests" />
+    <conf name="test" extends="default" visibility="private" description="build and run tests" />
   </configurations>
+
+  <publications>
+    <artifact />
+    <artifact type="pom" />
+  </publications>
+
   <dependencies>
     <dependency org="org.scala-lang" name="scala-compiler" rev="2.7.7" />
     <dependency org="org.scala-lang" name="scala-library" rev="2.7.7" />
@@ -32,7 +33,7 @@
     <dependency org="cglib" name="cglib" rev="2.1_3" conf="test->*" /> <!--auto-->
     <dependency org="asm" name="asm" rev="1.5.3" conf="test->*" /> <!--auto-->
     <dependency org="org.objenesis" name="objenesis" rev="1.1" conf="test->*" /> <!--auto-->
-    <dependency org="com.twitter" name="xrayspecs" rev="1.0.7" conf="*" /> <!--auto-->
+    <dependency org="com.twitter" name="xrayspecs" rev="1.0.7" /> <!--auto-->
     <dependency org="org.mockito" name="mockito-all" rev="1.8.1" />
     <dependency org="org.jboss.netty" name="netty" rev="3.1.5.GA" />
   </dependencies>

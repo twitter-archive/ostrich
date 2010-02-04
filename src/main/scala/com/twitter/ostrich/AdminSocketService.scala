@@ -36,7 +36,7 @@ object AdminSocketService {
 
 class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
   private val log = Logger.get
-  val port = config.getInt("admin_text_port", 9990)
+  val port = config.getInt("admin_text_port")
 
   val bootstrap = new ServerBootstrap(
     new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool())
@@ -49,9 +49,11 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
   pipeline.addLast("handler", handler)
 
   def start() {
-    val channel = bootstrap.bind(new InetSocketAddress(port))
-    AdminSocketService.allChannels.add(channel)
-    ServiceTracker.register(this)
+    port.map { port =>
+      val channel = bootstrap.bind(new InetSocketAddress(port))
+      AdminSocketService.allChannels.add(channel)
+      ServiceTracker.register(this)
+    }
   }
 
   override def quiesce() {

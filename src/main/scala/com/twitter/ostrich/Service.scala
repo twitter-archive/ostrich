@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2010 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -16,40 +16,18 @@
 
 package com.twitter.ostrich
 
-import scala.collection.mutable
-import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
-
 
 trait Service {
+  /**
+   * Shutdown this server.
+   */
   def shutdown(): Unit
 
+  /**
+   * Stop answering new requests, and close all listening sockets, but only shutdown after the last
+   * existing client dies. This is to allow servers with long-running clients to stay alive for a
+   * while and service those connections, while letting another server start up and begin handling
+   * new connections.
+   */
   def quiesce(): Unit
-}
-
-
-/**
- * Single server object that can track multiple Service implementations and multiplex the
- * shutdown & quiesce commands.
- */
-object ServiceTracker {
-  val services = new mutable.HashSet[Service]
-
-  def register(service: Service) {
-    services += service
-  }
-
-  def shutdown() {
-    services.foreach { _.shutdown() }
-    services.clear()
-  }
-
-  def quiesce() {
-    services.foreach { _.quiesce() }
-    services.clear()
-  }
-
-  def startAdmin(service: Service, config: ConfigMap, runtime: RuntimeEnvironment) {
-    new AdminHttpService(config, runtime).start()
-    config.getString("admin_jmx_package").map(StatsMBean(_))
-  }
 }

@@ -46,3 +46,53 @@ object BackgroundProcess {
   def spawn(threadName: String)(f: => Unit): Thread = spawn(threadName, false)(f)
   def spawnDaemon(threadName: String)(f: => Unit): Thread = spawn(threadName, true)(f)
 }
+
+/**
+ * Generalization of a background process that runs in a thread, and can be
+ * stopped. Stopping the thread waits for it to finish running.
+ *
+ * The code block will be run inside a "forever" loop, so it should either
+ * call a method that can be interrupted (like sleep) or block for a low
+ * timeout.
+ */
+abstract class BackgroundProcess(name: String) extends Thread(name) with Service {
+  private val log = Logger.get
+
+  @volatile var running = false
+  val startLatch = new CountDownLatch(1)
+
+  override def start() {
+    log.info("Starting %s", name)
+    running = true
+    super.start()
+    startLatch.await()
+  }
+
+  override def run() {
+    startLatch.countDown()
+    while (running) {
+      try {
+        runLoop()
+      } catch {
+        case e: InterruptedException =>
+          log.info("%s exiting by request.", name)
+          running = false
+        case e: Throwable =>
+          log.error(e, "Background process %s died with unexpected exception: %s", name, e)
+          running = false
+      }
+    }
+  }
+
+  def runLoop()
+
+  def shutdown() {
+    running = false
+    interrupt()
+    join()
+  }
+
+  def quiesce() {
+    shutdown()
+  }
+}
