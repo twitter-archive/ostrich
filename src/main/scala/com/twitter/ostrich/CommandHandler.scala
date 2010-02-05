@@ -36,9 +36,7 @@ object Format {
 }
 
 
-object CommandHandler {
-  val runtime = new RuntimeEnvironment(getClass)
-
+class CommandHandler(runtime: RuntimeEnvironment) {
   def apply(command: String, parameters: List[String], format: Format): String = {
     val rv = handleRawCommand(command, parameters)
     format match {
@@ -65,14 +63,12 @@ object CommandHandler {
           Thread.sleep(100)
           ServiceTracker.shutdown()
         }
-
         "ok"
       case "quiesce" =>
         BackgroundProcess.spawn("admin:quiesce") {
           Thread.sleep(100)
           ServiceTracker.quiesce()
         }
-
         "ok"
       case "stats" =>
         val reset = parameters.contains("reset")

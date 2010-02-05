@@ -42,7 +42,8 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
     new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool())
   )
 
-  val handler = new AdminSocketServiceHandler()
+  val commandHandler = new CommandHandler(runtime)
+  val handler = new AdminSocketServiceHandler(commandHandler)
   val pipeline = bootstrap.getPipeline
   pipeline.addLast("encoder", new StringEncoder())
   pipeline.addLast("decoder", new StringDecoder())
@@ -75,7 +76,7 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
 
 
 @ChannelPipelineCoverage("all")
-class AdminSocketServiceHandler extends SimpleChannelUpstreamHandler {
+class AdminSocketServiceHandler(commandHandler: CommandHandler) extends SimpleChannelUpstreamHandler {
   private val log = Logger.get
 
   override def channelOpen(context: ChannelHandlerContext, event: ChannelStateEvent) {
@@ -97,7 +98,7 @@ class AdminSocketServiceHandler extends SimpleChannelUpstreamHandler {
       case _ => Format.PlainText
     }
 
-    val response: String = CommandHandler(command, request.tail, format)
+    val response: String = commandHandler(command, request.tail, format)
     event.getChannel.write(response + "\n")
   }
 

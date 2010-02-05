@@ -59,7 +59,7 @@ class ReportRequestHandler extends CustomHttpHandler {
 }
 
 
-class CommandRequestHandler extends CustomHttpHandler {
+class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHandler {
   def handle(exchange: HttpExchange) {
     var response: String = null
     val requestURI = exchange.getRequestURI
@@ -82,7 +82,7 @@ class CommandRequestHandler extends CustomHttpHandler {
 
     try {
       response = {
-        val commandResponse = CommandHandler(command, parameters, format)
+        val commandResponse = commandHandler(command, parameters, format)
 
         if (parameters.contains("callback") && (format == Format.Json)) {
           "ostrichCallback(%s)".format(commandResponse)
@@ -103,8 +103,9 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   val port = config.getInt("admin_http_port")
   val backlog = config.getInt("admin_http_backlog", 20)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
+  val commandHandler = new CommandHandler(runtime)
 
-  addContext("/", new CommandRequestHandler())
+  addContext("/", new CommandRequestHandler(commandHandler))
   addContext("/report/", new ReportRequestHandler())
   addContext("/favicon.ico", new MissingFileHandler())
 
