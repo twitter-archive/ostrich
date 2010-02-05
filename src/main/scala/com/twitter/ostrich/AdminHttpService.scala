@@ -62,6 +62,14 @@ class ReportRequestHandler extends CustomHttpHandler {
 
 class CommandRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange) {
+    try {
+      _handle(exchange)
+    } catch {
+      case e => render("exception while processing request: " + e, exchange, 500)
+    }
+  }
+
+  def _handle(exchange: HttpExchange) {
     var response: String = null
     val requestURI = exchange.getRequestURI
     val command = requestURI.getPath.split('/').last.split('.').first
@@ -91,10 +99,11 @@ class CommandRequestHandler extends CustomHttpHandler {
           commandResponse
         }
       }
+
+      render(response, exchange)
     } catch {
       case e: UnknownCommandError => render("no such command", exchange, 404)
-    } finally {
-      render(response, exchange)
+      case unknownException => render("error processing command: " + unknownException, exchange, 500)
     }
   }
 }
