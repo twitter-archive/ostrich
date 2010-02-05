@@ -31,6 +31,7 @@ abstract class CustomHttpHandler extends HttpHandler {
   def render(body: String, exchange: HttpExchange, code: Int) {
     val input: InputStream = exchange.getRequestBody()
     val output: OutputStream = exchange.getResponseBody()
+    exchange.getResponseHeaders.set("Content-Type", "text/html")
     exchange.sendResponseHeaders(code, body.length)
     output.write(body.getBytes)
     output.flush()
