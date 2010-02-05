@@ -110,7 +110,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHa
 
 
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
-  val port = config.getInt("admin_http_port", 9990)
+  val port = config.getInt("admin_http_port")
   val backlog = config.getInt("admin_http_backlog", 20)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
   val commandHandler = new CommandHandler(runtime)
