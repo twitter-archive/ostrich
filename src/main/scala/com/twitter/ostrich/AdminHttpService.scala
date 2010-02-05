@@ -31,6 +31,7 @@ abstract class CustomHttpHandler extends HttpHandler {
   def render(body: String, exchange: HttpExchange, code: Int) {
     val input: InputStream = exchange.getRequestBody()
     val output: OutputStream = exchange.getResponseBody()
+    exchange.getResponseHeaders.set("Content-Type", "text/html")
     exchange.sendResponseHeaders(code, body.length)
     output.write(body.getBytes)
     output.flush()
@@ -61,6 +62,14 @@ class ReportRequestHandler extends CustomHttpHandler {
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHandler {
   def handle(exchange: HttpExchange) {
+    try {
+      _handle(exchange)
+    } catch {
+      case e => render("exception while processing request: " + e, exchange, 500)
+    }
+  }
+
+  def _handle(exchange: HttpExchange) {
     var response: String = null
     val requestURI = exchange.getRequestURI
     val command = requestURI.getPath.split('/').last.split('.').first
@@ -90,17 +99,18 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHa
           commandResponse
         }
       }
+
+      render(response, exchange)
     } catch {
       case e: UnknownCommandError => render("no such command", exchange, 404)
-    } finally {
-      render(response, exchange)
+      case unknownException => render("error processing command: " + unknownException, exchange, 500)
     }
   }
 }
 
 
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
-  val port = config.getInt("admin_http_port")
+  val port = config.getInt("admin_http_port", 9990)
   val backlog = config.getInt("admin_http_backlog", 20)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
   val commandHandler = new CommandHandler(runtime)
