@@ -41,7 +41,7 @@ class CommandHandler(runtime: RuntimeEnvironment) {
     val rv = handleRawCommand(command, parameters)
     format match {
       case Format.PlainText =>
-        rv.flatten
+        rv.flatten + "\n"
       case Format.Json =>
         // force it into a map because some json clients expect the top-level object to be a map.
         Json.build(rv match {

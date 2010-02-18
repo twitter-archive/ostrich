@@ -51,7 +51,7 @@ object AdminSocketServiceSpec extends Specification with Eventually with Mockito
     "answer pings" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("ping\n".getBytes)
-      socket.getInputStream().readString(1024) mustEqual "pong\n"
+      socket.getInputStream().readString(1024) mustEqual "pong\n\n"
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
       service.shutdown() was called.atLeastOnce
