@@ -66,9 +66,17 @@ object Stats extends StatsProvider {
     stats
   }
 
-  def getCounter(name: String): Counter = collection.getCounter(name)
+  def getCounter(name: String): Counter = {
+    // make sure any new counters get added to forked collections
+    forkedCollections.foreach { _.getCounter(name)}
+    collection.getCounter(name)
+  }
 
-  def getTiming(name: String): Timing = collection.getTiming(name)
+  def getTiming(name: String): Timing = {
+    // make sure any new timings get added to forked collections
+    forkedCollections.foreach { _.getTiming(name)}
+    collection.getTiming(name)
+  }
 
   override def clearAll() {
     collection.clearAll()
