@@ -25,7 +25,8 @@ import com.twitter.json.{Json, JsonSerializable}
  * A pre-calculated timing. If you have timing stats from an external source but
  * still want to report them via the Stats interface, use this.
  */
-class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSquares: Long) extends JsonSerializable {
+class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSquares: Long,
+                 _histogram: Option[Histogram]) extends JsonSerializable {
   def count = _count
   def minimum = if (_count > 0) _minimum else 0
   def maximum = if (_count > 0) _maximum else 0
@@ -34,6 +35,10 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   def standardDeviation = Math.sqrt(variance)
   def sum = _sum
   def sumSquares = _sumSquares
+  def histogram = _histogram
+
+  def this(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSquares: Long) =
+    this(_count, _maximum, _minimum, _sum, _sumSquares, None)
 
   def toJson() = {
     Json.build(immutable.Map("count" -> count, "minimum" -> minimum, "maximum" -> maximum,
@@ -49,7 +54,17 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
 
   override def toString = "(count=%d, maximum=%d, minimum=%d, sum=%d, sum_squares=%d)".format(count, maximum, minimum, sum, sumSquares)
 
-  def toMap: Map[String, Long] =
-    immutable.Map("count" -> count, "maximum" -> maximum, "minimum" -> minimum, "sum" -> sum, "sum_squares" -> sumSquares,
-                  "average" -> average, "standard_deviation" -> standardDeviation)
+  def toMap: Map[String, Long] = {
+    immutable.Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
+                                "sum" -> sum, "sum_squares" -> sumSquares, "average" -> average,
+                                "standard_deviation" -> standardDeviation) ++
+      (histogram match {
+        case None => immutable.Map.empty[String, Long]
+        case Some(h) => immutable.Map[String, Long]("hist_25" -> h.getHistogram(25),
+                                                    "hist_50" -> h.getHistogram(50),
+                                                    "hist_75" -> h.getHistogram(75),
+                                                    "hist_90" -> h.getHistogram(90),
+                                                    "hist_99" -> h.getHistogram(99))
+      })
+  }
 }

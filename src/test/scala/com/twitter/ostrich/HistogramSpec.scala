@@ -23,9 +23,11 @@ import org.specs.matcher.Matcher
 object HistogramSpec extends Specification {
   "Histogram" should {
     val histogram = new Histogram()
+    val histogram2 = new Histogram()
 
     doBefore {
       histogram.clear()
+      histogram2.clear()
     }
 
     "find the right bucket for various timings" in {
@@ -61,6 +63,20 @@ object HistogramSpec extends Specification {
       histogram.getHistogram(90) must shareABucketWith(900)
       histogram.getHistogram(99) must shareABucketWith(999)
       histogram.getHistogram(100) must shareABucketWith(1000)
+    }
+
+    "merge" in {
+      for (i <- 0 until 50) {
+        histogram.add(i * 10)
+        histogram2.add(i * 10)
+      }
+      histogram.merge(histogram2)
+      val stats = histogram.get(true)
+      val stats2 = histogram2.get(true)
+      for (i <- 0 until 50) {
+        val bucket = Histogram.binarySearch(i * 10)
+        stats(bucket) mustEqual 2 * stats2(bucket)
+      }
     }
   }
 }
