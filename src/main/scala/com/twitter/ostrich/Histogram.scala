@@ -34,23 +34,19 @@ class Histogram {
   var total = 0
 
   def add(n: Int) {
-    synchronized {
-      val index = Histogram.binarySearch(n)
-      buckets(index) += 1
-      total += 1
-    }
+    val index = Histogram.binarySearch(n)
+    buckets(index) += 1
+    total += 1
   }
 
   def clear() {
-    synchronized {
-      for (i <- 0 until numBuckets) {
-        buckets(i) = 0
-      }
-      total = 0
+    for (i <- 0 until numBuckets) {
+      buckets(i) = 0
     }
+    total = 0
   }
 
-  def get(reset: Boolean) = synchronized {
+  def get(reset: Boolean) = {
     val rv = buckets.toList
     clear()
     rv
@@ -67,6 +63,12 @@ class Histogram {
       0
     } else {
       Histogram.BUCKET_OFFSETS(index - 1) - 1
+    }
+  }
+
+  def merge(other: Histogram) {
+    for (i <- 0 until numBuckets) {
+      buckets(i) += other.buckets(i)
     }
   }
 }
