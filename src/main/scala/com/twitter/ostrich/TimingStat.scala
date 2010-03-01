@@ -18,7 +18,10 @@ package com.twitter.ostrich
 
 import scala.collection.Map
 import scala.collection.immutable
+import scala.util.Sorting
 import com.twitter.json.{Json, JsonSerializable}
+
+
 
 
 /**
@@ -40,6 +43,12 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   def this(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSquares: Long) =
     this(_count, _maximum, _minimum, _sum, _sumSquares, None)
 
+  // FIXME: this ought to be generally available
+  class SortableSeq[T <% Ordered[T]](seq: Iterable[T]) {
+    def sorted = Sorting.stableSort(seq.toSeq)
+  }
+  implicit def sortableSeq[T <% Ordered[T]](seq: Iterable[T]) = new SortableSeq(seq)
+
   def toJson() = {
     Json.build(immutable.Map("count" -> count, "minimum" -> minimum, "maximum" -> maximum,
       "average" -> average, "standard_deviation" -> standardDeviation, "sum" -> sum,
@@ -48,11 +57,14 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
 
   override def equals(other: Any) = other match {
     case t: TimingStat =>
-      t.count == count && t.maximum == maximum && t.minimum == minimum && t.sum == sum && t.sumSquares == sumSquares
+      t.count == count && t.maximum == maximum && t.minimum == minimum && t.sum == sum &&
+        t.sumSquares == sumSquares
     case _ => false
   }
 
-  override def toString = "(count=%d, maximum=%d, minimum=%d, sum=%d, sum_squares=%d)".format(count, maximum, minimum, sum, sumSquares)
+  override def toString = {
+    toMap.map { case (k, v) => "%s=%d".format(k, v) }.sorted.mkString("(", ", ", ")")
+  }
 
   def toMap: Map[String, Long] = {
     immutable.Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
