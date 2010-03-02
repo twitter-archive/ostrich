@@ -17,6 +17,7 @@ end
 $report_to_ganglia = true
 $ganglia_prefix = ''
 $stat_timeout = 86400
+$pattern = /^x-/
 
 hostname = "localhost"
 port = 9989
@@ -29,6 +30,7 @@ def usage(port)
   puts "    -n              say what I would report, but don't report it"
   puts "    -w              use web interface"
   puts "    -h <hostname>   connect to another host (default: localhost)"
+  puts "    -i <pattern>    ignore all stats matching pattern (default: #{$pattern.inspect})"
   puts "    -p <port>       connect to another port (default: #{port})"
   puts "    -P <prefix>     optional prefix for ganglia names"
   puts
@@ -38,6 +40,7 @@ opts = GetoptLong.new(
   [ '--help', GetoptLong::NO_ARGUMENT ],
   [ '-n', GetoptLong::NO_ARGUMENT ],
   [ '-h', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '-i', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-p', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-P', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-w', GetoptLong::NO_ARGUMENT ]
@@ -52,6 +55,8 @@ opts.each do |opt, arg|
     $report_to_ganglia = false
   when '-h'
     hostname = arg
+  when '-i'
+    $pattern = /#{arg}/
   when '-p'
     port = arg.to_i
   when '-P'
@@ -89,15 +94,15 @@ begin
   report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
   report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
 
-  stats["counters"].each do |name, value|
+  stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
     report_metric(name, (value.to_i rescue 0), "items")
   end
 
-  stats["gauges"].each do |name, value|
+  stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
     report_metric(name, value, "value")
   end
 
-  stats["timings"].each do |name, timing|
+  stats["timings"].reject { |name, val| name =~ $pattern }.each do |name, timing|
     report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
     report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
   end
