@@ -31,6 +31,7 @@ class Timing {
   private var sum: Long = 0
   private var sumSquares: Long = 0
   private var count: Int = 0
+  private var histogram = new Histogram()
 
   /**
    * Resets the state of this Timing. Clears the durations and counts collected so far.
@@ -41,6 +42,7 @@ class Timing {
     sum = 0
     sumSquares = 0
     count = 0
+    histogram.clear()
   }
 
   /**
@@ -53,6 +55,7 @@ class Timing {
       sum += n
       sumSquares += (n.toLong * n)
       count += 1
+      histogram.add(n)
     } else {
       log.warning("Tried to add a negative timing duration. Was the clock adjusted?")
     }
@@ -69,6 +72,7 @@ class Timing {
       sum += timingStat.sum
       sumSquares += timingStat.sumSquares
       count += timingStat.count
+      timingStat.histogram.map { h => histogram.merge(h) }
     }
     count
   }
@@ -78,7 +82,7 @@ class Timing {
    * @param reset whether to erase the current history afterwards
    */
   def get(reset: Boolean): TimingStat = synchronized {
-    val rv = new TimingStat(count, maximum, minimum, sum, sumSquares)
+    val rv = new TimingStat(count, maximum, minimum, sum, sumSquares, Some(histogram))
     if (reset) clear()
     rv
   }

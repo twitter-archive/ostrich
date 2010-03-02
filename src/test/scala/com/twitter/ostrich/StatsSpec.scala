@@ -137,6 +137,13 @@ object StatsSpec extends Specification {
         Stats.getTimingStats(false)("made_up").count mustEqual 1
         Stats.getTimingStats(false)("made_up").average mustEqual 1
       }
+
+      "report text in sorted order" in {
+        Stats.addTiming("alpha", new TimingStat(1, 0, 0, 0, 0))
+        Stats.getTimingStats(false)("alpha").toString mustEqual
+          "(average=0, count=1, hist_25=0, hist_50=0, hist_75=0, hist_90=0, hist_99=0, " +
+          "maximum=0, minimum=0, standard_deviation=0, sum=0, sum_squares=0)"
+      }
     }
 
     "gauges" in {
