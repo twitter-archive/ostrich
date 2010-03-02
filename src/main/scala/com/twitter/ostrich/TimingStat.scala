@@ -22,8 +22,6 @@ import scala.util.Sorting
 import com.twitter.json.{Json, JsonSerializable}
 
 
-
-
 /**
  * A pre-calculated timing. If you have timing stats from an external source but
  * still want to report them via the Stats interface, use this.
@@ -50,9 +48,11 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   implicit def sortableSeq[T <% Ordered[T]](seq: Iterable[T]) = new SortableSeq(seq)
 
   def toJson() = {
-    Json.build(immutable.Map("count" -> count, "minimum" -> minimum, "maximum" -> maximum,
-      "average" -> average, "standard_deviation" -> standardDeviation, "sum" -> sum,
-      "sum_squares" -> sumSquares)).toString()
+    val out = toMapWithoutHistogram ++ (histogram match {
+      case None => immutable.Map.empty[String, Any]
+      case Some(h) => immutable.Map("histogram" -> h.get(false))
+    })
+    Json.build(out).toString
   }
 
   override def equals(other: Any) = other match {
@@ -66,17 +66,20 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
     toMap.map { case (k, v) => "%s=%d".format(k, v) }.sorted.mkString("(", ", ", ")")
   }
 
-  def toMap: Map[String, Long] = {
+  private def toMapWithoutHistogram = {
     immutable.Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
                                 "sum" -> sum, "sum_squares" -> sumSquares, "average" -> average,
-                                "standard_deviation" -> standardDeviation) ++
-      (histogram match {
-        case None => immutable.Map.empty[String, Long]
-        case Some(h) => immutable.Map[String, Long]("hist_25" -> h.getHistogram(25),
-                                                    "hist_50" -> h.getHistogram(50),
-                                                    "hist_75" -> h.getHistogram(75),
-                                                    "hist_90" -> h.getHistogram(90),
-                                                    "hist_99" -> h.getHistogram(99))
-      })
+                                "standard_deviation" -> standardDeviation)
+  }
+
+  def toMap: Map[String, Long] = {
+    toMapWithoutHistogram ++ (histogram match {
+      case None => immutable.Map.empty[String, Long]
+      case Some(h) => immutable.Map[String, Long]("hist_25" -> h.getHistogram(25),
+                                                  "hist_50" -> h.getHistogram(50),
+                                                  "hist_75" -> h.getHistogram(75),
+                                                  "hist_90" -> h.getHistogram(90),
+                                                  "hist_99" -> h.getHistogram(99))
+    })
   }
 }
