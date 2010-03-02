@@ -16,15 +16,15 @@
 
 package com.twitter.ostrich
 
-import scala.collection.{Map, mutable, immutable}
-
+import scala.collection.{Map, jcl, mutable, immutable}
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
 class StatsCollection extends StatsProvider {
   private val counterMap = new mutable.HashMap[String, Counter]()
-  private val timingMap = new mutable.HashMap[String, Timing]()
+  private val timingMap = new ConcurrentHashMap[String, Timing]()
 
   def addTiming(name: String, duration: Int): Long = {
     getTiming(name).add(duration)
@@ -50,7 +50,7 @@ class StatsCollection extends StatsProvider {
 
   def getTimingStats(reset: Boolean): Map[String, TimingStat] = {
     val out = new mutable.HashMap[String, TimingStat]
-    for ((key, timing) <- timingMap) {
+    for ((key, timing) <- jcl.Map(timingMap)) {
       out += (key -> timing.get(reset))
     }
     out
@@ -58,7 +58,7 @@ class StatsCollection extends StatsProvider {
 
   def clearAll() {
     counterMap.synchronized { counterMap.clear() }
-    timingMap.synchronized { timingMap.clear() }
+    timingMap.clear()
   }
 
   /**
@@ -77,13 +77,12 @@ class StatsCollection extends StatsProvider {
   /**
    * Find or create a timing measurement with the given name.
    */
-  def getTiming(name: String): Timing = timingMap.synchronized {
-    timingMap.get(name) match {
-      case Some(timing) => timing
-      case None =>
-        val timing = new Timing
-        timingMap += (name -> timing)
-        timing
+  def getTiming(name: String): Timing = {
+    var timing = timingMap.get(name)
+    while (timing == null) {
+      timing = timingMap.putIfAbsent(name, new Timing)
+      timing = timingMap.get(name)
     }
+    timing
   }
 }
