@@ -4,6 +4,7 @@ require 'rubygems'
 require 'getoptlong'
 require 'socket'
 require 'json'
+require 'timeout'
 
 
 def report_metric(name, value, units)
@@ -80,31 +81,33 @@ end
 File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 
 begin
-  socket = TCPSocket.new(hostname, port)
-  if use_web
-    socket.write("GET /stats#{'?reset=1' if $report_to_ganglia} HTTP/1.0\r\n\r\n")
-    while socket.gets != "\r\n"; end
-  else
-    socket.puts("stats/json#{' reset' if $report_to_ganglia}")
-  end
-  stats = JSON.parse(socket.gets)
+  Timeout::timeout(60) do
+    socket = TCPSocket.new(hostname, port)
+    if use_web
+      socket.write("GET /stats#{'?reset=1' if $report_to_ganglia} HTTP/1.0\r\n\r\n")
+      while socket.gets != "\r\n"; end
+    else
+      socket.puts("stats/json#{' reset' if $report_to_ganglia}")
+    end
+    stats = JSON.parse(socket.gets)
 
-  report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
-  report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
-  report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
-  report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
+    report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
+    report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
+    report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
+    report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
 
-  stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-    report_metric(name, (value.to_i rescue 0), "items")
-  end
+    stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
+      report_metric(name, (value.to_i rescue 0), "items")
+    end
 
-  stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
-    report_metric(name, value, "value")
-  end
+    stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
+      report_metric(name, value, "value")
+    end
 
-  stats["timings"].reject { |name, val| name =~ $pattern }.each do |name, timing|
-    report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
-    report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
+    stats["timings"].reject { |name, val| name =~ $pattern }.each do |name, timing|
+      report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
+      report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
+    end
   end
 ensure
   File.unlink(singleton_file)
