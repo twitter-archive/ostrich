@@ -42,10 +42,10 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
     this(_count, _maximum, _minimum, _sum, _sumSquares, None)
 
   // FIXME: this ought to be generally available
-  class SortableSeq[T <% Ordered[T]](seq: Iterable[T]) {
-    def sorted = Sorting.stableSort(seq.toSeq)
+  class SortableSeq[T <% Ordered[T]](seq: Iterator[T]) {
+    def sorted = Sorting.stableSort(seq.toList)
   }
-  implicit def sortableSeq[T <% Ordered[T]](seq: Iterable[T]) = new SortableSeq(seq)
+  implicit def sortableSeq[T <% Ordered[T]](seq: Iterator[T]) = new SortableSeq(seq)
 
   def toJson() = {
     val out = toMapWithoutHistogram ++ (histogram match {
@@ -63,7 +63,8 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   }
 
   override def toString = {
-    toMap.map { case (k, v) => "%s=%d".format(k, v) }.sorted.mkString("(", ", ", ")")
+    val out = toMap
+    out.keys.sorted.map { key => "%s=%d".format(key, out(key)) }.mkString("(", ", ", ")")
   }
 
   private def toMapWithoutHistogram = {
@@ -79,7 +80,9 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
                                                   "hist_50" -> h.getHistogram(0.5),
                                                   "hist_75" -> h.getHistogram(0.75),
                                                   "hist_90" -> h.getHistogram(0.9),
-                                                  "hist_99" -> h.getHistogram(0.99))
+                                                  "hist_99" -> h.getHistogram(0.99),
+                                                  "hist_999" -> h.getHistogram(0.999),
+                                                  "hist_9999" -> h.getHistogram(0.9999))
     })
   }
 }
