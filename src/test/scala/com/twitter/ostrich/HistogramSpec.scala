@@ -58,11 +58,11 @@ object HistogramSpec extends Specification {
         }
       }
 
-      histogram.getHistogram(0) must shareABucketWith(0)
-      histogram.getHistogram(50) must shareABucketWith(500)
-      histogram.getHistogram(90) must shareABucketWith(900)
-      histogram.getHistogram(99) must shareABucketWith(999)
-      histogram.getHistogram(100) must shareABucketWith(1000)
+      histogram.getHistogram(0.0) must shareABucketWith(0)
+      histogram.getHistogram(0.5) must shareABucketWith(500)
+      histogram.getHistogram(0.9) must shareABucketWith(900)
+      histogram.getHistogram(0.99) must shareABucketWith(999)
+      histogram.getHistogram(1.0) must shareABucketWith(1000)
     }
 
     "merge" in {

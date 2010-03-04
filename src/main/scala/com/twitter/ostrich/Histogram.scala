@@ -52,10 +52,10 @@ class Histogram {
     rv
   }
 
-  def getHistogram(percentage: Int): Int = {
+  def getHistogram(percentage: Double): Int = {
     var sum = 0
     var index = 0
-    while (sum * 100 < percentage * total) {
+    while (sum < percentage * total) {
       sum += buckets(index)
       index += 1
     }

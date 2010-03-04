@@ -75,11 +75,11 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   def toMap: Map[String, Long] = {
     toMapWithoutHistogram ++ (histogram match {
       case None => immutable.Map.empty[String, Long]
-      case Some(h) => immutable.Map[String, Long]("hist_25" -> h.getHistogram(25),
-                                                  "hist_50" -> h.getHistogram(50),
-                                                  "hist_75" -> h.getHistogram(75),
-                                                  "hist_90" -> h.getHistogram(90),
-                                                  "hist_99" -> h.getHistogram(99))
+      case Some(h) => immutable.Map[String, Long]("hist_25" -> h.getHistogram(0.25),
+                                                  "hist_50" -> h.getHistogram(0.5),
+                                                  "hist_75" -> h.getHistogram(0.75),
+                                                  "hist_90" -> h.getHistogram(0.9),
+                                                  "hist_99" -> h.getHistogram(0.99))
     })
   }
 }
