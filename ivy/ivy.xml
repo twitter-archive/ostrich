@@ -26,7 +26,7 @@
     <dependency org="org.scala-tools" name="vscaladoc" rev="1.1-md-3" conf="bootstrap->*" />
     <dependency org="com.twitter" name="json" rev="1.1" />
 
-    <dependency org="net.lag" name="configgy" rev="1.4" />
+    <dependency org="net.lag" name="configgy" rev="1.5.2" />
     <dependency org="commons-logging" name="commons-logging" rev="1.1" />
     <dependency org="commons-lang" name="commons-lang" rev="2.2" />
     <dependency org="org.hamcrest" name="hamcrest-all" rev="1.1" conf="test->*" /> <!--auto-->
