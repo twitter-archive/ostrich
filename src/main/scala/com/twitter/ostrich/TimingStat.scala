@@ -48,10 +48,11 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   implicit def sortableSeq[T <% Ordered[T]](seq: Iterator[T]) = new SortableSeq(seq)
 
   def toJson() = {
-    val out = toMapWithoutHistogram ++ (histogram match {
+    val histMap: Map[String, Any] = histogram match {
       case None => immutable.Map.empty[String, Any]
       case Some(h) => immutable.Map("histogram" -> h.get(false))
-    })
+    }
+    val out: Map[String, Any] = immutable.Map.empty ++ toMap ++ histMap
     Json.build(out).toString
   }
 
