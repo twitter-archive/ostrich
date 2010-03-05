@@ -48,7 +48,11 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
   implicit def sortableSeq[T <% Ordered[T]](seq: Iterator[T]) = new SortableSeq(seq)
 
   def toJson() = {
-    Json.build(toMap).toString
+    val out: Map[String, Any] = toMap ++ (histogram match {
+      case None => immutable.Map.empty[String, Any]
+      case Some(h) => immutable.Map[String, Any]("histogram" -> h.get(false))
+    })
+    Json.build(out).toString
   }
 
   override def equals(other: Any) = other match {
@@ -69,7 +73,7 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
                                 "standard_deviation" -> standardDeviation)
   }
 
-  def toMap: Map[String, Long] = {
+  def toMap: immutable.Map[String, Long] = {
     toMapWithoutHistogram ++ (histogram match {
       case None => immutable.Map.empty[String, Long]
       case Some(h) => immutable.Map[String, Long]("hist_25" -> h.getHistogram(0.25),

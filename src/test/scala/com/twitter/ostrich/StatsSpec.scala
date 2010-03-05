@@ -145,6 +145,12 @@ object StatsSpec extends Specification {
           "hist_999=0, hist_9999=0, " +
           "maximum=0, minimum=0, standard_deviation=0, sum=0, sum_squares=0)"
       }
+
+      "json contains histogram buckets" in {
+        Stats.addTiming("alpha", new TimingStat(1, 0, 0, 0, 0))
+        val json = Stats.getTimingStats(false)("alpha").toJson
+        json mustMatch("\"histogram\":\\[")
+      }
     }
 
     "gauges" in {
