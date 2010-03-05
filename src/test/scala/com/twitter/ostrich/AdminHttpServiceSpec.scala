@@ -125,6 +125,25 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
         timing2("count") mustEqual 0
       }
 
+      "in json, with histograms" in {
+        Stats.clearAll()
+        Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
+        Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
+        Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
+        Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
+
+        val stats = get("/stats.json")
+        val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val timings = json("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
+
+        timings must haveKey("hist_25")
+        timings must haveKey("hist_50")
+        timings must haveKey("hist_75")
+        timings must haveKey("hist_99")
+        timings must haveKey("hist_999")
+        timings must haveKey("hist_9999")
+      }
+
       "in json, with callback" in {
         val stats = get("/stats.json?callback=true")
         stats.startsWith("ostrichCallback(") mustBe true
