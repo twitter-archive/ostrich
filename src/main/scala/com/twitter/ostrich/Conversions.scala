@@ -22,23 +22,23 @@ import scala.util.Sorting
 
 object Conversions {
   class RichAny(obj: Any) {
-    def flatten: String = {
+    private def build(obj: Any): List[String] = {
       obj match {
-        case s: Seq[_] =>
-          s.mkString(", ")
         case m: Map[_, _] =>
-          Sorting.stableSort(m.keys.toList, { (a: Any, b: Any) => a.toString < b.toString }).map { k =>
-            m(k) match {
-              case m: Map[_, _] =>
-                "%s:\n".format(k) + new RichAny(m).flatten.split("\n").map { "  " + _ }.mkString("\n")
-              case x =>
-                "%s: %s".format(k, new RichAny(x).flatten)
+          Sorting.stableSort(m.keys.toList, { (a: Any, b: Any) => a.toString < b.toString }).toList.flatMap { k =>
+            build(m(k)) match {
+              case line :: Nil if (!line.contains(": ")) => List(k.toString + ": " + line)
+              case list => (k.toString + ":") :: list.map { "  " + _ }
             }
-          }.mkString("\n")
+          }
+        case s: Seq[_] =>
+          s.flatMap { build(_) }.toList
         case x =>
-          x.toString
+          List(x.toString)
       }
     }
+
+    def flatten: String = build(obj).mkString("\n") + "\n"
   }
   implicit def richAny(obj: Any) = new RichAny(obj)
 }
