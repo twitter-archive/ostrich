@@ -141,9 +141,9 @@ object StatsSpec extends Specification {
       "report text in sorted order" in {
         Stats.addTiming("alpha", new TimingStat(1, 0, 0, 0, 0))
         Stats.getTimingStats(false)("alpha").toString mustEqual
-          "(average=0, count=1, hist_25=0, hist_50=0, hist_75=0, hist_90=0, hist_99=0, " +
-          "hist_999=0, hist_9999=0, " +
-          "maximum=0, minimum=0, standard_deviation=0, sum=0, sum_squares=0)"
+          "(average=0, count=1, maximum=0, minimum=0, " +
+          "p25=0, p50=0, p75=0, p90=0, p99=0, p999=0, p9999=0, " +
+          "standard_deviation=0, sum=0, sum_squares=0)"
       }
 
       "json contains histogram buckets" in {

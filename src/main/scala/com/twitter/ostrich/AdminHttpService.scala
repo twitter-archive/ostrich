@@ -105,7 +105,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHa
       case e: UnknownCommandError => render("no such command", exchange, 404)
       case unknownException =>
         render("error processing command: " + unknownException, exchange, 500)
-        throw unknownException
+        unknownException.printStackTrace()
     }
   }
 }
