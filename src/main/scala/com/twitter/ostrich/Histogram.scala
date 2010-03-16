@@ -6,6 +6,7 @@ object Histogram {
     Array(1, 2, 3, 4, 5, 7, 9, 11, 14, 18, 24, 31, 40, 52, 67, 87, 113, 147, 191, 248,
           322, 418, 543, 706, 918, 1193, 1551, 2016, 2620, 3406, 4428, 5757, 7483,
           9728, 12647, 16441, 21373, 27784, 36119)
+  val bucketOffsetSize = BUCKET_OFFSETS.size
 
   private def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
     if (low > high) {
@@ -59,10 +60,12 @@ class Histogram {
       sum += buckets(index)
       index += 1
     }
-    if (index == 0) {
-      0
-    } else {
-      Histogram.BUCKET_OFFSETS(index - 1) - 1
+    index match {
+      case 0 => 0
+      case i if i < Histogram.bucketOffsetSize - 1 => 
+	Histogram.BUCKET_OFFSETS(i - 1) - 1
+      case _ => 
+	Histogram.BUCKET_OFFSETS(Histogram.bucketOffsetSize - 1) - 1
     }
   }
 

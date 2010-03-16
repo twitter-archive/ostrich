@@ -20,6 +20,7 @@ import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI, URL}
 import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
+import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 
@@ -61,6 +62,8 @@ class ReportRequestHandler extends CustomHttpHandler {
 
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHandler {
+  private val log = Logger.get
+
   def handle(exchange: HttpExchange) {
     try {
       _handle(exchange)
@@ -103,7 +106,10 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHa
       render(response, exchange)
     } catch {
       case e: UnknownCommandError => render("no such command", exchange, 404)
-      case unknownException => render("error processing command: " + unknownException, exchange, 500)
+      case unknownException => {
+	log.error(unknownException, "error processing command")
+	render("error processing command: " + unknownException, exchange, 500)
+      }
     }
   }
 }
