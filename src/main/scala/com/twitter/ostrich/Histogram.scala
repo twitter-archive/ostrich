@@ -49,7 +49,9 @@ class Histogram {
 
   def get(reset: Boolean) = {
     val rv = buckets.toList
-    clear()
+    if (reset) {
+      clear()
+    }
     rv
   }
 
@@ -73,5 +75,13 @@ class Histogram {
     for (i <- 0 until numBuckets) {
       buckets(i) += other.buckets(i)
     }
+    total += other.total
   }
+
+  override def clone() : Histogram = {
+    val histogram = new Histogram
+    histogram.merge(this)
+    histogram
+  }
+
 }

@@ -70,7 +70,9 @@ object HistogramSpec extends Specification {
         histogram.add(i * 10)
         histogram2.add(i * 10)
       }
+      val origTotal = histogram.total
       histogram.merge(histogram2)
+      histogram.total mustEqual origTotal + histogram2.total
       val stats = histogram.get(true)
       val stats2 = histogram2.get(true)
       for (i <- 0 until 50) {
@@ -78,5 +80,16 @@ object HistogramSpec extends Specification {
         stats(bucket) mustEqual 2 * stats2(bucket)
       }
     }
+
+    "clone" in {
+      for (i <- 0 until 50) {
+        histogram.add(i * 10)
+      }
+      val histClone = histogram.clone()
+      histogram.buckets.toList must containAll(histClone.buckets.toList)
+      histClone.buckets.toList must containAll(histogram.buckets.toList)
+      histogram.total mustEqual histClone.total
+    }
+
   }
 }
