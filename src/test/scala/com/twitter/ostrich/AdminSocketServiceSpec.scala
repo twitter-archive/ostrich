@@ -72,6 +72,15 @@ object AdminSocketServiceSpec extends Specification with Eventually with Mockito
       service.shutdown() was called.atLeastOnce
     }
 
+    "dump thread stacks" in {
+      val socket = new Socket("localhost", PORT)
+      socket.getOutputStream().write("threads\n".getBytes)
+      val lines = socket.getInputStream().readString(4096).split("\n")
+      lines must contain("threads:")
+      lines must contain("    daemon: false")
+      lines must contain("    stack:")
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()

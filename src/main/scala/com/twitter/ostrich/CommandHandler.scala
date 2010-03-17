@@ -20,6 +20,7 @@ import java.io._
 import java.net._
 import scala.collection.Map
 import scala.collection.immutable
+import scala.collection.jcl
 import com.twitter.json.Json
 import net.lag.configgy.{Configgy, RuntimeEnvironment}
 import net.lag.logging.Logger
@@ -41,7 +42,7 @@ class CommandHandler(runtime: RuntimeEnvironment) {
     val rv = handleRawCommand(command, parameters)
     format match {
       case Format.PlainText =>
-        rv.flatten + "\n"
+        rv.flatten
       case Format.Json =>
         // force it into a map because some json clients expect the top-level object to be a map.
         Json.build(rv match {
@@ -76,8 +77,21 @@ class CommandHandler(runtime: RuntimeEnvironment) {
       case "server_info" =>
         immutable.Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
                       "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision)
+      case "threads" =>
+        getThreadStacks()
       case x =>
         throw new UnknownCommandError(x)
     }
+  }
+
+  private def getThreadStacks(): Map[String, Map[String, Map[String, Any]]] = {
+    val stacks = jcl.Map(Thread.getAllStackTraces()).map { case (thread, stack) =>
+      (thread.getId().toString, immutable.Map("thread" -> thread.getName(),
+                                              "daemon" -> thread.isDaemon(),
+                                              "state" -> thread.getState(),
+                                              "priority" -> thread.getPriority(),
+                                              "stack" -> stack.map(_.toString)))
+    }.toSeq
+    immutable.Map("threads" -> immutable.Map(stacks: _*))
   }
 }

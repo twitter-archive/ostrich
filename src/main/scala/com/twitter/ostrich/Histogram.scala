@@ -55,19 +55,19 @@ class Histogram {
     rv
   }
 
-  def getHistogram(percentage: Double): Int = {
+  def getPercentile(percentile: Double): Int = {
     var sum = 0
     var index = 0
-    while (sum < percentage * total) {
+    while (sum < percentile * total) {
       sum += buckets(index)
       index += 1
     }
-    index match {
-      case 0 => 0
-      case i if i < Histogram.bucketOffsetSize - 1 => 
-	Histogram.BUCKET_OFFSETS(i - 1) - 1
-      case _ => 
-	Histogram.BUCKET_OFFSETS(Histogram.bucketOffsetSize - 1) - 1
+    if (index == 0) {
+      0
+    } else if (index - 1 >= Histogram.BUCKET_OFFSETS.size) {
+      Math.MAX_INT
+    } else {
+      Histogram.BUCKET_OFFSETS(index - 1) - 1
     }
   }
 

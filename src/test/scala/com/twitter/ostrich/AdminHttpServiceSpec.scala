@@ -149,23 +149,23 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
         timings must haveKey("standard_deviation")
         timings("standard_deviation") mustEqual 2
 
-        timings must haveKey("hist_25")
-        timings("hist_25") mustEqual 2
+        timings must haveKey("p25")
+        timings("p25") mustEqual 2
 
-        timings must haveKey("hist_50")
-        timings("hist_50") mustEqual 3
+        timings must haveKey("p50")
+        timings("p50") mustEqual 3
 
-        timings must haveKey("hist_75")
-        timings("hist_75")  mustEqual 6
+        timings must haveKey("p75")
+        timings("p75")  mustEqual 6
 
-        timings must haveKey("hist_99")
-        timings("hist_99") mustEqual 6
+        timings must haveKey("p99")
+        timings("p99") mustEqual 6
 
-        timings must haveKey("hist_999")
-        timings("hist_999") mustEqual 6
+        timings must haveKey("p999")
+        timings("p999") mustEqual 6
 
-        timings must haveKey("hist_9999")
-        timings("hist_9999") mustEqual 6
+        timings must haveKey("p9999")
+        timings("p9999") mustEqual 6
       }
 
       "in json, with histograms and reset" in {
@@ -192,23 +192,23 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
         timings must haveKey("standard_deviation")
         timings("standard_deviation") mustEqual 2
 
-        timings must haveKey("hist_25")
-        timings("hist_25") mustEqual 2
+        timings must haveKey("p25")
+        timings("p25") mustEqual 2
 
-        timings must haveKey("hist_50")
-        timings("hist_50") mustEqual 3
+        timings must haveKey("p50")
+        timings("p50") mustEqual 3
 
-        timings must haveKey("hist_75")
-        timings("hist_75")  mustEqual 6
+        timings must haveKey("p75")
+        timings("p75")  mustEqual 6
 
-        timings must haveKey("hist_99")
-        timings("hist_99") mustEqual 6
+        timings must haveKey("p99")
+        timings("p99") mustEqual 6
 
-        timings must haveKey("hist_999")
-        timings("hist_999") mustEqual 6
+        timings must haveKey("p999")
+        timings("p999") mustEqual 6
 
-        timings must haveKey("hist_9999")
-        timings("hist_9999") mustEqual 6
+        timings must haveKey("p9999")
+        timings("p9999") mustEqual 6
       }
 
       "in json, with callback" in {

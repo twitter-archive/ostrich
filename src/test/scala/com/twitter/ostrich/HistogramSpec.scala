@@ -58,11 +58,11 @@ object HistogramSpec extends Specification {
         }
       }
 
-      histogram.getHistogram(0.0) must shareABucketWith(0)
-      histogram.getHistogram(0.5) must shareABucketWith(500)
-      histogram.getHistogram(0.9) must shareABucketWith(900)
-      histogram.getHistogram(0.99) must shareABucketWith(999)
-      histogram.getHistogram(1.0) must shareABucketWith(1000)
+      histogram.getPercentile(0.0) must shareABucketWith(0)
+      histogram.getPercentile(0.5) must shareABucketWith(500)
+      histogram.getPercentile(0.9) must shareABucketWith(900)
+      histogram.getPercentile(0.99) must shareABucketWith(999)
+      histogram.getPercentile(1.0) must shareABucketWith(1000)
     }
 
     "merge" in {
@@ -89,6 +89,11 @@ object HistogramSpec extends Specification {
       histogram.buckets.toList must containAll(histClone.buckets.toList)
       histClone.buckets.toList must containAll(histogram.buckets.toList)
       histogram.total mustEqual histClone.total
+    }
+
+    "handle a very large timing" in {
+      histogram.add(100000)
+      histogram.getPercentile(1.0) mustEqual Math.MAX_INT
     }
 
   }
