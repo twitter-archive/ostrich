@@ -6,6 +6,7 @@ object Histogram {
     Array(1, 2, 3, 4, 5, 7, 9, 11, 14, 18, 24, 31, 40, 52, 67, 87, 113, 147, 191, 248,
           322, 418, 543, 706, 918, 1193, 1551, 2016, 2620, 3406, 4428, 5757, 7483,
           9728, 12647, 16441, 21373, 27784, 36119)
+  val bucketOffsetSize = BUCKET_OFFSETS.size
 
   private def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
     if (low > high) {
@@ -48,7 +49,9 @@ class Histogram {
 
   def get(reset: Boolean) = {
     val rv = buckets.toList
-    clear()
+    if (reset) {
+      clear()
+    }
     rv
   }
 
@@ -72,5 +75,13 @@ class Histogram {
     for (i <- 0 until numBuckets) {
       buckets(i) += other.buckets(i)
     }
+    total += other.total
   }
+
+  override def clone() : Histogram = {
+    val histogram = new Histogram
+    histogram.merge(this)
+    histogram
+  }
+
 }

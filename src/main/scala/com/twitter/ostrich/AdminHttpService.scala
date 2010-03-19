@@ -20,6 +20,7 @@ import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI, URL}
 import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
+import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 
 

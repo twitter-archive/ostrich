@@ -151,5 +151,6 @@ them. Major contributers include, in alphabetical order:
 - Pankaj Gupta
 - Robey Pointer
 - Steve Jenson
+- John Corwin
 
 If you make a significant change, please add your name to the list!

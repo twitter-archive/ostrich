@@ -82,7 +82,7 @@ class Timing {
    * @param reset whether to erase the current history afterwards
    */
   def get(reset: Boolean): TimingStat = synchronized {
-    val rv = new TimingStat(count, maximum, minimum, sum, sumSquares, Some(histogram))
+    val rv = new TimingStat(count, maximum, minimum, sum, sumSquares, Some(histogram.clone()))
     if (reset) clear()
     rv
   }
