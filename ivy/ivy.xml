@@ -1,7 +1,7 @@
 <ivy-module version="1.0" xmlns:e="http://ant.apache.org/ivy/extra">
   <info organisation="com.twitter"
     module="ostrich"
-    revision="1.1.10"
+    revision="1.1.11"
     e:buildpackage="com.twitter.ostrich"
     e:testclass="com.twitter.ostrich.TestRunner"
     e:jarclassname="com.twitter.ostrich.Main"
