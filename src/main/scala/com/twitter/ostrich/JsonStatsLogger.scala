@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2010 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -16,8 +16,9 @@
 
 package com.twitter.ostrich
 
-import scala.collection.mutable
-import com.twitter.xrayspecs.Time
+import scala.collection.{immutable, mutable}
+import com.twitter.json.Json
+import com.twitter.xrayspecs.{Duration, Time}
 import com.twitter.xrayspecs.TimeConversions._
 import net.lag.logging.Logger
 
@@ -30,46 +31,25 @@ class JsonStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJv
   def this(logger: Logger, frequencyInSeconds: Int) = this(logger, frequencyInSeconds, true)
 
   val collection = Stats.fork()
-  val reporter = new W3CReporter(logger)
-  var nextRun = Time.now + frequencyInSeconds.seconds
 
-  override def stats(reset: Boolean): Map[String, Map[String, Any]] = {
-    val out = super.stats(reset) ++ immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> getGaugeStats(reset))
-    immutable.Map(out.toSeq: _*)
+  def nextRun: Duration = {
+    // truncate to nearest round multiple of the desired repeat
+    val t = Time.now + frequencyInSeconds.seconds
+    ((t.inSeconds / frequencyInSeconds) * frequencyInSeconds).seconds - Time.now
   }
 
-
   def runLoop() {
-    val delay = (nextRun - Time.now).inMilliseconds
-
+    val delay = nextRun.inMilliseconds
     if (delay > 0) {
       Thread.sleep(delay)
     }
 
-    nextRun += frequencyInSeconds.seconds
     logStats()
   }
 
   def logStats() {
-    val report = new mutable.HashMap[String, Any]
-
-    if (includeJvmStats) {
-      Stats.getJvmStats() foreach { case (key, value) => report("jvm_" + key) = value }
-    }
-
-    collection.getCounterStats(true) foreach { case (key, value) => report(key) = value }
-    Stats.getGaugeStats(true) foreach { case (key, value) => report(key) = value }
-
-    collection.getTimingStats(true) foreach { case (key, timing) =>
-      report(key + "_count") = timing.count
-      report(key + "_min") = timing.minimum
-      report(key + "_max") = timing.maximum
-      report(key + "_sum") = timing.sum
-      report(key + "_sumsq") = timing.sumSquares
-      report(key + "_avg") = timing.average
-      report(key + "_std") = timing.standardDeviation
-    }
-
-    reporter.report(report)
+    val statMap = collection.stats(true) ++
+      immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> Stats.getGaugeStats(true))
+    logger.info(Json.build(immutable.Map(statMap.toSeq: _*)).toString)
   }
 }
