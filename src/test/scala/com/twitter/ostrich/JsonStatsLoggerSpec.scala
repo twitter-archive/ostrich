@@ -42,7 +42,7 @@ object JsonStatsLoggerSpec extends Specification {
     doBefore {
       Stats.clearAll()
       handler.clear()
-      statsLogger = new JsonStatsLogger(logger, 1, false)
+      statsLogger = new JsonStatsLogger(logger, 1)
     }
 
     "log basic stats" in {
@@ -63,7 +63,7 @@ object JsonStatsLoggerSpec extends Specification {
       line mustMatch "\"zzz\":"
       line mustMatch "\"average\":15"
       line mustMatch "\"count\":2"
-      line mustMatch "\"sum_squares\":500"
+      line mustMatch "\"standard_deviation\":7"
     }
   }
 }

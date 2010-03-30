@@ -27,6 +27,12 @@ object Histogram {
 
   def binarySearch(key: Int): Int =
     binarySearch(BUCKET_OFFSETS, key, 0, BUCKET_OFFSETS.length - 1)
+
+  def apply(values: Int*) = {
+    val h = new Histogram()
+    values.foreach { h.add(_) }
+    h
+  }
 }
 
 class Histogram {

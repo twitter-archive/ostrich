@@ -28,10 +28,10 @@ class Timing {
 
   private var maximum = Math.MIN_INT
   private var minimum = Math.MAX_INT
-  private var sum: Long = 0
-  private var sumSquares: Long = 0
   private var count: Int = 0
   private var histogram = new Histogram()
+  private var mean: Double = 0.0
+  private var partialVariance: Double = 0.0
 
   /**
    * Resets the state of this Timing. Clears the durations and counts collected so far.
@@ -39,8 +39,6 @@ class Timing {
   def clear() = synchronized {
     maximum = Math.MIN_INT
     minimum = Math.MAX_INT
-    sum = 0
-    sumSquares = 0
     count = 0
     histogram.clear()
   }
@@ -52,10 +50,16 @@ class Timing {
     if (n > -1) {
       maximum = n max maximum
       minimum = n min minimum
-      sum += n
-      sumSquares += (n.toLong * n)
       count += 1
       histogram.add(n)
+      if (count == 1) {
+        mean = n
+        partialVariance = 0.0
+      } else {
+        val newMean = mean + (n - mean) / count
+        partialVariance += (n - mean) * (n - newMean)
+        mean = newMean
+      }
     } else {
       log.warning("Tried to add a negative timing duration. Was the clock adjusted?")
     }
@@ -67,11 +71,16 @@ class Timing {
    */
   def add(timingStat: TimingStat): Long = synchronized {
     if (timingStat.count > 0) {
+      // these equations end up using the sum again, and may be lossy. i couldn't find or think of
+      // a better way.
+      val newMean = (mean * count + timingStat.mean * timingStat.count) / (count + timingStat.count)
+      partialVariance = partialVariance + timingStat.partialVariance +
+        (mean - newMean) * mean * count +
+        (timingStat.mean - newMean) * timingStat.mean * timingStat.count
+      mean = newMean
+      count += timingStat.count
       maximum = timingStat.maximum max maximum
       minimum = timingStat.minimum min minimum
-      sum += timingStat.sum
-      sumSquares += timingStat.sumSquares
-      count += timingStat.count
       timingStat.histogram.map { h => histogram.merge(h) }
     }
     count
@@ -82,7 +91,7 @@ class Timing {
    * @param reset whether to erase the current history afterwards
    */
   def get(reset: Boolean): TimingStat = synchronized {
-    val rv = new TimingStat(count, maximum, minimum, sum, sumSquares, Some(histogram.clone()))
+    val rv = new TimingStat(count, maximum, minimum, Some(histogram.clone()), mean, partialVariance)
     if (reset) clear()
     rv
   }

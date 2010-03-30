@@ -26,10 +26,8 @@ import net.lag.logging.Logger
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.
  */
-class JsonStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvmStats: Boolean)
+class JsonStatsLogger(val logger: Logger, val frequencyInSeconds: Int)
       extends BackgroundProcess("JsonStatsLogger") {
-  def this(logger: Logger, frequencyInSeconds: Int) = this(logger, frequencyInSeconds, true)
-
   val collection = Stats.fork()
 
   def nextRun: Duration = {

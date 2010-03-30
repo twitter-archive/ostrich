@@ -25,21 +25,23 @@ import com.twitter.json.{Json, JsonSerializable}
 /**
  * A pre-calculated timing. If you have timing stats from an external source but
  * still want to report them via the Stats interface, use this.
+ *
+ * Partial variance is `(count - 1)(s^2)`, or `sum(x^2) - sum(x) * mean`.
  */
-class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSquares: Long,
-                 _histogram: Option[Histogram]) extends JsonSerializable {
+class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[Histogram],
+                 _mean: Double, _partialVariance: Double) extends JsonSerializable {
   def count = _count
   def minimum = if (_count > 0) _minimum else 0
   def maximum = if (_count > 0) _maximum else 0
-  def average = if (_count > 0) (_sum / _count).toInt else 0
-  def variance = if (_count > 1) ((_sumSquares - _sum * average) / (_count - 1)).toInt else 0
-  def standardDeviation = Math.sqrt(variance)
-  def sum = _sum
-  def sumSquares = _sumSquares
+  def average = if (_count > 0) _mean.toInt else 0
+  def mean = if (_count > 0) _mean else 0.0
+  def partialVariance = if (_count > 1) _partialVariance else 0.0
+  def variance = if (_count > 1) (_partialVariance / (_count - 1)) else 0.0
+  def standardDeviation = Math.round(Math.sqrt(variance))
   def histogram = _histogram
 
-  def this(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSquares: Long) =
-    this(_count, _maximum, _minimum, _sum, _sumSquares, None)
+  def this(_count: Int, _maximum: Int, _minimum: Int) =
+    this(_count, _maximum, _minimum, None, 0.0, 0.0)
 
   // FIXME: this ought to be generally available
   class SortableSeq[T <% Ordered[T]](seq: Iterator[T]) {
@@ -57,8 +59,8 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
 
   override def equals(other: Any) = other match {
     case t: TimingStat =>
-      t.count == count && t.maximum == maximum && t.minimum == minimum && t.sum == sum &&
-        t.sumSquares == sumSquares
+      t.count == count && t.maximum == maximum && t.minimum == minimum && t.average == average &&
+        t.variance == variance
     case _ => false
   }
 
@@ -69,8 +71,7 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _sum: Long, _sumSqua
 
   private def toMapWithoutHistogram = {
     immutable.Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
-                                "sum" -> sum, "sum_squares" -> sumSquares, "average" -> average,
-                                "standard_deviation" -> standardDeviation)
+                                "average" -> average, "standard_deviation" -> standardDeviation.toLong)
   }
 
   def toMap: immutable.Map[String, Long] = {

@@ -57,8 +57,6 @@ class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvm
       report(key + "_count") = timing.count
       report(key + "_min") = timing.minimum
       report(key + "_max") = timing.maximum
-      report(key + "_sum") = timing.sum
-      report(key + "_sumsq") = timing.sumSquares
       report(key + "_avg") = timing.average
       report(key + "_std") = timing.standardDeviation
     }
