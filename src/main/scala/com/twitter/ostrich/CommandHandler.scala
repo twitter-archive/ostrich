@@ -17,7 +17,9 @@
 package com.twitter.ostrich
 
 import java.io._
+import java.lang.management.ManagementFactory
 import java.net._
+import java.util.Date
 import scala.collection.Map
 import scala.collection.immutable
 import scala.collection.jcl
@@ -75,8 +77,11 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         val reset = parameters.contains("reset")
         Stats.stats(reset)
       case "server_info" =>
+        val mxRuntime = ManagementFactory.getRuntimeMXBean()
         immutable.Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
-                      "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision)
+                      "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision,
+                      "start_time" -> (new Date(mxRuntime.getStartTime())).toString,
+                      "uptime" -> mxRuntime.getUptime())
       case "threads" =>
         getThreadStacks()
       case x =>

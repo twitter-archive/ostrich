@@ -89,6 +89,16 @@ object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
       get("/bullshit.json") must throwA[java.io.FileNotFoundException]
     }
 
+    "server info" in {
+      val serverInfo = get("/server_info.json")
+      serverInfo mustMatch("\"build\":")
+      serverInfo mustMatch("\"build_revision\":")
+      serverInfo mustMatch("\"name\":")
+      serverInfo mustMatch("\"version\":")
+      serverInfo mustMatch("\"start_time\":")
+      serverInfo mustMatch("\"uptime\":")
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()
