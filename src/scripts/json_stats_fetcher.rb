@@ -4,8 +4,7 @@ require 'rubygems'
 require 'getoptlong'
 require 'socket'
 require 'json'
-require 'timeout'
-
+require 'open-uri'
 
 def report_metric(name, value, units)
   if $report_to_ganglia
@@ -81,32 +80,34 @@ end
 File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 
 begin
-  Timeout::timeout(60) do
+  data = if use_web
+    open("http://#{hostname}:#{port}/stats#{'?reset=1' if $report_to_ganglia}").read
+  else
     socket = TCPSocket.new(hostname, port)
-    if use_web
-      socket.write("GET /stats#{'?reset=1' if $report_to_ganglia} HTTP/1.0\r\n\r\n")
-      while socket.gets != "\r\n"; end
-    else
-      socket.puts("stats/json#{' reset' if $report_to_ganglia}")
-    end
-    stats = JSON.parse(socket.gets)
+    socket.puts("stats/json#{' reset' if $report_to_ganglia}")
+    socket.gets
+  end
 
-    report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
-    report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
-    report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
-    report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
+  stats = JSON.parse(data)
 
-    stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      report_metric(name, (value.to_i rescue 0), "items")
-    end
+  report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
+  report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
+  report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
+  report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
 
-    stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      report_metric(name, value, "value")
-    end
+  stats["counters"].each do |name, value|
+    report_metric(name, (value.to_i rescue 0), "items")
+  end
 
-    stats["timings"].reject { |name, val| name =~ $pattern }.each do |name, timing|
-      report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
-      report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
+  stats["gauges"].each do |name, value|
+    report_metric(name, value, "value")
+  end
+
+  stats["timings"].reject { |name, val| name =~ $pattern }.each do |name, timing|
+    report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
+    report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
+    [:p25, :p50, :p75, :p90, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
+      report_metric("#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec") if timing[bucket]
     end
   end
 ensure
