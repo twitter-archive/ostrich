@@ -26,26 +26,11 @@ import net.lag.logging.Logger
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.
  */
-class JsonStatsLogger(val logger: Logger, val frequencyInSeconds: Int)
-      extends BackgroundProcess("JsonStatsLogger") {
+class JsonStatsLogger(val logger: Logger, val period: Duration)
+      extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
   val collection = Stats.fork()
 
-  def nextRun: Duration = {
-    // truncate to nearest round multiple of the desired repeat
-    val t = Time.now + frequencyInSeconds.seconds
-    ((t.inSeconds / frequencyInSeconds) * frequencyInSeconds).seconds - Time.now
-  }
-
-  def runLoop() {
-    val delay = nextRun.inMilliseconds
-    if (delay > 0) {
-      Thread.sleep(delay)
-    }
-
-    logStats()
-  }
-
-  def logStats() {
+  def periodic() {
     val statMap = collection.stats(true) ++
       immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> Stats.getGaugeStats(true))
     logger.info(Json.build(immutable.Map(statMap.toSeq: _*)).toString)

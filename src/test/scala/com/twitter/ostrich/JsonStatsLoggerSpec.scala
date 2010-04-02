@@ -42,13 +42,13 @@ object JsonStatsLoggerSpec extends Specification {
     doBefore {
       Stats.clearAll()
       handler.clear()
-      statsLogger = new JsonStatsLogger(logger, 1)
+      statsLogger = new JsonStatsLogger(logger, 1.second)
     }
 
     "log basic stats" in {
       Stats.incr("cats")
       Stats.incr("dogs", 3)
-      statsLogger.logStats()
+      statsLogger.periodic()
       val line = getLines()(0)
       line mustMatch "\"cats\":1"
       line mustMatch "\"dogs\":3"
@@ -58,7 +58,7 @@ object JsonStatsLoggerSpec extends Specification {
       Time.freeze
       Stats.time("zzz") { Time.now += 10.milliseconds }
       Stats.time("zzz") { Time.now += 20.milliseconds }
-      statsLogger.logStats()
+      statsLogger.periodic()
       val line = getLines()(0)
       line mustMatch "\"zzz\":"
       line mustMatch "\"average\":15"

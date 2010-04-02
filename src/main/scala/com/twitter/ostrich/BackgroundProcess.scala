@@ -17,6 +17,8 @@
 package com.twitter.ostrich
 
 import java.util.concurrent.CountDownLatch
+import com.twitter.xrayspecs.{Duration, Time}
+import com.twitter.xrayspecs.TimeConversions._
 import net.lag.logging.Logger
 
 
@@ -95,4 +97,38 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
   def quiesce() {
     shutdown()
   }
+}
+
+/**
+ * Background process that performs some task periodically, over a given duration. If the duration
+ * is a useful multiple of seconds, the first event will be staggered so that it takes place on an
+ * even multiple. (For example, a minutely event will first trigger at the top of a minute.)
+ *
+ * The `periodic()` method implements the periodic event.
+ */
+abstract class PeriodicBackgroundProcess(name: String, private val period: Duration)
+         extends BackgroundProcess(name) {
+  def nextRun: Duration = {
+    val t = Time.now + period
+    // truncate to nearest round multiple of the desired repeat in seconds.
+    if (period >= 1.second) {
+      ((t.inSeconds / period.inSeconds) * period.inSeconds).seconds - Time.now
+    } else {
+      t - Time.now
+    }
+  }
+
+  def runLoop() {
+    val delay = nextRun.inMilliseconds
+    if (delay > 0) {
+      Thread.sleep(delay)
+    }
+
+    periodic()
+  }
+
+  /**
+   * Implement the periodic event here.
+   */
+  def periodic()
 }
