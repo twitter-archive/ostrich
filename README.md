@@ -66,6 +66,10 @@ The commands are:
 
   dump server info (server name, version, build, and git revision)
 
+- threads
+
+  dump stack traces and stats about each currently running thread
+
 
 ## Admin API
 
