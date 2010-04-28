@@ -40,6 +40,10 @@ abstract class CustomHttpHandler extends HttpHandler {
     exchange.close()
   }
 
+  def loadResource(name: String) = {
+    Source.fromInputStream(getClass.getResourceAsStream(name)).mkString
+  }
+
   def handle(exchange: HttpExchange): Unit
 }
 
@@ -52,8 +56,7 @@ class MissingFileHandler extends CustomHttpHandler {
 
 
 class ReportRequestHandler extends CustomHttpHandler {
-  lazy val pageFilePath: java.net.URI = this.getClass.getResource("/report_request_handler.html").toURI
-  lazy val page: String = Source.fromFile(pageFilePath).mkString
+  lazy val page = loadResource("/report_request_handler.html")
 
   def handle(exchange: HttpExchange) {
     render(page, exchange)
@@ -125,6 +128,15 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   httpServer.setExecutor(null)
 
   def addContext(path: String, handler: HttpHandler) = httpServer.createContext(path, handler)
+
+  def addContext(path: String)(generator: () => String) = {
+    val handler = new CustomHttpHandler {
+      def handle(exchange: HttpExchange) {
+        render(generator(), exchange)
+      }
+    }
+    httpServer.createContext(path, handler)
+  }
 
   def handleRequest(socket: Socket) { }
 
