@@ -64,40 +64,46 @@ class ReportRequestHandler extends CustomHttpHandler {
 }
 
 
-class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHandler {
+abstract class CgiRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange) {
     try {
-      _handle(exchange)
+      val requestURI = exchange.getRequestURI
+      val path = requestURI.getPath.split('/').toList.filter { _.length > 0 }
+
+      val parameters: List[List[String]] = {
+        val params = requestURI.getQuery
+
+        if (params != null) {
+          params.split('&').toList
+        } else {
+          Nil
+        }
+      }.map { _.split("=", 2).toList }
+
+      handle(exchange, path, parameters)
     } catch {
       case e => render("exception while processing request: " + e, exchange, 500)
     }
   }
 
-  def _handle(exchange: HttpExchange) {
-    var response: String = null
-    val requestURI = exchange.getRequestURI
-    val command = requestURI.getPath.split('/').last.split('.').first
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]])
+}
 
-    val format: Format  = requestURI.getPath.split('.').last match {
+
+class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+    val command = path.last.split('.').first
+    val format: Format = path.last.split('.').last match {
       case "txt" => Format.PlainText
       case _ => Format.Json
     }
 
-    val parameters: List[String] = {
-      val params = requestURI.getQuery
-
-      if (params != null) {
-        params.split('&').toList
-      } else {
-        Nil
-      }
-    }.map { _.split('=').first }
-
     try {
-      response = {
-        val commandResponse = commandHandler(command, parameters, format)
+      val response = {
+        val parameterNames = parameters.map { p => p(0) }
+        val commandResponse = commandHandler(command, parameterNames, format)
 
-        if (parameters.contains("callback") && (format == Format.Json)) {
+        if (parameterNames.contains("callback") && (format == Format.Json)) {
           "ostrichCallback(%s)".format(commandResponse)
         } else {
           commandResponse
@@ -118,8 +124,10 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CustomHttpHa
 class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
   val port = config.getInt("admin_http_port")
   val backlog = config.getInt("admin_http_backlog", 20)
-  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.get), backlog)
+  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.getOrElse(0)), backlog)
   val commandHandler = new CommandHandler(runtime)
+
+  def address = httpServer.getAddress
 
   addContext("/", new CommandRequestHandler(commandHandler))
   addContext("/report/", new ReportRequestHandler())

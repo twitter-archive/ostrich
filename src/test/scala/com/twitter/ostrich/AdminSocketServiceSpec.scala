@@ -4,8 +4,8 @@ import java.io.{DataInputStream, InputStream}
 import java.net.{Socket, SocketException}
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Eventually
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
+import org.specs.util.Time
+import org.specs.util.TimeConversions._
 import net.lag.extensions._
 import net.lag.configgy.{Config, RuntimeEnvironment}
 import org.mockito.Matchers._
@@ -13,7 +13,7 @@ import org.specs.Specification
 import org.specs.mock.Mockito
 
 
-object AdminSocketServiceSpec extends Specification with Eventually with Mockito {
+object AdminSocketServiceSpec extends Specification with Mockito {
   val PORT = 9995
   val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
 

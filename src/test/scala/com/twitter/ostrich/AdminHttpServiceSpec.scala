@@ -27,7 +27,7 @@ import org.specs.Specification
 import org.specs.mock.Mockito
 
 
-object AdminHttpServiceSpec extends Specification with Eventually with Mockito {
+object AdminHttpServiceSpec extends Specification with Mockito {
   val PORT = 9996
   val config = Config.fromMap(Map("admin_http_port" -> PORT.toString))
 
