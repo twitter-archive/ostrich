@@ -64,10 +64,12 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
   val startLatch = new CountDownLatch(1)
 
   override def start() {
-    log.info("Starting %s", name)
-    running = true
-    super.start()
-    startLatch.await()
+    if (!running) {
+      log.info("Starting %s", name)
+      running = true
+      super.start()
+      startLatch.await()
+    }
   }
 
   override def run() {
