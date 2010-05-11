@@ -42,8 +42,15 @@ object ServiceTracker {
   }
 
   def startAdmin(config: ConfigMap, runtime: RuntimeEnvironment) {
-    new AdminHttpService(config, runtime).start()
-    new AdminSocketService(config, runtime).start()
+    val adminHttpService = new AdminHttpService(config, runtime)
+    val adminService = new AdminSocketService(config, runtime)
     config.getString("admin_jmx_package").map(StatsMBean(_))
+    if (config.getBool("admin_timeseries", true)) {
+      val collector = new TimeSeriesCollector()
+      collector.registerWith(adminHttpService)
+      collector.start()
+    }
+    adminHttpService.start()
+    adminService.start()
   }
 }

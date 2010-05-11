@@ -72,21 +72,26 @@ class TimeSeriesCollector {
   def get(name: String) = {
     val times = (for (i <- 0 until 60) yield (lastCollection + (i - 59).minutes).inSeconds).toList
     val data = times.zip(hourly(name).toList).map { case (a, b) => List(a, b) }
-    Json.build(immutable.Map(name -> data)).toString
+    Json.build(immutable.Map(name -> data)).toString + "\n"
   }
 
   def keys = hourly.keys
 
   def registerWith(service: AdminHttpService) {
+    service.addContext("/graph/", new PageResourceHandler("/graph.html"))
     service.addContext("/graph_data", new CgiRequestHandler {
       def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
         if (path.size == 1) {
-          render(Json.build(Map("keys" -> keys.toList)).toString, exchange)
+          render(Json.build(Map("keys" -> keys.toList)).toString + "\n", exchange)
         } else {
-          render(get(path.last), exchange)
+          render(get(path.last), exchange, 200, "application/json")
         }
       }
     })
+  }
+
+  def start() {
+    collector.start()
   }
 
   def shutdown() {

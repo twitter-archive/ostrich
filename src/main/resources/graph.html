@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+  <script type="text/javascript" src="http://danvk.org/dygraphs/dygraph-combined.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
+  <script type="text/javascript">
+    if (document.location.search.length > 0) {
+      google.load('visualization', '1');
+      google.setOnLoadCallback(drawChart);
+    } else {
+      $.getJSON("/graph_data", function(datadump) {
+        var keys = datadump["keys"].sort();
+        for (i in keys) {
+          $("#contents").append('<a href="graph.html?' + keys[i] + '">' + keys[i] + '</a><br/>');
+        }
+        $("#graph-container").css("display", "none");
+      });
+    }
+    
+    function roundTo(number, digits) {
+      return Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits);
+    }
+
+    function drawChart() {
+      $.ajaxSetup({"error": function(XMLHttpRequest, textStatus, errorThrown) {
+        var data = 'Error: ' + textStatus + ': ' + errorThrown;
+        data += "<br/>" + XMLHttpRequest.responseText.length + "?";
+        for (var i in XMLHttpRequest) { data += i + ", "; }
+        $('#foo').html(data);
+      }});
+      var key = document.location.search.substr(1);
+      $.getJSON("/graph_data/" + key, function(datadump) {
+        var rawData = datadump[key];
+        var data = new google.visualization.DataTable();
+        data.addColumn('datetime', 'Time');
+        data.addColumn('number', 'Data1');
+        data.addRows(rawData.map(function(row) { return [ new Date(row[0] * 1000), row[1] ]; }));
+
+        new Dygraph.GVizChart(document.getElementById('chart')).draw(data, {
+          includeZero: true,
+          fillGraph: true,
+          labelsKMG2: true,
+          xAxisLabelFormatter: function(date, granularity) { return date.strftime("%H:%M"); },
+          labelsDivStyles: { display: "none" },
+          highlightCallback: function(e, x, pts) {
+            var label = document.getElementById('chart_label');
+            $('#chart_label').html(roundTo(pts[0].yval, 3));
+            $('#chart_label').css({ display: "block", left: (Math.floor(pts[0].canvasx) + 15) + "px", top: (Math.floor(pts[0].canvasy) + 15) + "px" });
+          },
+          unhighlightCallback: function(e) {
+            $('#chart_label').css({ display: "none" });
+          },
+        });
+      });
+    }
+  </script>
+</head>
+<body>
+
+<div id="graph-container">
+<div id="chart" style="width: 400px; height: 200px;"></div>
+<span id="chart_label" style="position: absolute;"></span>
+</div>
+<div id="contents"></div>
+
+</body>
+</html>
