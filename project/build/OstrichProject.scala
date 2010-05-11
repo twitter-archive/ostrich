@@ -18,4 +18,13 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) {
   val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
 
   val publishTo = Resolver.sftp("green.lag.net", "green.lag.net", "/web/repo")
+
+  override def pomExtra =
+    <licenses>
+      <license>
+        <name>Apache 2</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
 }
