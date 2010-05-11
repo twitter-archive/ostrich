@@ -30,11 +30,16 @@ abstract class CustomHttpHandler extends HttpHandler {
   }
 
   def render(body: String, exchange: HttpExchange, code: Int) {
+    render(body, exchange, code, "text/html")
+  }
+
+  def render(body: String, exchange: HttpExchange, code: Int, contentType: String) {
     val input: InputStream = exchange.getRequestBody()
     val output: OutputStream = exchange.getResponseBody()
-    exchange.getResponseHeaders.set("Content-Type", "text/html")
-    exchange.sendResponseHeaders(code, body.length)
-    output.write(body.getBytes)
+    exchange.getResponseHeaders.set("Content-Type", contentType)
+    val data = body.getBytes
+    exchange.sendResponseHeaders(code, data.size)
+    output.write(data)
     output.flush()
     output.close()
     exchange.close()
@@ -55,8 +60,8 @@ class MissingFileHandler extends CustomHttpHandler {
 }
 
 
-class ReportRequestHandler extends CustomHttpHandler {
-  lazy val page = loadResource("/report_request_handler.html")
+class PageResourceHandler(path: String) extends CustomHttpHandler {
+  lazy val page = loadResource(path)
 
   def handle(exchange: HttpExchange) {
     render(page, exchange)
@@ -130,7 +135,7 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   def address = httpServer.getAddress
 
   addContext("/", new CommandRequestHandler(commandHandler))
-  addContext("/report/", new ReportRequestHandler())
+  addContext("/report/", new PageResourceHandler("/report_request_handler.html"))
   addContext("/favicon.ico", new MissingFileHandler())
 
   httpServer.setExecutor(null)
