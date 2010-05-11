@@ -54,10 +54,10 @@ object TimeSeriesCollectorSpec extends Specification {
       Stats.incr("dogs")
       collector.collector.periodic()
 
-      val data = Json.parse(collector.get("dogs_count")).asInstanceOf[Map[String, Seq[Seq[Number]]]]
-      data("dogs_count")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
-      data("dogs_count")(58) mustEqual List(1.minute.ago.inSeconds, 3)
-      data("dogs_count")(59) mustEqual List(Time.now.inSeconds, 1)
+      val data = Json.parse(collector.get("counter:dogs")).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      data("counter:dogs")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
+      data("counter:dogs")(58) mustEqual List(1.minute.ago.inSeconds, 3)
+      data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 1)
     }
 
     "fetch json via http" in {
@@ -75,12 +75,12 @@ object TimeSeriesCollectorSpec extends Specification {
       val port = service.address.getPort
       try {
         val keys = getJson(port, "/graph_data").asInstanceOf[Map[String, Seq[String]]]
-        keys("keys") mustContain "dogs_count"
-        keys("keys") mustContain "cats_count"
-        val data = getJson(port, "/graph_data/dogs_count").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-        data("dogs_count")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
-        data("dogs_count")(58) mustEqual List(1.minute.ago.inSeconds, 3)
-        data("dogs_count")(59) mustEqual List(Time.now.inSeconds, 1)
+        keys("keys") mustContain "counter:dogs"
+        keys("keys") mustContain "counter:cats"
+        val data = getJson(port, "/graph_data/counter:dogs").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        data("counter:dogs")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
+        data("counter:dogs")(58) mustEqual List(1.minute.ago.inSeconds, 3)
+        data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 1)
       } finally {
         service.shutdown()
       }

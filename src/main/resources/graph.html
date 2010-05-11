@@ -24,19 +24,23 @@
     }
 
     function drawChart() {
-      $.ajaxSetup({"error": function(XMLHttpRequest, textStatus, errorThrown) {
-        var data = 'Error: ' + textStatus + ': ' + errorThrown;
-        data += "<br/>" + XMLHttpRequest.responseText.length + "?";
-        for (var i in XMLHttpRequest) { data += i + ", "; }
-        $('#foo').html(data);
-      }});
       var key = document.location.search.substr(1);
+      if (key.substr(0, 7) == "timing:") {
+        drawChartOf(key, 6);
+      } else {
+        drawChartOf(key, 1);
+      }
+    }
+
+    function drawChartOf(key, columns) {
       $.getJSON("/graph_data/" + key, function(datadump) {
         var rawData = datadump[key];
         var data = new google.visualization.DataTable();
         data.addColumn('datetime', 'Time');
-        data.addColumn('number', 'Data1');
-        data.addRows(rawData.map(function(row) { return [ new Date(row[0] * 1000), row[1] ]; }));
+        for (i = 0; i < columns; i++) {
+          data.addColumn('number', 'Data' + i);
+        }
+        data.addRows(rawData.map(function(row) { return [ new Date(row[0] * 1000) ].concat(row.slice(1)); }));
 
         new Dygraph.GVizChart(document.getElementById('chart')).draw(data, {
           includeZero: true,

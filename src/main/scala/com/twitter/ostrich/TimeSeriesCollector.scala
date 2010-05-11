@@ -29,24 +29,26 @@ import net.lag.logging.Logger
  * for generating ad-hoc realtime graphs.
  */
 class TimeSeriesCollector {
-  class TimeSeries(val size: Int) {
-    val data = new Array[Double](size)
+  class TimeSeries[T](val size: Int, empty: => T) {
+    val data = new mutable.ArrayBuffer[T]()
+    for (i <- 0 until size) data += empty
     var index = 0
 
-    def add(n: Double) {
+    def add(n: T) {
       data(index) = n
       index = (index + 1) % size
     }
 
-    def toList = {
-      val out = new Array[Double](size)
-      System.arraycopy(data, index, out, 0, size - index)
-      System.arraycopy(data, 0, out, size - index, index)
+    def toList: List[T] = {
+      val out = new mutable.ListBuffer[T]
+      data.slice(index).foreach { out += _ }
+      data.slice(0, index).foreach { out += _ }
       out.toList
     }
   }
 
-  val hourly = new mutable.HashMap[String, TimeSeries]()
+  val hourly = new mutable.HashMap[String, TimeSeries[Double]]()
+  val hourlyTimings = new mutable.HashMap[String, TimeSeries[List[Long]]]()
   var lastCollection: Time = Time(0.seconds)
 
   val collector = new PeriodicBackgroundProcess("TimeSeriesCollector", 1.minute) {
@@ -54,16 +56,19 @@ class TimeSeriesCollector {
 
     def periodic() {
       Stats.getJvmStats().elements.foreach { case (k, v) =>
-        hourly.getOrElseUpdate("jvm_" + k, new TimeSeries(60)).add(v.toDouble)
+        hourly.getOrElseUpdate("jvm:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
       Stats.getGaugeStats(true).elements.foreach { case (k, v) =>
-        hourly.getOrElseUpdate(k, new TimeSeries(60)).add(v)
+        hourly.getOrElseUpdate("gauge:" + k, new TimeSeries[Double](60, 0)).add(v)
       }
       stats.getCounterStats(true).elements.foreach { case (k, v) =>
-        hourly.getOrElseUpdate(k + "_count", new TimeSeries(60)).add(v.toDouble)
+        hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
       stats.getTimingStats(true).elements.foreach { case (k, v) =>
-//        hourly.getOrElseUpdate(k + "_count", new TimeSeries(60)).add(v.toDouble)
+        val data = List(0.5, 0.75, 0.9, 0.99, 0.999, 0.9999).map { percent =>
+          v.histogram.get.getPercentile(percent).toLong
+        }
+        hourlyTimings.getOrElseUpdate("timing:" + k, new TimeSeries[List[Long]](60, List(0, 0, 0, 0, 0, 0))).add(data)
       }
       lastCollection = Time.now
     }
@@ -71,11 +76,16 @@ class TimeSeriesCollector {
 
   def get(name: String) = {
     val times = (for (i <- 0 until 60) yield (lastCollection + (i - 59).minutes).inSeconds).toList
-    val data = times.zip(hourly(name).toList).map { case (a, b) => List(a, b) }
-    Json.build(immutable.Map(name -> data)).toString + "\n"
+    if (hourly.keys contains name) {
+      val data = times.zip(hourly(name).toList).map { case (a, b) => List(a, b) }
+      Json.build(immutable.Map(name -> data)).toString + "\n"
+    } else {
+      val data = times.zip(hourlyTimings(name).toList).map { case (a, b) => List(a) ++ b }
+      Json.build(immutable.Map(name -> data)).toString + "\n"
+    }
   }
 
-  def keys = hourly.keys
+  def keys = hourly.keys ++ hourlyTimings.keys
 
   def registerWith(service: AdminHttpService) {
     service.addContext("/graph/", new PageResourceHandler("/graph.html"))
