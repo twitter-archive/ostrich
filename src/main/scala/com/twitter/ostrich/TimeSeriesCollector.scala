@@ -65,10 +65,10 @@ class TimeSeriesCollector {
         hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
       stats.getTimingStats(true).elements.foreach { case (k, v) =>
-        val data = List(0.5, 0.75, 0.9, 0.99, 0.999, 0.9999).map { percent =>
+        val data = List(0.5, 0.999).map { percent =>
           v.histogram.get.getPercentile(percent).toLong
         }
-        hourlyTimings.getOrElseUpdate("timing:" + k, new TimeSeries[List[Long]](60, List(0, 0, 0, 0, 0, 0))).add(data)
+        hourlyTimings.getOrElseUpdate("timing:" + k, new TimeSeries[List[Long]](60, List(0, 0))).add(data)
       }
       lastCollection = Time.now
     }

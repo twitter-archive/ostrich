@@ -25,19 +25,11 @@
 
     function drawChart() {
       var key = document.location.search.substr(1);
-      if (key.substr(0, 7) == "timing:") {
-        drawChartOf(key, 6);
-      } else {
-        drawChartOf(key, 1);
-      }
-    }
-
-    function drawChartOf(key, columns) {
       $.getJSON("/graph_data/" + key, function(datadump) {
         var rawData = datadump[key];
         var data = new google.visualization.DataTable();
         data.addColumn('datetime', 'Time');
-        for (i = 0; i < columns; i++) {
+        for (i = 0; i < rawData[0].length - 1; i++) {
           data.addColumn('number', 'Data' + i);
         }
         data.addRows(rawData.map(function(row) { return [ new Date(row[0] * 1000) ].concat(row.slice(1)); }));
@@ -49,9 +41,11 @@
           xAxisLabelFormatter: function(date, granularity) { return date.strftime("%H:%M"); },
           labelsDivStyles: { display: "none" },
           highlightCallback: function(e, x, pts) {
-            var label = document.getElementById('chart_label');
-            $('#chart_label').html(roundTo(pts[0].yval, 3));
-            $('#chart_label').css({ display: "block", left: (Math.floor(pts[0].canvasx) + 15) + "px", top: (Math.floor(pts[0].canvasy) + 15) + "px" });
+            var xloc = Math.floor(pts[pts.length - 1].canvasx) + 15;
+            var yloc = Math.floor(pts[pts.length - 1].canvasy) + 15;
+            var label = pts.map(function(p) { return roundTo(p.yval, 3); }).join(", ");
+            $('#chart_label').html(label);
+            $('#chart_label').css({ display: "block", left: xloc + "px", top: yloc + "px" });
           },
           unhighlightCallback: function(e) {
             $('#chart_label').css({ display: "none" });
@@ -64,8 +58,8 @@
 <body>
 
 <div id="graph-container">
-<div id="chart" style="width: 400px; height: 200px;"></div>
-<span id="chart_label" style="position: absolute;"></span>
+<div id="chart" style="width: 640px; height: 320px;"></div>
+<span id="chart_label" style="position: absolute; font-size: 10pt;"></span>
 </div>
 <div id="contents"></div>
 
