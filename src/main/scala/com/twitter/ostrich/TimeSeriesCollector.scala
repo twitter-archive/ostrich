@@ -101,6 +101,7 @@ class TimeSeriesCollector {
   }
 
   def start() {
+    collector.setDaemon(true)
     collector.start()
   }
 
