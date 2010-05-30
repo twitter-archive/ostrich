@@ -17,8 +17,6 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) {
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
   val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
 
-  val publishTo = Resolver.sftp("green.lag.net", "green.lag.net", "/web/repo")
-
   override def pomExtra =
     <licenses>
       <license>
@@ -27,4 +25,7 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) {
         <distribution>repo</distribution>
       </license>
     </licenses>
+
+  Credentials(Path.userHome / ".ivy2" / "credentials", log)
+  val publishTo = "nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
 }
