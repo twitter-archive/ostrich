@@ -85,9 +85,11 @@ class TimeSeriesCollector {
     } else {
       val timings = hourlyTimings(name).toList
       val data = times.zip(timings).map { case (a, b) => List(a) ++ b }
-      val filteredData = data.zipWithIndex.filter { case (row, index) =>
-        selection.isEmpty || (selection contains index)
-      }.map { case (row, index) => row }
+      val filteredData = data.map {
+        _.zipWithIndex.filter { case (row, index) =>
+          selection.isEmpty || index == 0 || (selection contains index - 1)
+        }.map { case (row, index) => row }
+      }
       Json.build(immutable.Map(name -> filteredData)).toString + "\n"
     }
   }

@@ -85,5 +85,25 @@ object TimeSeriesCollectorSpec extends Specification {
         service.shutdown()
       }
     }
+
+    "fetch specific timing percentiles" in {
+      Time.freeze
+      Stats.addTiming("run", 5)
+      Stats.addTiming("run", 10)
+      Stats.addTiming("run", 15)
+      Stats.addTiming("run", 20)
+      collector.collector.periodic()
+
+      val service = new AdminHttpService(new Config(), new RuntimeEnvironment(getClass))
+      collector.registerWith(service)
+      service.start()
+      val port = service.address.getPort
+      try {
+        val data = getJson(port, "/graph_data/timing:run?p=1,5").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        data("timing:run")(59) mustEqual List(Time.now.inSeconds, 10, 23)
+      } finally {
+        service.shutdown()
+      }
+    }
   }
 }
