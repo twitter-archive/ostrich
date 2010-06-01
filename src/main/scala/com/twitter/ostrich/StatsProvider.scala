@@ -37,11 +37,23 @@ trait StatsProvider {
    * Runs the function f and logs that duration, in nanoseconds, with the given name.
    *
    * When using nanoseconds, be sure to encode your field with that fact. Consider
-   * using the suffix `_ns` in your field.
+   * using the suffix `_nsec` in your field.
    */
   def timeNanos[T](name: String)(f: => T): T = {
     val (rv, nsec) = Stats.durationNanos(f)
     addTiming(name, nsec.toInt)
+    rv
+  }
+
+  /**
+   * Runs the function f and logs that duration, in microseconds, with the given name.
+   *
+   * When using microseconds, be sure to encode your field with that fact. Consider
+   * using the suffix `_usec` in your field.
+   */
+  def timeMicros[T](name: String)(f: => T): T = {
+    val (rv, nsec) = Stats.durationNanos(f)
+    addTiming(name, (nsec / 1000).toInt)
     rv
   }
 

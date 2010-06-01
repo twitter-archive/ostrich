@@ -29,6 +29,9 @@ import net.lag.logging.Logger
  * for generating ad-hoc realtime graphs.
  */
 class TimeSeriesCollector {
+  val PERCENTILES = List(0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999, 0.9999)
+  val EMPTY_TIMINGS = List.make(PERCENTILES.size, 0L)
+
   class TimeSeries[T](val size: Int, empty: => T) {
     val data = new mutable.ArrayBuffer[T]()
     for (i <- 0 until size) data += empty
@@ -65,23 +68,29 @@ class TimeSeriesCollector {
         hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
       stats.getTimingStats(true).elements.foreach { case (k, v) =>
-        val data = List(0.5, 0.999).map { percent =>
+        val data = PERCENTILES.map { percent =>
           v.histogram.get.getPercentile(percent).toLong
         }
-        hourlyTimings.getOrElseUpdate("timing:" + k, new TimeSeries[List[Long]](60, List(0, 0))).add(data)
+        hourlyTimings.getOrElseUpdate("timing:" + k, new TimeSeries[List[Long]](60, EMPTY_TIMINGS)).add(data)
       }
       lastCollection = Time.now
     }
   }
 
-  def get(name: String) = {
+  def get(name: String, selection: Seq[Int]) = {
     val times = (for (i <- 0 until 60) yield (lastCollection + (i - 59).minutes).inSeconds).toList
     if (hourly.keys contains name) {
       val data = times.zip(hourly(name).toList).map { case (a, b) => List(a, b) }
       Json.build(immutable.Map(name -> data)).toString + "\n"
     } else {
-      val data = times.zip(hourlyTimings(name).toList).map { case (a, b) => List(a) ++ b }
-      Json.build(immutable.Map(name -> data)).toString + "\n"
+      val timings = hourlyTimings(name).toList
+      val data = times.zip(timings).map { case (a, b) => List(a) ++ b }
+      val filteredData = data.map {
+        _.zipWithIndex.filter { case (row, index) =>
+          selection.isEmpty || index == 0 || (selection contains index - 1)
+        }.map { case (row, index) => row }
+      }
+      Json.build(immutable.Map(name -> filteredData)).toString + "\n"
     }
   }
 
@@ -94,7 +103,10 @@ class TimeSeriesCollector {
         if (path.size == 1) {
           render(Json.build(Map("keys" -> keys.toList)).toString + "\n", exchange)
         } else {
-          render(get(path.last), exchange, 200, "application/json")
+          val keep = parameters.filter { _(0) == "p" }.firstOption.map {
+            _(1).split(",").map { _.toInt }
+          }.getOrElse((0 until PERCENTILES.size).toArray)
+          render(get(path.last, keep), exchange, 200, "application/json")
         }
       }
     })
