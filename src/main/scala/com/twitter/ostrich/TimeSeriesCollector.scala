@@ -44,7 +44,7 @@ class TimeSeriesCollector {
 
     def toList: List[T] = {
       val out = new mutable.ListBuffer[T]
-      data.slice(index).foreach { out += _ }
+      data.drop(index).foreach { out += _ }
       data.slice(0, index).foreach { out += _ }
       out.toList
     }

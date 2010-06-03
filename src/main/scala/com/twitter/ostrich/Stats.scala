@@ -150,6 +150,14 @@ object Stats extends StatsProvider {
   }
 
   /**
+   * Returns how long it took, in microseconds, to run the function f.
+   */
+  def durationMicros[T](f: => T): (T, Long) = {
+    val (rv, duration) = durationNanos(f)
+    (rv, duration / 1000)
+  }
+
+  /**
    * Returns how long it took, in nanoseconds, to run the function f.
    */
   def durationNanos[T](f: => T): (T, Long) = {
