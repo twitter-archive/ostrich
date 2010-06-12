@@ -69,21 +69,26 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
 }
 
 
+object CgiRequestHandler {
+  def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
+    val params = exchange.getRequestURI.getQuery
+
+    if (params != null) {
+      params.split('&').toList
+    } else {
+      Nil
+    }
+  }.map { _.split("=", 2).toList }
+}
+
 abstract class CgiRequestHandler extends CustomHttpHandler {
+  import CgiRequestHandler._
+
   def handle(exchange: HttpExchange) {
     try {
       val requestURI = exchange.getRequestURI
-      val path = requestURI.getPath.split('/').toList.filter { _.length > 0 }
-
-      val parameters: List[List[String]] = {
-        val params = requestURI.getQuery
-
-        if (params != null) {
-          params.split('&').toList
-        } else {
-          Nil
-        }
-      }.map { _.split("=", 2).toList }
+      val path       = requestURI.getPath.split('/').toList.filter { _.length > 0 }
+      val parameters = exchangeToParameters(exchange)
 
       handle(exchange, path, parameters)
     } catch {
