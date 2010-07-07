@@ -54,9 +54,7 @@ object ServiceTracker {
     }
 
     for ((path, handler) <- queuedAdminHandlers) {
-      println("dequeueing handler for %s".format(path))
       _adminHttpService.addContext(path, handler)
-
     }
 
     _adminHttpService.start()
