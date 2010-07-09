@@ -6,8 +6,8 @@
   <script type="text/javascript" src="http://danvk.org/dygraphs/dygraph-combined.js"></script>
   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
   <script type="text/javascript">
-    percentiles = [ "25", "50", "75", "90", "95", "99", "99.9", "99.99" ];
-    display_lines = [ true, true, true, true, true, true, true, true, true, true ];
+    percentiles = [ "25%", "50%", "75%", "90%", "95%", "99%", "99.9%", "99.99%" ];
+    display_lines = [ false, true, true, false, false, true, false, false ];
     if (document.location.search.length > 0) {
       google.load('visualization', '1');
       google.setOnLoadCallback(drawContent);
@@ -28,7 +28,8 @@
     function drawContent() {
       if (document.location.search.substr(1, 7) == "timing:") {
         for (i = 0; i < percentiles.length; i++) {
-          $("#display_lines").append("<input type=checkbox name=box" + i + " checked onClick=\"clickBox(" + i + ")\" />" + percentiles[i] + "%<br />");
+          $("#display_lines").append("<input type=checkbox name=box" + i + " onClick=\"clickBox(" + i + ")\" />" + percentiles[i] + "<br />");
+          $("input[name=box" + i + "]").attr("checked", display_lines[i]);
         }
       }
       drawChart();
