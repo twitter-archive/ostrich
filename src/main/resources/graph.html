@@ -11,7 +11,6 @@
     if (document.location.search.length > 0) {
       google.load('visualization', '1');
       google.setOnLoadCallback(drawContent);
-
     } else {
       $.getJSON("/graph_data", function(datadump) {
         var keys = datadump["keys"].sort();
@@ -27,8 +26,10 @@
     }
 
     function drawContent() {
-      for (i = 0; i < percentiles.length; i++) {
-        $("#display_lines").append("<input type=checkbox name=box" + i + " checked onClick=\"clickBox(" + i + ")\" />" + percentiles[i] + "%<br />");
+      if (document.location.search.substr(1, 7) == "timing:") {
+        for (i = 0; i < percentiles.length; i++) {
+          $("#display_lines").append("<input type=checkbox name=box" + i + " checked onClick=\"clickBox(" + i + ")\" />" + percentiles[i] + "%<br />");
+        }
       }
       drawChart();
     }
