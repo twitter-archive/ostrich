@@ -56,7 +56,7 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   def clearAll(): Unit = get().clear()
 
   /**
-   * Private method to ensure that fields being inserted are actually being tracked, throwing an exception otherwise.
+   * Private method to ensure that fields being inserted are actually being tracked, logging an error otherwise.
    */
   private def log_safe[T](name: String, value: T) {
     if (complainAboutUnregisteredFields && !fieldNames.contains(name)) {
