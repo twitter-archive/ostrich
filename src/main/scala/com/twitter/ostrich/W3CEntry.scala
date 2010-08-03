@@ -59,6 +59,10 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
     map + (name -> value)
   }
 
+  def log(name: String, value: String) {
+    log_safe(name, value)
+  }
+
   /**
    * Adds the current name, timing pair to the stats map.
    */

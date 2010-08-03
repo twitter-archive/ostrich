@@ -76,6 +76,12 @@ object W3CEntrySpec extends Specification {
       handler.toString() must endWith("0 2")
     }
 
+    "works with Strings" in {
+      w3c.log("backend-response-time", "57")
+      w3c.flush
+      handler.toString must beMatching("57")
+    }
+
     "rejects a column that isn't registered" in {
       w3c.incr("whatwhatlol", 100)
       handler.toString() mustNot beMatching("100")
