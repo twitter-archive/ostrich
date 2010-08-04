@@ -52,11 +52,11 @@ object Stats extends StatsProvider {
     collection.addTiming(name, timingStat)
   }
   
-  def setGauge(name: String, value: Double) = {
+  def setGauge(name: String, value: Double) = gaugeMap.synchronized { 
     gaugeMap += name -> new Gauge { def apply(reset: Boolean) = value }
   }
     
-  def clearGauge(name: String) = {
+  def clearGauge(name: String) = gaugeMap.synchronized { 
     gaugeMap -= name
   }
 
