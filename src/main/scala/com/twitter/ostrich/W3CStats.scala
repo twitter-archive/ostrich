@@ -34,6 +34,7 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   val log = Logger.get(getClass.getName)
   val reporter = new W3CReporter(logger)
   var complainAboutUnregisteredFields = true
+  val fieldNames: Set[String] = Set.empty ++ fields
 
   /**
    * Store our map of named events.
@@ -55,10 +56,10 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   def clearAll(): Unit = get().clear()
 
   /**
-   * Private method to ensure that fields being inserted are actually being tracked, throwing an exception otherwise.
+   * Private method to ensure that fields being inserted are actually being tracked, logging an error otherwise.
    */
   private def log_safe[T](name: String, value: T) {
-    if (complainAboutUnregisteredFields && !fields.contains(name)) {
+    if (complainAboutUnregisteredFields && !fieldNames.contains(name)) {
       log.error("trying to log unregistered field: %s".format(name))
     }
     get + (name -> value)

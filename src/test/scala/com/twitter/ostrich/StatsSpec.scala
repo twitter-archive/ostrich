@@ -173,12 +173,12 @@ object StatsSpec extends Specification {
         Stats.makeGauge("pi") { java.lang.Math.PI }
         Stats.getGaugeStats(false) mustEqual Map("pi" -> java.lang.Math.PI)
       }
-      
+ 
       "setGauge" in {
         Stats.setGauge("stew", 11.0)
         Stats.getGaugeStats(true) mustEqual Map("stew" -> 11.0)
       }
-      
+
       "clearGauge" in {
         Stats.setGauge("stew", 11.0)
         Stats.clearGauge("stew")
