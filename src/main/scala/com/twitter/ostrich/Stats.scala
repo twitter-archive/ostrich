@@ -51,6 +51,14 @@ object Stats extends StatsProvider {
     forkedCollections.foreach { _.addTiming(name, timingStat) }
     collection.addTiming(name, timingStat)
   }
+  
+  def setGauge(name: String, value: Double) = {
+    gaugeMap += name -> new Gauge { def apply(reset: Boolean) = value }
+  }
+    
+  def clearGauge(name: String) = {
+    gaugeMap -= name
+  }
 
   def incr(name: String, count: Int): Long = {
     forkedCollections.foreach { _.incr(name, count) }
