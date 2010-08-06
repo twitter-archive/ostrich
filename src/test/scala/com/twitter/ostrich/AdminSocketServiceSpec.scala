@@ -7,7 +7,6 @@ import org.specs.util.Time
 import org.specs.util.TimeConversions._
 import net.lag.extensions._
 import net.lag.configgy.{Config, RuntimeEnvironment}
-import org.mockito.Matchers._
 import org.specs.Specification
 import org.specs.mock.Mockito
 

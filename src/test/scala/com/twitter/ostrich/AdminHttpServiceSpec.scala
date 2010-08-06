@@ -21,7 +21,6 @@ import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
 import net.lag.configgy.{Config, RuntimeEnvironment}
-import org.mockito.Matchers._
 import org.specs.Specification
 import org.specs.mock.Mockito
 
