@@ -40,5 +40,5 @@ object Conversions {
 
     def flatten: String = build(obj).mkString("\n") + "\n"
   }
-  implicit def richAny(obj: Any) = new RichAny(obj)
+  implicit def richAny(obj: Any): RichAny = new RichAny(obj)
 }
