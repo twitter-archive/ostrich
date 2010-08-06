@@ -95,7 +95,7 @@ class CommandHandler(runtime: RuntimeEnvironment) {
                                               "daemon" -> thread.isDaemon(),
                                               "state" -> thread.getState(),
                                               "priority" -> thread.getPriority(),
-                                              "stack" -> stack.map(_.toString)))
+                                              "stack" -> stack.toSeq.map(_.toString)))
     }.toSeq
     immutable.Map("threads" -> immutable.Map(stacks: _*))
   }

@@ -101,7 +101,7 @@ object AdminSocketServiceSpec extends Specification with Mockito {
 
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("threads\n".getBytes)
-      val lines = socket.getInputStream().readString(4096).split("\n")
+      val lines = socket.getInputStream().readString(4096).split("\n").toSeq
       lines must contain("threads:")
       lines must contain("    daemon: false")
       lines must contain("    stack:")
@@ -177,7 +177,7 @@ object AdminSocketServiceSpec extends Specification with Mockito {
 
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats\n".getBytes)
-        val response = socket.getInputStream().readString(1024).split("\n")
+        val response = socket.getInputStream().readString(1024).split("\n").toSeq
         response must contain("  kangaroos: 1")
         
         service.shutdown()
