@@ -79,7 +79,7 @@ class TimeSeriesCollector {
 
   def get(name: String, selection: Seq[Int]) = {
     val times = (for (i <- 0 until 60) yield (lastCollection + (i - 59).minutes).inSeconds).toList
-    if (hourly.keys contains name) {
+    if (hourly.keySet contains name) {
       val data = times.zip(hourly(name).toList).map { case (a, b) => List(a, b) }
       Json.build(immutable.Map(name -> data)).toString + "\n"
     } else {
