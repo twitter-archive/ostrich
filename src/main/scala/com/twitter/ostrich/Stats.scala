@@ -25,7 +25,7 @@ import net.lag.logging.Logger
 
 
 /**
- * Basic Stats gathering object that returns performance data for the application.
+ * Basic StatsProvider gathering object that returns performance data for the application.
  */
 object Stats extends StatsProvider {
   val log = Logger.get(getClass.getName)
@@ -51,12 +51,12 @@ object Stats extends StatsProvider {
     forkedCollections.foreach { _.addTiming(name, timingStat) }
     collection.addTiming(name, timingStat)
   }
-  
-  def setGauge(name: String, value: Double) = gaugeMap.synchronized { 
+
+  def setGauge(name: String, value: Double) = gaugeMap.synchronized {
     gaugeMap += name -> new Gauge { def apply(reset: Boolean) = value }
   }
-    
-  def clearGauge(name: String) = gaugeMap.synchronized { 
+
+  def clearGauge(name: String) = gaugeMap.synchronized {
     gaugeMap -= name
   }
 
@@ -212,6 +212,10 @@ object Stats extends StatsProvider {
    */
   def getGaugeStats(reset: Boolean): Map[String, Double] = {
     immutable.Map(gaugeMap.map(x => (x._1, x._2(reset))).toList: _*)
+  }
+
+  def getGauge(name: String): Option[Double] = {
+    gaugeMap.get(name).flatMap{ gauge => Some(gauge(false)) }
   }
 
   override def stats(reset: Boolean): Map[String, Map[String, Any]] = {
