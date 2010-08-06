@@ -18,7 +18,7 @@ package com.twitter.ostrich
 
 import java.lang.management.ManagementFactory
 import javax.{management => jmx}
-import scala.collection.{immutable, jcl}
+import scala.collection.{immutable, JavaConversions}
 import scala.util.Sorting
 import com.twitter.xrayspecs.Time
 import com.twitter.xrayspecs.TimeConversions._
@@ -38,7 +38,7 @@ object StatsMBeanSpec extends Specification {
     }
 
     def getMBean() = {
-      val mbeans = jcl.Set(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
+      val mbeans = JavaConversions.asSet(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
       mbeans.size mustEqual 1
       mbeans.toList.first
     }
