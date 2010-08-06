@@ -38,56 +38,105 @@ object AdminHttpServiceSpec extends Specification with Mockito {
     var service: AdminHttpService = null
 
     doBefore {
+    }
+
+    doAfter {
+    }
+
+    "start and stop" in {
       Stats.clearAll()
       new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
       service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
       service.start()
-    }
 
-    doAfter {
-      service.shutdown()
-    }
-
-    "start and stop" in {
       new Socket("localhost", PORT) must notBeNull
       service.shutdown()
       new Socket("localhost", PORT) must throwA[SocketException]
+
+      service.shutdown()
     }
 
     "answer pings" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       val socket = new Socket("localhost", PORT)
       get("/ping.json").trim mustEqual """{"response":"pong"}"""
 
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
       there was atLeastOne(service).shutdown()
+
+      service.shutdown()
     }
 
     "shutdown" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       get("/shutdown.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
       there was atLeastOne(service).shutdown()
+
+      service.shutdown()
     }
 
     "quiesce" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       get("/quiesce.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
       there was atLeastOne(service).quiesce()
+
+      service.shutdown()
     }
 
     "get a proper web page back for the report URL" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       get("/report/") must beMatching("Stats Report")
+
+      service.shutdown()
     }
 
     "return 404 for favicon" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       get("/favicon.ico") must throwA[java.io.FileNotFoundException]
+
+      service.shutdown()
     }
 
     "return 404 for a missing command" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       get("/bullshit.json") must throwA[java.io.FileNotFoundException]
+
+      service.shutdown()
     }
 
     "server info" in {
+      Stats.clearAll()
+      new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service.start()
+
       val serverInfo = get("/server_info.json")
       serverInfo mustMatch("\"build\":")
       serverInfo mustMatch("\"build_revision\":")
@@ -95,14 +144,20 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       serverInfo mustMatch("\"version\":")
       serverInfo mustMatch("\"start_time\":")
       serverInfo mustMatch("\"uptime\":")
+
+      service.shutdown()
     }
 
     "provide stats" in {
       doAfter {
-        service.shutdown()
       }
 
       "in json" in {
+        Stats.clearAll()
+        new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+        service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+        service.start()
+
         // make some statsy things happen
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
@@ -117,9 +172,16 @@ object AdminHttpServiceSpec extends Specification with Mockito {
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")
         timing("average") mustEqual timing("maximum")
+
+        service.shutdown()
       }
 
       "in json, with reset" in {
+        Stats.clearAll()
+        new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+        service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+        service.start()
+
         // make some statsy things happen
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
@@ -131,9 +193,16 @@ object AdminHttpServiceSpec extends Specification with Mockito {
         val stats2 = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         val timing2 = stats2("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
         timing2("count") mustEqual 0
+
+        service.shutdown()
       }
 
       "in json, with histograms" in {
+        Stats.clearAll()
+        new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+        service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+        service.start()
+
         Stats.clearAll()
         // Add items indirectly to the histogram
         Stats.addTiming("kangaroo_time", 1)
@@ -174,9 +243,16 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
         timings must haveKey("p9999")
         timings("p9999") mustEqual 6
+
+        service.shutdown()
       }
 
       "in json, with histograms and reset" in {
+        Stats.clearAll()
+        new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+        service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+        service.start()
+
         Stats.clearAll()
         // Add items indirectly to the histogram
         Stats.addTiming("kangaroo_time", 1)
@@ -217,20 +293,36 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
         timings must haveKey("p9999")
         timings("p9999") mustEqual 6
+
+        service.shutdown()
       }
 
       "in json, with callback" in {
+        Stats.clearAll()
+        new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+        service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+        service.start()
+
         val stats = get("/stats.json?callback=true")
         stats.startsWith("ostrichCallback(") mustBe true
         stats.endsWith(")") mustBe true
+
+        service.shutdown()
       }
 
       "in text" in {
+        Stats.clearAll()
+        new Socket("localhost", PORT) must throwA[SocketException] // nothing listening yet
+        service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+        service.start()
+
         // make some statsy things happen
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         get("/stats.txt") must beMatching("  kangaroos: 1")
+
+        service.shutdown()
       }
     }
   }
