@@ -20,7 +20,6 @@ import java.io.{DataInputStream, InputStream}
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
-import com.twitter.xrayspecs.Eventually
 import net.lag.configgy.{Config, RuntimeEnvironment}
 import org.mockito.Matchers._
 import org.specs.Specification
@@ -62,19 +61,19 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
+      there was atLeastOne(service).shutdown()
     }
 
     "shutdown" in {
       get("/shutdown.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called
+      there was atLeastOne(service).shutdown()
     }
 
     "quiesce" in {
       get("/quiesce.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.quiesce() was called
+      there was atLeastOne(service).quiesce()
     }
 
     "get a proper web page back for the report URL" in {

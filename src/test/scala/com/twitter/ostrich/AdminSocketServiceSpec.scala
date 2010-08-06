@@ -3,7 +3,6 @@ package com.twitter.ostrich
 import java.io.{DataInputStream, InputStream}
 import java.net.{Socket, SocketException}
 import com.twitter.json.Json
-import com.twitter.xrayspecs.Eventually
 import org.specs.util.Time
 import org.specs.util.TimeConversions._
 import net.lag.extensions._
@@ -45,7 +44,7 @@ object AdminSocketServiceSpec extends Specification with Mockito {
       new Socket("localhost", PORT) must notBeNull
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called.atLeastOnce
+      there was atLeastOne(service).shutdown()
     }
 
     "answer pings" in {
@@ -54,22 +53,22 @@ object AdminSocketServiceSpec extends Specification with Mockito {
       socket.getInputStream().readString(1024) mustEqual "pong\n\n"
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      service.shutdown() was called.atLeastOnce
+      there was atLeastOne(service).shutdown()
     }
 
     "shutdown" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("shutdown\n".getBytes)
       new Socket("localhost", PORT) must eventually(2, 5.seconds)(throwA[SocketException])
-      service.shutdown() was called.atLeastOnce
+      there was atLeastOne(service).shutdown()
     }
 
     "quiesce" in {
       val socket = new Socket("localhost", PORT)
       socket.getOutputStream().write("quiesce\n".getBytes)
       new Socket("localhost", PORT) must eventually(2, 5.seconds)(throwA[SocketException])
-      service.quiesce() was called.atLeastOnce
-      service.shutdown() was called.atLeastOnce
+      there was atLeastOne(service).quiesce()
+      there was atLeastOne(service).shutdown()
     }
 
     "dump thread stacks" in {
@@ -132,7 +131,7 @@ object AdminSocketServiceSpec extends Specification with Mockito {
         val socket = new Socket("localhost", PORT)
         socket.getOutputStream().write("stats\n".getBytes)
         val response = socket.getInputStream().readString(1024).split("\n")
-        response mustContain "  kangaroos: 1"
+        response must contain("  kangaroos: 1")
       }
     }
   }
