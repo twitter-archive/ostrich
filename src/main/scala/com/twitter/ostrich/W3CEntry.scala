@@ -56,7 +56,7 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
     if (!fieldNames.contains(name)) {
       log.error("trying to log unregistered field: %s".format(name))
     }
-    map + (name -> value)
+    map += (name -> value)
   }
 
   def log(name: String, value: String) {

@@ -62,7 +62,7 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
     if (complainAboutUnregisteredFields && !fieldNames.contains(name)) {
       log.error("trying to log unregistered field: %s".format(name))
     }
-    get + (name -> value)
+    get += (name -> value)
   }
 
   /**
