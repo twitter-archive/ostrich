@@ -31,6 +31,8 @@ object Conversions {
               case list => (k.toString + ":") :: list.map { "  " + _ }
             }
           }
+        case a: Array[_] =>
+          a.flatMap { build(_) }.toList
         case s: Seq[_] =>
           s.flatMap { build(_) }.toList
         case x =>
