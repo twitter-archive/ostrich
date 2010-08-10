@@ -2,7 +2,7 @@ import sbt._
 import com.twitter.sbt.{SubversionRepository, StandardProject}
 
 
-class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionRepository{
+class OstrichProject(info: ProjectInfo) extends StandardProject(info) {
   val specs = "org.scala-tools.testing" % "specs" % "1.6.2.1"
   val vscaladoc = "org.scala-tools" % "vscaladoc" % "1.1-md-3"
   val twitterJson = "com.twitter" % "json" % "1.1.2"
