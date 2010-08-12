@@ -1,12 +1,40 @@
 #!/usr/bin/ruby
 
+# json_stats_fetcher.rb - Publish Ostrich stats to Ganglia.
+#
+# The latest version is always available at:
+# http://github.com/twitter/ostrich/blob/master/src/scripts/json_stats_fetcher.rb
+#
+
 require 'rubygems'
 require 'getoptlong'
 require 'socket'
 require 'json'
+require 'timeout'
 require 'open-uri'
 
+
+def valid_gmetric_name?(name)
+  # Determines if a gmetric name is valid.
+  #
+  # Ganglia is very intolerant of metric named with non-standard characters,
+  # where non-standard contains most everything other than letters, numbers and
+  # some common symbols.
+  #
+  # Returns true if the metric is a valid gmetric name, otherwise false.
+  if name =~ /^[A-Za-z0-9_-]+$/
+    return true
+  else
+    $stderr.puts "Metric <#{name}> contains invalid characters."
+    return false
+  end
+end
+
 def report_metric(name, value, units)
+  if not valid_gmetric_name?(name)
+    return
+  end
+
   if $report_to_ganglia
     system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
   else
