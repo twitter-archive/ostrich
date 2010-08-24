@@ -34,7 +34,7 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   val log = Logger.get(getClass.getName)
   val reporter = new W3CReporter(logger)
   var complainAboutUnregisteredFields = true
-  val fieldNames: HashSet[String] = new HashSet()
+  val fieldNames: java.util.HashSet[String] = new java.util.HashSet()
   fields.foreach { fieldNames.add(_) }
 
   /**
