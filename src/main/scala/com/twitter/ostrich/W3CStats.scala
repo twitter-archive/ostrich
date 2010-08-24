@@ -18,7 +18,7 @@ package com.twitter.ostrich
 
 import net.lag.logging.Logger
 import scala.collection.mutable
-import java.util.Date
+import java.util.{Date, HashSet}
 import java.util.zip.CRC32
 import java.net.InetAddress
 import java.text.SimpleDateFormat
@@ -34,7 +34,8 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   val log = Logger.get(getClass.getName)
   val reporter = new W3CReporter(logger)
   var complainAboutUnregisteredFields = true
-  val fieldNames: Set[String] = Set.empty ++ fields
+  val fieldNames: HashSet[String] = new HashSet()
+  fields.foreach { fieldNames.add(_) }
 
   /**
    * Store our map of named events.
