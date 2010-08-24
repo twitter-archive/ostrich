@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Concrete StatsProvider that tracks counters and timings.
  */
 class StatsCollection extends StatsProvider {
-  private val counterMap = new mutable.HashMap[String, Counter]()
+  private val counterMap = new ConcurrentHashMap[String, Counter]()
   private val timingMap = new ConcurrentHashMap[String, Timing]()
 
   def addTiming(name: String, duration: Int): Long = {
@@ -39,11 +39,9 @@ class StatsCollection extends StatsProvider {
   }
 
   def getCounterStats(reset: Boolean): Map[String, Long] = {
-    val rv = immutable.HashMap(counterMap.map { case (k, v) => (k, v.value.get) }.toList: _*)
-    if (reset) {
-      for ((k, v) <- counterMap) {
-        v.reset()
-      }
+    val rv = new mutable.HashMap[String, Long]
+    for((key, counter) <- jcl.Map(counterMap)) {
+      rv += (key -> counter(reset))
     }
     rv
   }
@@ -57,21 +55,20 @@ class StatsCollection extends StatsProvider {
   }
 
   def clearAll() {
-    counterMap.synchronized { counterMap.clear() }
+    counterMap.clear()
     timingMap.clear()
   }
 
   /**
    * Find or create a counter with the given name.
    */
-  def getCounter(name: String): Counter = counterMap.synchronized {
-    counterMap.get(name) match {
-      case Some(counter) => counter
-      case None =>
-        val counter = new Counter
-        counterMap += (name -> counter)
-        counter
+  def getCounter(name: String): Counter = {
+    var counter = counterMap.get(name)
+    while (counter == null) {
+      counter = counterMap.putIfAbsent(name, new Counter)
+      counter = counterMap.get(name)
     }
+    counter
   }
 
   /**
