@@ -26,9 +26,10 @@ import java.util.concurrent.atomic.AtomicLong
 class Counter {
   var value = new AtomicLong
 
-  def incr() = value.addAndGet(1)
+  def incr() = value.incrementAndGet
   def incr(n: Int) = value.addAndGet(n)
-  def apply(): Long = value.get()
+  def apply(reset: Boolean) = if (reset) value.getAndSet(0) else value.get()
+  def apply(): Long = this(false)
   def update(n: Long) = value.set(n)
   def reset() = update(0L)
 }
