@@ -1,8 +1,8 @@
 import sbt._
-import com.twitter.sbt.{SubversionRepository, StandardProject}
+import com.twitter.sbt._
 
 
-class OstrichProject(info: ProjectInfo) extends StandardProject(info) {
+class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
   val specs = "org.scala-tools.testing" % "specs" % "1.6.2.1"
   val vscaladoc = "org.scala-tools" % "vscaladoc" % "1.1-md-3"
   val twitterJson = "com.twitter" % "json" % "1.1.2"
@@ -26,6 +26,5 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) {
       </license>
     </licenses>
 
-  Credentials(Path.userHome / ".ivy2" / "credentials", log)
-  val publishTo = "nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
+  override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
 }
