@@ -38,8 +38,10 @@ object W3CReporter {
  * `report`, if the keys in the map have changed, or it's been "a while" since the header was
  * last logged, the header is logged again.
  */
-class W3CReporter(val logger: Logger) {
+class W3CReporter(val logger: Logger, val printCrc: Boolean) {
   import W3CReporter._
+
+  def this(logger: Logger) = this(logger, false)
 
   /**
    * The W3C header lines will be written out this often, even if the fields haven't changed.
@@ -66,7 +68,8 @@ class W3CReporter(val logger: Logger) {
   }
 
   def generateLine(orderedKeys: Iterable[String], stats: Map[String, Any]) = {
-    orderedKeys.map { key => stats.get(key).map { stringify(_) }.getOrElse("-") }.mkString(" ")
+    val rv = orderedKeys.map { key => stats.get(key).map { stringify(_) }.getOrElse("-") }.mkString(" ")
+    if (printCrc) previousCrc + " " + rv else rv
   }
 
   private def logHeader(fieldsHeader: String, crc: Long) {
