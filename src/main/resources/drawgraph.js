@@ -3,20 +3,39 @@ percentiles = [ "25%", "50%", "75%", "90%", "95%", "99%", "99.9%", "99.99%" ];
 display_lines = [ false, true, true, false, false, true, false, false ];
 
 $fake = false;
+$timing = false;
+$params = {};
 
 $(document).ready(function() {
-  if (document.location.search.length > 0) {
+  parseParams();
+
+  if ("g" in $params) {
     drawContent();
   } else {
     $.getJSON("/graph_data", function(datadump) {
       var keys = datadump["keys"].sort();
       for (i in keys) {
-        $("#contents").append('<a href="graph.html?' + keys[i] + '">' + keys[i] + '</a><br/>');
+        $("#contents").append('<a href="graph.html?g=' + keys[i] + '">' + keys[i] + '</a><br/>');
       }
       $("#graph-container").css("display", "none");
     });
   }
 });
+
+function decode(s) {
+  return decodeURIComponent(s.replace(/\+/g, " "));
+}
+
+function parseParams() {
+  var params = window.location.search.substring(1);
+  var re = /([^&=]+)=?([^&]*)/g;
+  var pair;
+
+  while (pair = re.exec(params)) {
+    $params[decode(pair[1])] = decode(pair[2]);
+  }
+}
+
 
 function roundTo(number, digits) {
   return Math.round(number * Math.pow(10, digits)) / Math.pow(10, digits);
@@ -25,6 +44,15 @@ function roundTo(number, digits) {
 function clickBox(n) {
   display_lines[n] = !display_lines[n];
   $('input[name=box' + n + ']').attr('checked', display_lines[n]);
+  getData();
+}
+
+function clickLog() {
+  if ($params["log"] > 0) {
+    $params["log"] = 0;
+  } else {
+    $params["log"] = 1;
+  }
   getData();
 }
 
@@ -65,14 +93,19 @@ function hideTooltip() {
 }
 
 function drawContent() {
-  if (document.location.search.substr(1, 7) == "timing:") {
+  $("#display_lines").append("<input type=checkbox name=log onClick=\"clickLog()\" /> log scale");
+  $("input[name=log]").attr("checked", $params["log"] > 0);
+  $("#display_lines").append("<p />");
+
+  if ($params["g"].substr(0, 7) == "timing:") {
+    $timing = true;
     for (i = 0; i < percentiles.length; i++) {
-      $("#display_lines").append("<input type=checkbox name=box" + i + " onClick=\"clickBox(" + i + ")\" />" + percentiles[i] + "<br />");
+      $("#display_lines").append("<input type=checkbox name=box" + i + " onClick=\"clickBox(" + i + ")\" /> " + percentiles[i] + "<br />");
       $("input[name=box" + i + "]").attr("checked", display_lines[i]);
     }
-  }
-  if (document.location.search.substr(8, 4) == "FAKE") {
-    $fake = true;
+    if ($params["g"].substr(7, 4) == "FAKE") {
+      $fake = true;
+    }
   }
   getData();
 }
@@ -110,23 +143,27 @@ function drawChart(rawData) {
   newData = rotate(newData);
   newData = $.map(newData, function(row) {
     return {
-      //label: "yeah",
       yaxis: 2,
       data: row
     };
   })
   var options = {
     grid: {
-      hoverable: true
+      hoverable: true,
+      mouseActiveRadius: 25,
     },
     xaxis: {
       mode: "time"
     },
     y2axis: {
-      transform: function (v) { return Math.log(v) + 1; },
-      inverseTransform: function (v) { return Math.exp(v); }
     },
   };
+  if ($params["log"] > 0) {
+    $.extend(options["y2axis"], {
+      transform: function (v) { return Math.log(v); },
+      inverseTransform: function (v) { return Math.exp(v); }
+    });
+  }
   $.plot($("#chart"), newData, options);
 
   var previousPoint = null;
@@ -139,32 +176,5 @@ function drawChart(rawData) {
     } else {
       hideTooltip();
     }
-  });
-}
-
-function drawChartGoogly(rawData) {
-  var data = new google.visualization.DataTable();
-  data.addColumn('datetime', 'Time');
-  for (i = 0; i < rawData[0].length - 1; i++) {
-    data.addColumn('number', 'Data' + i);
-  }
-  data.addRows(rawData.map(function(row) { return [ new Date(row[0] * 1000) ].concat(row.slice(1)); }));
-
-  new Dygraph.GVizChart(document.getElementById('chart')).draw(data, {
-    includeZero: true,
-    fillGraph: true,
-    labelsKMG2: true,
-    xAxisLabelFormatter: function(date, granularity) { return date.strftime("%H:%M"); },
-    labelsDivStyles: { display: "none" },
-    highlightCallback: function(e, x, pts) {
-      var xloc = Math.floor(pts[pts.length - 1].canvasx) + 15;
-      var yloc = Math.floor(pts[pts.length - 1].canvasy) + 15;
-      var label = pts.map(function(p) { return roundTo(p.yval, 3); }).join(", ");
-      $('#chart_label').html(label);
-      $('#chart_label').css({ display: "block", left: xloc + "px", top: yloc + "px" });
-    },
-    unhighlightCallback: function(e) {
-      $('#chart_label').css({ display: "none" });
-    },
   });
 }
