@@ -68,6 +68,15 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
   }
 }
 
+class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
+  def handle(exchange: HttpExchange) {
+    val requestPath = exchange.getRequestURI().getPath()
+    val n = requestPath.lastIndexOf('/')
+    val relativePath = if (n >= 0) requestPath.substring(n + 1) else requestPath
+    render(loadResource(staticPath + "/" + relativePath), exchange)
+  }
+}
+
 
 object CgiRequestHandler {
   def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
@@ -146,6 +155,7 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   addContext("/", new CommandRequestHandler(commandHandler))
   addContext("/report/", new PageResourceHandler("/report_request_handler.html"))
   addContext("/favicon.ico", new MissingFileHandler())
+  addContext("/static/", new FolderResourceHandler("/static"))
 
   httpServer.setExecutor(null)
 

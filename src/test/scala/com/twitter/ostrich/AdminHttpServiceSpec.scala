@@ -99,6 +99,10 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       serverInfo mustMatch("\"uptime\":")
     }
 
+    "fetch static files" in {
+      get("/static/drawgraph.js") must include("drawChart")
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()
