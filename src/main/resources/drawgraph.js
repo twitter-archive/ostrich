@@ -121,7 +121,6 @@ function getData() {
     ];
     drawChart(rawData);
   } else {
-    var key = document.location.search.substr(1);
     var param = "";
     for (i = 0; i < percentiles.length; i++) {
       if (display_lines[i]) {
@@ -131,8 +130,8 @@ function getData() {
         param += i;
       }
     }
-    $.getJSON("/graph_data/" + key + "?p=" + param, function(datadump) {
-      var rawData = datadump[key];
+    $.getJSON("/graph_data/" + $params["g"] + "?p=" + param, function(datadump) {
+      var rawData = datadump[$params["g"]];
       drawChart(rawData);
     });
   }
@@ -160,8 +159,8 @@ function drawChart(rawData) {
   };
   if ($params["log"] > 0) {
     $.extend(options["y2axis"], {
-      transform: function (v) { return Math.log(v); },
-      inverseTransform: function (v) { return Math.exp(v); }
+      transform: function (v) { return (v == 0) ? null : Math.log(v); },
+      inverseTransform: function (v) { return (v == null) ? 0 : Math.exp(v); }
     });
   }
   $.plot($("#chart"), newData, options);

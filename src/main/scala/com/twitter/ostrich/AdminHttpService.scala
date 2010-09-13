@@ -84,6 +84,8 @@ object CgiRequestHandler {
 abstract class CgiRequestHandler extends CustomHttpHandler {
   import CgiRequestHandler._
 
+  private val log = Logger(getClass.getName)
+
   def handle(exchange: HttpExchange) {
     try {
       val requestURI = exchange.getRequestURI
@@ -92,7 +94,9 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
 
       handle(exchange, path, parameters)
     } catch {
-      case e => render("exception while processing request: " + e, exchange, 500)
+      case e =>
+        render("exception while processing request: " + e, exchange, 500)
+        log.error(e, "Exception processing admin http request")
     }
   }
 
