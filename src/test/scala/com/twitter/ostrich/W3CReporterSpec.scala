@@ -27,7 +27,7 @@ import net.lag.logging.{GenericFormatter, Level, Logger, StringHandler}
 import org.specs._
 
 
-object W3CReporterSpec extends Specification {
+class W3CReporterSpec extends Specification {
   "W3CReporter" should {
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
@@ -85,6 +85,30 @@ object W3CReporterSpec extends Specification {
         expectedHeader(1342496559) :::
         "w3c: #Fields: a b" ::
         "w3c: 3 1" :: Nil
+    }
+
+    "per line crc printing"  >> {
+      val crcReporter = new W3CReporter(logger, true)
+
+      "should print" in {
+        crcReporter.report(Map("a" -> 3, "b" -> 1))
+        handler.toString.split("\n").toList mustEqual
+          expectedHeader(1342496559) :::
+          "w3c: #Fields: a b" ::
+          "w3c: 1342496559 3 1" :: Nil
+      }
+
+      "changes appropriately when column headers change" in {
+        crcReporter.report(Map("a" -> 1))
+        crcReporter.report(Map("a" -> 3, "b" -> 1))
+        handler.toString.split("\n").toList mustEqual
+          expectedHeader(276919822) :::
+          "w3c: #Fields: a" ::
+          "w3c: 276919822 1" ::
+          expectedHeader(1342496559) :::
+          "w3c: #Fields: a b" ::
+          "w3c: 1342496559 3 1" :: Nil
+      }
     }
   }
 }
