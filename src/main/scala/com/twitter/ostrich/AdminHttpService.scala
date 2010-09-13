@@ -68,6 +68,15 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
   }
 }
 
+class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
+  def handle(exchange: HttpExchange) {
+    val requestPath = exchange.getRequestURI().getPath()
+    val n = requestPath.lastIndexOf('/')
+    val relativePath = if (n >= 0) requestPath.substring(n + 1) else requestPath
+    render(loadResource(staticPath + "/" + relativePath), exchange)
+  }
+}
+
 
 object CgiRequestHandler {
   def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
@@ -84,6 +93,8 @@ object CgiRequestHandler {
 abstract class CgiRequestHandler extends CustomHttpHandler {
   import CgiRequestHandler._
 
+  private val log = Logger(getClass.getName)
+
   def handle(exchange: HttpExchange) {
     try {
       val requestURI = exchange.getRequestURI
@@ -92,7 +103,9 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
 
       handle(exchange, path, parameters)
     } catch {
-      case e => render("exception while processing request: " + e, exchange, 500)
+      case e =>
+        render("exception while processing request: " + e, exchange, 500)
+        log.error(e, "Exception processing admin http request")
     }
   }
 
@@ -142,6 +155,7 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   addContext("/", new CommandRequestHandler(commandHandler))
   addContext("/report/", new PageResourceHandler("/report_request_handler.html"))
   addContext("/favicon.ico", new MissingFileHandler())
+  addContext("/static/", new FolderResourceHandler("/static"))
 
   httpServer.setExecutor(null)
 
