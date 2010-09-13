@@ -98,6 +98,8 @@ class TimeSeriesCollector {
 
   def registerWith(service: AdminHttpService) {
     service.addContext("/graph/", new PageResourceHandler("/graph.html"))
+    service.addContext("/graph/jquery.flot.js", new PageResourceHandler("/jquery.flot.js"))
+    service.addContext("/graph/drawgraph.js", new PageResourceHandler("/drawgraph.js"))
     service.addContext("/graph_data", new CgiRequestHandler {
       def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
         if (path.size == 1) {
