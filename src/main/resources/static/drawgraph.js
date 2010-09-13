@@ -15,7 +15,7 @@ $(document).ready(function() {
     $.getJSON("/graph_data", function(datadump) {
       var keys = datadump["keys"].sort();
       for (i in keys) {
-        $("#contents").append('<a href="graph.html?g=' + keys[i] + '">' + keys[i] + '</a><br/>');
+        $("#contents").append('<a href="/graph/?g=' + keys[i] + '">' + keys[i] + '</a><br/>');
       }
       $("#graph-container").css("display", "none");
     });
