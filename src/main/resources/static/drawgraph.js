@@ -156,17 +156,22 @@ function drawChart(rawData) {
     },
     y2axis: {
     },
+    selection: { mode: "xy" }
   };
+
   if ($params["log"] > 0) {
     $.extend(options["y2axis"], {
       transform: function (v) { return (v == 0) ? null : Math.log(v); },
       inverseTransform: function (v) { return (v == null) ? 0 : Math.exp(v); }
     });
   }
-  $.plot($("#chart"), newData, options);
 
   var previousPoint = null;
-  $("#chart").bind("plothover", function (event, pos, item) {
+
+  var chart = $("#chart");
+  $.plot(chart, newData, options);
+
+  chart.bind("plothover", function (event, pos, item) {
     if (item && (previousPoint != item.datapoint)) {
       previousPoint = item.datapoint;
       hideTooltip();
@@ -175,5 +180,18 @@ function drawChart(rawData) {
     } else {
       hideTooltip();
     }
+  });
+
+  chart.bind("plotselected", function (event, ranges) {
+    $("#message").text("Zoomed in -- click anywhere in the graph to return.");
+    $.plot(chart, newData, $.extend(true, {}, options, {
+      xaxis: { min: ranges.xaxis.from, max: ranges.xaxis.to },
+      y2axis: { min: ranges.y2axis.from, max: ranges.y2axis.to },
+    }));
+  });
+
+  chart.bind("plotunselected", function (event) {
+    $("#message").text("");
+    $.plot(chart, newData, options);
   });
 }
