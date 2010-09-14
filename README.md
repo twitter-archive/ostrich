@@ -1,9 +1,9 @@
 # Ostrich
 
 Ostrich is a small library for collecting and reporting runtime statistics from a scala server. It
-can collect counters, gauges, and timings, and it can report them via JMX, a simple web interface, a
-plain-text socket, or a "W3C" log file. A server can also be asked to shutdown or reload its config
-files using these interfaces.
+can collect counters, gauges, and timings, and it can report them via JMX, a simple web interface
+that includes simple graphs, a plain-text socket, or a "W3C" log file. A server can also be asked to
+shutdown or reload its config files using these interfaces.
 
 Dependencies: scala-json, Configgy, Netty. These dependencies are managed by the build system.
 
@@ -80,34 +80,70 @@ The commands are:
   dump stack traces and stats about each currently running thread
 
 
+## Web graphs
+
+The web interface also includes a small graph server that can be used to look at the last hour of
+data on collected stats. (See "Stats API" below for how to track stats.)
+
+The url
+
+    http://localhost:PPPP/graph/
+
+(where PPPP is your `admin_http_port`) will give a list of currently-collected stats, and links to
+the current hourly graph for each stat. The graphs are generated in javascript using flot.
+
+
 ## Admin API
 
 To startup the admin interfaces, call:
 
-    Server.startAdmin(serverInterface, config, runtimeEnvironment)
+    ServiceTracker.startAdmin(config, runtimeEnvironment)
 
 `RuntimeEnvironment` comes from configgy, and is used to display the server info.
 
 `Config` is usually your root server config (but doesn't have to be) and is used to determine which
-admin interfaces to start up. If `admin_text_port` exists (usually 9989), the socket interface will
-start up there. If `admin_http_port` exists (usually 9990), the web interface will start up. If
-neither is set, no admin services will be started.
+admin interfaces to start up. If `admin_text_port` exists, the socket interface will start up there.
+If `admin_http_port` exists, the web interface will start up. If neither is set, no admin services
+will be started.
 
-`ServerInterface` is your implementation of `ServerInterface` for your server. It contains only the
-methods `shutdown` and `quiesce`, both of which are always called from dedicated temporary threads
-(so it's okay to do slow things, but be careful of thread safety). You can implement `quiesce` as a
-call to `shutdown` if the distinction makes no sense for your server.
+In order to shutdown your server from the admin port, you must implement `Service` and register it:
+
+    ServiceTracker.register(this)
+
+`Service` contains only the methods `shutdown` and `quiesce`, both of which are always called from
+dedicated temporary threads (so it's okay to do slow things, but be careful of thread safety). You
+can implement `quiesce` as a call to `shutdown` if the distinction makes no sense for your server.
 
 An example:
 
     import com.twitter.ostrich.{Server, ServerInterface}
     import net.lag.configgy.{Configgy, RuntimeEnvironment}
 
-    object Main extends ServerInterface {
+    object Main extends Service {
       val runtime = new RuntimeEnvironment(getClass)
       runtime.load(args)
       val config = Configgy.config
-      Server.startAdmin(this, config, runtime)
+      ServiceTracker.register(this)
+      ServiceTracker.startAdmin(config, runtime)
+
+
+## Config keys
+
+- `admin_http_port`
+
+  port for the web server interface (default: no web interface)
+
+- `admin_text_port`
+
+  port for the interactive text interface (default: no text interface)
+
+- `admin_jmx_package`
+
+  package to use for reporting stats & config through JMX (default: no JMX)
+
+- `admin_timeseries`
+
+  true/false, whether to expose the hourly graphs through the web interface (default: true)
 
 
 ## Stats API
