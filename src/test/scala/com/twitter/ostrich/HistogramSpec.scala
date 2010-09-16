@@ -33,7 +33,7 @@ object HistogramSpec extends Specification {
     "find the right bucket for various timings" in {
       histogram.add(0)
       histogram.get(true)(0) mustEqual 1
-      histogram.add(99999)
+      histogram.add(9999999)
       histogram.get(true).last mustEqual 1
       histogram.add(1)
       histogram.get(true)(1) mustEqual 1
@@ -92,7 +92,7 @@ object HistogramSpec extends Specification {
     }
 
     "handle a very large timing" in {
-      histogram.add(100000)
+      histogram.add(100000000)
       histogram.getPercentile(1.0) mustEqual Math.MAX_INT
     }
 

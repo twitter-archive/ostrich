@@ -2,10 +2,12 @@ package com.twitter.ostrich
 
 
 object Histogram {
+  // (0..53).map { |n| (1.3 ** n).to_i + 1 }.uniq
   val BUCKET_OFFSETS =
     Array(1, 2, 3, 4, 5, 7, 9, 11, 14, 18, 24, 31, 40, 52, 67, 87, 113, 147, 191, 248,
           322, 418, 543, 706, 918, 1193, 1551, 2016, 2620, 3406, 4428, 5757, 7483,
-          9728, 12647, 16441, 21373, 27784, 36119)
+          9728, 12647, 16441, 21373, 27784, 36119, 46955, 61041, 79354, 103160, 134107,
+          174339, 226641, 294633, 383023, 497930, 647308, 841501, 1093951)
   val bucketOffsetSize = BUCKET_OFFSETS.size
 
   private def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
