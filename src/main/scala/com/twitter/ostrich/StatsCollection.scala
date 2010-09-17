@@ -16,7 +16,7 @@
 
 package com.twitter.ostrich
 
-import scala.collection.{Map, jcl, mutable, immutable}
+import scala.collection.{Map, JavaConversions, mutable, immutable}
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -40,7 +40,7 @@ class StatsCollection extends StatsProvider {
 
   def getCounterStats(reset: Boolean): Map[String, Long] = {
     val rv = new mutable.HashMap[String, Long]
-    for((key, counter) <- jcl.Map(counterMap)) {
+    for((key, counter) <- JavaConversions.asMap(counterMap)) {
       rv += (key -> counter(reset))
     }
     rv
@@ -48,7 +48,7 @@ class StatsCollection extends StatsProvider {
 
   def getTimingStats(reset: Boolean): Map[String, TimingStat] = {
     val out = new mutable.HashMap[String, TimingStat]
-    for ((key, timing) <- jcl.Map(timingMap)) {
+    for ((key, timing) <- JavaConversions.asMap(timingMap)) {
       out += (key -> timing.get(reset))
     }
     out

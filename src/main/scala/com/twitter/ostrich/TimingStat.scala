@@ -44,10 +44,10 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[H
     this(_count, _maximum, _minimum, None, 0.0, 0.0)
 
   // FIXME: this ought to be generally available
-  class SortableSeq[T <% Ordered[T]](seq: Iterator[T]) {
+  class SortableSeq[T](seq: Iterable[T])(implicit m: ClassManifest[T], ord: Ordering[T]) {
     def sorted = Sorting.stableSort(seq.toList)
   }
-  implicit def sortableSeq[T <% Ordered[T]](seq: Iterator[T]) = new SortableSeq(seq)
+  implicit def sortableSeq[T](seq: Iterable[T])(implicit m: ClassManifest[T], ord: Ordering[T]) = new SortableSeq(seq)
 
   def toJson() = {
     val out: Map[String, Any] = toMap ++ (histogram match {

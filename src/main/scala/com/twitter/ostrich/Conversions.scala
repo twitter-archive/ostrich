@@ -24,13 +24,15 @@ object Conversions {
   class RichAny(obj: Any) {
     private def build(obj: Any): List[String] = {
       obj match {
-        case m: Map[_, _] =>
+        case m: Map[Any, Any] =>
           Sorting.stableSort(m.keys.toList, { (a: Any, b: Any) => a.toString < b.toString }).toList.flatMap { k =>
             build(m(k)) match {
               case line :: Nil if (!line.contains(": ")) => List(k.toString + ": " + line)
               case list => (k.toString + ":") :: list.map { "  " + _ }
             }
           }
+        case a: Array[_] =>
+          a.flatMap { build(_) }.toList
         case s: Seq[_] =>
           s.flatMap { build(_) }.toList
         case x =>
@@ -40,5 +42,5 @@ object Conversions {
 
     def flatten: String = build(obj).mkString("\n") + "\n"
   }
-  implicit def richAny(obj: Any) = new RichAny(obj)
+  implicit def richAny(obj: Any): RichAny = new RichAny(obj)
 }
