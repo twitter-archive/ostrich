@@ -28,6 +28,7 @@ object ServiceTracker {
   val services = new mutable.HashSet[Service]
   val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]
   var adminHttpService: Option[AdminHttpService] = None
+  var adminService: Option[AdminSocketService] = None
 
   def register(service: Service) {
     services += service
@@ -36,16 +37,18 @@ object ServiceTracker {
   def shutdown() {
     services.foreach { _.shutdown() }
     services.clear()
+    stopAdmin()
   }
 
   def quiesce() {
     services.foreach { _.quiesce() }
     services.clear()
+    stopAdmin()
   }
 
   def startAdmin(config: ConfigMap, runtime: RuntimeEnvironment) = synchronized {
     val _adminHttpService = new AdminHttpService(config, runtime)
-    val adminService = new AdminSocketService(config, runtime)
+    val _adminService = new AdminSocketService(config, runtime)
     config.getString("admin_jmx_package").map(StatsMBean(_))
     if (config.getBool("admin_timeseries", true)) {
       val collector = new TimeSeriesCollector()
@@ -58,10 +61,20 @@ object ServiceTracker {
     }
 
     _adminHttpService.start()
-    adminService.start()
+    _adminService.start()
 
     adminHttpService = Some(_adminHttpService)
+    adminService = Some(_adminService)
   }
+
+  def stopAdmin() = synchronized {
+    adminHttpService.map { _.shutdown() }
+    adminHttpService = None
+
+    adminService.map { _.shutdown() }
+    adminService = None
+  }
+
 
   def registerAdminHttpHandler(path: String)(generator: (List[List[String]]) => String) = {
     val handler = new CustomHttpHandler {
