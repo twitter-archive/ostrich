@@ -59,29 +59,31 @@ object W3CStatsSpec extends Specification {
       }
       response2 mustEqual 3
 
-      val logline = w3c.log_entry
+      w3c.report
+      val logline = handler.toString
       logline mustNot beNull
 
       val entries: Array[String] = logline.split(" ")
-      entries(0).toInt must be_>=(0)
-      entries(1) mustEqual "GET"
-      entries(2) mustEqual "/home"
-      entries(3).toInt must be_>=(10)  //must take at least 10 ns!
-      entries(4) mustEqual "-"
-      entries(5) mustEqual "01-Jan-1970_00:00:00"
+      entries(1).toInt must be_>=(0)
+      entries(2) mustEqual "GET"
+      entries(3) mustEqual "/home"
+      entries(4).toInt must be_>=(10)  //must take at least 10 ns!
+      entries(5) mustEqual "-"
+      entries(6) mustEqual "01-Jan-1970_00:00:00"
     }
 
     "map when cleared returns the empty string" in {
       w3c.log("request-uri", "foo")
       w3c.clearAll()
-      val logline = w3c.log_entry
+      val logline = handler.toString
       // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
       logline.replaceAll("-", "").trim() mustEqual ""
     }
 
     "logging a field not tracked in the fields member shouldn't show up in the logfile" in {
       w3c.log("jibberish_nonsense", "foo")
-      w3c.log_entry must notInclude("foo")
+      handler.toString must notInclude("foo")
+//      w3c.log_entry must notInclude("foo")
     }
 
     "handle a transaction" in {

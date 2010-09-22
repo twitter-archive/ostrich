@@ -44,7 +44,7 @@ class W3CReporterSpec extends Specification {
       Stats.clearAll()
       handler.clear()
       Time.now = Time.at("2009-08-03 19:23:04 +0000")
-      reporter = new W3CReporter(logger)
+      reporter = new W3CReporter(logger, true, false)
     }
 
     "log basic stats" in {
@@ -88,7 +88,7 @@ class W3CReporterSpec extends Specification {
     }
 
     "per line crc printing"  >> {
-      val crcReporter = new W3CReporter(logger, true)
+      val crcReporter = new W3CReporter(logger, true, true)
 
       "should print" in {
         crcReporter.report(Map("a" -> 3, "b" -> 1))

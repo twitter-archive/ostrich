@@ -29,7 +29,7 @@ class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvm
   def this(logger: Logger, frequencyInSeconds: Int) = this(logger, frequencyInSeconds, true)
 
   val collection = Stats.fork()
-  val reporter = new W3CReporter(logger)
+  val reporter = new W3CReporter(logger, true, false)
   var nextRun = Time.now + frequencyInSeconds.seconds
 
   def runLoop() {

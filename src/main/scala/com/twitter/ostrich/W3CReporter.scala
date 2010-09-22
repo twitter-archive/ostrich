@@ -38,10 +38,11 @@ object W3CReporter {
  * `report`, if the keys in the map have changed, or it's been "a while" since the header was
  * last logged, the header is logged again.
  */
-class W3CReporter(val logger: Logger, val printCrc: Boolean) {
+class W3CReporter(val logger: Logger, val printHeader: Boolean, val printCrc: Boolean) {
   import W3CReporter._
 
-  def this(logger: Logger) = this(logger, false)
+  def this(logger: Logger, printCrc: Boolean) = this(logger, false, true)
+  def this(logger: Logger) = this(logger, false, false)
 
   /**
    * The W3C header lines will be written out this often, even if the fields haven't changed.
@@ -59,15 +60,22 @@ class W3CReporter(val logger: Logger, val printCrc: Boolean) {
    */
   def report(stats: Map[String, Any]) {
     val orderedKeys = stats.keys.toList.sort(_ < _)
+    report(orderedKeys, stats)
+  }
+
+  def report(orderedKeys: Iterable[String], stats: Map[String, Any]) = {
     val fieldsHeader = orderedKeys.mkString("#Fields: ", " ", "")
     val crc = crc32(fieldsHeader)
-    if (crc != previousCrc || Time.now >= nextHeaderDumpAt) {
+
+    if (printHeader && (crc != previousCrc || Time.now >= nextHeaderDumpAt)) {
       logHeader(fieldsHeader, crc)
     }
+
+    previousCrc = crc
     logger.info(generateLine(orderedKeys, stats))
   }
 
-  def generateLine(orderedKeys: Iterable[String], stats: Map[String, Any]) = {
+  private def generateLine(orderedKeys: Iterable[String], stats: Map[String, Any]) = {
     val rv = orderedKeys.map { key => stats.get(key).map { stringify(_) }.getOrElse("-") }.mkString(" ")
     if (printCrc) previousCrc + " " + rv else rv
   }
@@ -78,8 +86,7 @@ class W3CReporter(val logger: Logger, val printCrc: Boolean) {
             "#Date: ", formatter.format(new Date(Time.now.inMilliseconds)), "\n",
             "#CRC: ", crc.toString, "\n",
             fieldsHeader, "\n").mkString("")
-    logger.info(header)
-    previousCrc = crc
+    if (printHeader) logger.info(header)
     nextHeaderDumpAt = headerRepeatFrequencyInMilliseconds.milliseconds.fromNow
   }
 

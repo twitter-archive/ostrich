@@ -10,5 +10,6 @@ dist
 *.swp
 lib_managed
 project/boot
+project/plugins/project
 .DS_Store
 src_managed
