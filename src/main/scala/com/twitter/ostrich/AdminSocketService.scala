@@ -66,11 +66,12 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
 
     future.addListener(new ChannelGroupFutureListener() {
       def operationComplete(future: ChannelGroupFuture) {
-        val completed = future.awaitUninterruptibly(500)
-        log.debug("shutdown completed: " + completed)
+        log.debug("Shutdown completed.")
         bootstrap.releaseExternalResources()
       }
     })
+
+    future.awaitUninterruptibly(500)
   }
 }
 
