@@ -13,3 +13,4 @@ project/boot
 .DS_Store
 src_managed
 project/plugins/project
+ostrich.tmproj
