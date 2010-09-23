@@ -73,7 +73,14 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
     val requestPath = exchange.getRequestURI().getPath()
     val n = requestPath.lastIndexOf('/')
     val relativePath = if (n >= 0) requestPath.substring(n + 1) else requestPath
-    render(loadResource(staticPath + "/" + relativePath), exchange)
+    val contentType = if (relativePath.endsWith(".js")) {
+      "text/javascript"
+    } else if (relativePath.endsWith(".html")) {
+      "text/html"
+    } else {
+      "application/unknown"
+    }
+    render(loadResource(staticPath + "/" + relativePath), exchange, 200, contentType)
   }
 }
 
