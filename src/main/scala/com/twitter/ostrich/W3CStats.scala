@@ -30,11 +30,10 @@ import java.text.SimpleDateFormat
  *
  * @param fields The fields, in order, as they will appear in the final w3c log output.
  */
-class W3CStats(reporter: W3CReporter, fields: Array[String]) extends StatsProvider {
-  def this(logger: Logger, fields: Array[String]) = this(new W3CReporter(logger), fields)
+class W3CStats(reporter: W3CReporter, fields: Array[String], complainAboutUnregisteredFields: Boolean) extends StatsProvider {
+  def this(logger: Logger, fields: Array[String]) = this(new W3CReporter(logger), fields, true)
 
   val log = Logger.get(getClass.getName)
-  var complainAboutUnregisteredFields = true
   val fieldNames: java.util.HashSet[String] = new java.util.HashSet()
   fields.foreach { fieldNames.add(_) }
 
@@ -63,8 +62,9 @@ class W3CStats(reporter: W3CReporter, fields: Array[String]) extends StatsProvid
   private def log_safe[T](name: String, value: T) {
     if (complainAboutUnregisteredFields && !fieldNames.contains(name)) {
       log.error("trying to log unregistered field: %s".format(name))
+    } else {
+      get + (name -> value)
     }
-    get + (name -> value)
   }
 
   /**
