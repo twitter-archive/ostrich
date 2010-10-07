@@ -5,7 +5,7 @@ import com.twitter.sbt._
 class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
   val specs = "org.scala-tools.testing" % "specs_2.8.0" % "1.6.5"
   val vscaladoc = "org.scala-tools" % "vscaladoc" % "1.1-md-3"
-  val twitterJson = "com.twitter" % "json" % "2.1.3"
+  val twitterJson = "com.twitter" % "json" % "2.1.4"
   val configgy = "net.lag" % "configgy" % "2.0.0"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
