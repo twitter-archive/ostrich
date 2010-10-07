@@ -16,7 +16,7 @@
 
 package com.twitter.ostrich
 
-import scala.collection.{immutable, mutable}
+import scala.collection.Map
 import com.twitter.json.Json
 import com.twitter.xrayspecs.{Duration, Time}
 import com.twitter.xrayspecs.TimeConversions._
@@ -31,8 +31,8 @@ class JsonStatsLogger(val logger: Logger, val period: Duration)
   val collection = Stats.fork()
 
   def periodic() {
-    val statMap = collection.stats(true) ++
-      immutable.Map("jvm" -> Stats.getJvmStats(), "gauges" -> Stats.getGaugeStats(true))
-    logger.info(Json.build(immutable.Map(statMap.toSeq: _*)).toString)
+    val statMap = Map.empty ++ collection.stats(true) ++
+      Map("jvm" -> Stats.getJvmStats(), "gauges" -> Stats.getGaugeStats(true))
+    logger.info(Json.build(statMap).body)
   }
 }
