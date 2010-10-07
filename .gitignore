@@ -12,3 +12,4 @@ lib_managed
 project/boot
 .DS_Store
 src_managed
+.ensime
