@@ -19,6 +19,8 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) with Subve
 
   val jbossRepo = "JBoss Repository" at "http://repository.jboss.org/nexus/content/groups/public/"
 
+  override def disableCrossPaths = false
+
   override def pomExtra =
     <licenses>
       <license>
