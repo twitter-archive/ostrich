@@ -140,7 +140,8 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
         }
       }
 
-      render(response, exchange)
+      val contentType = if (format == Format.PlainText) "text/plain" else "application/json"
+      render(response, exchange, 200, contentType)
     } catch {
       case e: UnknownCommandError => render("no such command", exchange, 404)
       case unknownException =>
