@@ -84,6 +84,8 @@ class CommandHandler(runtime: RuntimeEnvironment) {
                       "uptime" -> mxRuntime.getUptime())
       case "threads" =>
         getThreadStacks()
+      case "gc" =>
+        System.gc()
       case x =>
         throw new UnknownCommandError(x)
     }
