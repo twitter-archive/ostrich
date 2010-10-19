@@ -86,6 +86,7 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         getThreadStacks()
       case "gc" =>
         System.gc()
+        "ok"
       case x =>
         throw new UnknownCommandError(x)
     }
