@@ -51,13 +51,14 @@ object TimeSeriesCollectorSpec extends Specification {
       Stats.incr("dogs", 3)
       collector.collector.periodic()
       Time.advance(1.minute)
-      Stats.incr("dogs")
+      Stats.incr("dogs", 60000)
       collector.collector.periodic()
 
-      val data = Json.parse(collector.get("counter:dogs", Nil)).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      val json = collector.get("counter:dogs", Nil)
+      val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
       data("counter:dogs")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
       data("counter:dogs")(58) mustEqual List(1.minute.ago.inSeconds, 3)
-      data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 1)
+      data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 60000)
     }
 
     "fetch json via http" in {
@@ -66,7 +67,7 @@ object TimeSeriesCollectorSpec extends Specification {
       Stats.incr("dogs", 3)
       collector.collector.periodic()
       Time.advance(1.minute)
-      Stats.incr("dogs")
+      Stats.incr("dogs", 1)
       collector.collector.periodic()
 
       val service = new AdminHttpService(new Config(), new RuntimeEnvironment(getClass))
