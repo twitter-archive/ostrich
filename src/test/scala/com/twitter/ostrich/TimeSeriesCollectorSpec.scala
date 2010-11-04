@@ -45,7 +45,7 @@ object TimeSeriesCollectorSpec extends Specification {
       Json.parse(Source.fromURL(url).getLines.mkString("\n"))
     }
 
-    "report basic stats" in {
+    "Stats.incr" in {
       Time.freeze
       Stats.incr("cats")
       Stats.incr("dogs", 3)
@@ -59,6 +59,38 @@ object TimeSeriesCollectorSpec extends Specification {
       data("counter:dogs")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
       data("counter:dogs")(58) mustEqual List(1.minute.ago.inSeconds, 3)
       data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 60000)
+    }
+
+    "Stats.getCounter().update" in {
+      Time.freeze
+      Stats.getCounter("whales.tps").update(10)
+      collector.collector.periodic()
+      Time.advance(1.minute)
+      Stats.getCounter("whales.tps").update(5)
+      collector.collector.periodic()
+
+      val json = collector.get("counter:whales.tps", Nil)
+      val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      data("counter:whales.tps")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
+      data("counter:whales.tps")(58) mustEqual List(1.minute.ago.inSeconds, 10)
+      data("counter:whales.tps")(59) mustEqual List(Time.now.inSeconds, 5)
+    }
+
+    "Stats.getCounter saved in variable" in {
+      val whales = Stats.getCounter("whales.tps")
+      Time.freeze
+      whales.update(10)
+      collector.collector.periodic()
+      Time.advance(1.minute)
+      whales.update(5)
+      collector.collector.periodic()
+
+      val json = collector.get("counter:whales.tps", Nil)
+      val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      data("counter:whales.tps")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
+      data("counter:whales.tps")(58) mustEqual List(1.minute.ago.inSeconds, 10)
+      data("counter:whales.tps")(59) mustEqual List(Time.now.inSeconds, 5)
+
     }
 
     "fetch json via http" in {
