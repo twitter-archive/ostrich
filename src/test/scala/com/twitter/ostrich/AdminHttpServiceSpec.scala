@@ -48,6 +48,12 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       service.shutdown()
     }
 
+    "static resources should be available on the classpath" in {
+      val inputStream = getClass.getResourceAsStream("/static/drawgraph.js")
+      inputStream mustNot beNull
+      Source.fromInputStream(inputStream).mkString mustNot beNull
+    }
+
     "start and stop" in {
       new Socket("localhost", PORT) must notBeNull
       service.shutdown()
