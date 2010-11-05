@@ -56,6 +56,8 @@ class TimeSeriesCollector {
 
   val collector = new PeriodicBackgroundProcess("TimeSeriesCollector", 1.minute) {
     def periodic() {
+      val stats = Stats.fork()
+
       Stats.getJvmStats().elements.foreach { case (k, v) =>
         hourly.getOrElseUpdate("jvm:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
