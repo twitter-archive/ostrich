@@ -48,10 +48,29 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       service.shutdown()
     }
 
-    "static resources should be available on the classpath" in {
-      val inputStream = getClass.getResourceAsStream("/static/drawgraph.js")
-      inputStream mustNot beNull
-      Source.fromInputStream(inputStream).mkString mustNot beNull
+    "FolderResourceHandler" in {
+      val staticHandler = new FolderResourceHandler("/nested")
+      "split a URI" in {
+        staticHandler.getRelativePath("/nested/1level.txt") mustEqual "/1level.txt"
+        staticHandler.getRelativePath("/nested/2level/2level.txt") mustEqual "/2level/2level.txt"
+      }
+    }
+
+    "static resources" in {
+      "unnested" in {
+        val inputStream = getClass.getResourceAsStream("/unnested.txt")
+        Source.fromInputStream(inputStream).mkString must beMatching("we are not nested")
+      }
+
+      "1 level of nesting" in {
+        val inputStream = getClass.getResourceAsStream("/nested/1level.txt")
+        Source.fromInputStream(inputStream).mkString must beMatching("nested one level deep")
+      }
+
+      "2 levels of nesting" in {
+        val inputStream = getClass.getResourceAsStream("/nested/2levels/2levels.txt")
+        Source.fromInputStream(inputStream).mkString must beMatching("nested two levels deep")
+      }
     }
 
     "start and stop" in {

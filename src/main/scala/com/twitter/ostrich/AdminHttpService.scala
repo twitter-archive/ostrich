@@ -69,10 +69,23 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
 }
 
 class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
+
+  /**
+   * Given a requestPath (e.g. /static/digraph.js), break it up into the path and filename
+   */
+  def getRelativePath(requestPath: String): String = {
+    val n = requestPath.lastIndexOf('/')
+    if (requestPath.startsWith(staticPath)) {
+      requestPath.substring(staticPath.length)
+    } else {
+      requestPath
+    }
+  }
+
   def handle(exchange: HttpExchange) {
     val requestPath = exchange.getRequestURI().getPath()
-    val n = requestPath.lastIndexOf('/')
-    val relativePath = if (n >= 0) requestPath.substring(n + 1) else requestPath
+    val relativePath = getRelativePath(requestPath)
+
     val contentType = if (relativePath.endsWith(".js")) {
       "text/javascript"
     } else if (relativePath.endsWith(".html")) {
@@ -80,6 +93,7 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
     } else {
       "application/unknown"
     }
+
     render(loadResource(staticPath + "/" + relativePath), exchange, 200, contentType)
   }
 }
