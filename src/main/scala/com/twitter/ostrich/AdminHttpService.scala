@@ -22,7 +22,7 @@ import scala.io.Source
 import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
-
+import com.twitter.xrayspecs.TimeConversions._
 
 abstract class CustomHttpHandler extends HttpHandler {
   def render(body: String, exchange: HttpExchange) {
@@ -98,7 +98,6 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
   }
 }
 
-
 object CgiRequestHandler {
   def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
     val params = exchange.getRequestURI.getQuery
@@ -133,6 +132,35 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]])
 }
 
+
+class HeapResourceHandler extends CgiRequestHandler {
+  private val log = Logger(getClass.getName)
+
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+    if (!Heapster.instance.isDefined) {
+      render("heapster not loaded!", exchange)
+      return
+    }
+    val heapster = Heapster.instance.get
+
+    parameters.filter(_(0) == "pause").firstOption.map(_(1)) match {
+      case Some(pause) =>
+       log.info("collecting heap profile for %s seconds".format(pause))
+       val profile = heapster.profile(pause.toInt.seconds)
+
+       // Write out the profile verbatim. It's a pprof "raw" profile.
+       exchange.sendResponseHeaders(200, profile.size)
+       val output: OutputStream = exchange.getResponseBody()
+       output.write(profile)
+       output.flush()
+       output.close()
+       exchange.close()
+
+      case None =>
+        render("failed to parse pause parameter", exchange)
+    }
+  }
+}
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
@@ -178,6 +206,7 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   addContext("/report/", new PageResourceHandler("/report_request_handler.html"))
   addContext("/favicon.ico", new MissingFileHandler())
   addContext("/static/", new FolderResourceHandler("/static"))
+  addContext("/pprof/heap", new HeapResourceHandler)
 
   httpServer.setExecutor(null)
 
