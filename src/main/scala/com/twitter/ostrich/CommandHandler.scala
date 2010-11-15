@@ -18,14 +18,12 @@ package com.twitter.ostrich
 
 import java.io._
 import java.lang.management.ManagementFactory
-import java.net._
 import java.util.Date
 import scala.collection.Map
 import scala.collection.immutable
 import scala.collection.JavaConversions
 import com.twitter.json.Json
-import net.lag.configgy.{Configgy, RuntimeEnvironment}
-import net.lag.logging.Logger
+import net.lag.configgy.Configgy
 import Conversions._
 
 

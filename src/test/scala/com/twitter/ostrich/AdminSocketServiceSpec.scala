@@ -1,19 +1,15 @@
 package com.twitter.ostrich
 
-import java.io.{DataInputStream, InputStream}
+import java.io.InputStream
 import java.net.{Socket, SocketException}
 import com.twitter.json.Json
-import org.specs.util.Time
 import org.specs.util.TimeConversions._
-import net.lag.extensions._
-import net.lag.configgy.{Config, RuntimeEnvironment}
 import org.specs.Specification
 import org.specs.mock.Mockito
 import scala.collection.Map
 
 object AdminSocketServiceSpec extends Specification with Mockito {
   val PORT = 9995
-  val config = Config.fromMap(Map("admin_text_port" -> PORT.toString))
 
   class PimpedInputStream(stream: InputStream) {
     def readString(maxBytes: Int) = {
@@ -25,7 +21,7 @@ object AdminSocketServiceSpec extends Specification with Mockito {
 
   implicit def pimpInputStream(stream: InputStream) = new PimpedInputStream(stream)
 
-  val service: AdminSocketService = spy(new AdminSocketService(config, new RuntimeEnvironment(getClass)))
+  val service: AdminSocketService = spy(new AdminSocketService(PORT, new RuntimeEnvironment(getClass)))
 
   "AdminSocketService" should {
     doBefore {

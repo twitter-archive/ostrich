@@ -18,14 +18,11 @@ package com.twitter.ostrich
 
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors
-import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
 import org.jboss.netty.bootstrap.ServerBootstrap
-import org.jboss.netty.buffer.ChannelBuffer
-import org.jboss.netty.channel.Channels
 import org.jboss.netty.channel.group.{ChannelGroupFuture, ChannelGroupFutureListener, DefaultChannelGroup}
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory
-import org.jboss.netty.channel.{ChannelHandler, ChannelHandlerContext, ChannelPipeline, ChannelPipelineCoverage, ExceptionEvent, MessageEvent, SimpleChannelUpstreamHandler, ChannelStateEvent}
+import org.jboss.netty.channel.{ChannelHandlerContext, ChannelPipelineCoverage, ExceptionEvent, MessageEvent, SimpleChannelUpstreamHandler, ChannelStateEvent}
 import org.jboss.netty.handler.codec.string.{StringDecoder, StringEncoder}
 
 
@@ -34,9 +31,8 @@ object AdminSocketService {
 }
 
 
-class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
+class AdminSocketService(port: Int, runtime: RuntimeEnvironment) extends Service {
   private val log = Logger.get
-  val port = config.getInt("admin_text_port")
 
   val bootstrap = new ServerBootstrap(
     new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool())
@@ -50,11 +46,9 @@ class AdminSocketService(config: ConfigMap, runtime: RuntimeEnvironment) extends
   pipeline.addLast("handler", handler)
 
   def start() {
-    port.map { port =>
-      val channel = bootstrap.bind(new InetSocketAddress(port))
-      AdminSocketService.allChannels.add(channel)
-      ServiceTracker.register(this)
-    }
+    val channel = bootstrap.bind(new InetSocketAddress(port))
+    AdminSocketService.allChannels.add(channel)
+    ServiceTracker.register(this)
   }
 
   override def quiesce() {

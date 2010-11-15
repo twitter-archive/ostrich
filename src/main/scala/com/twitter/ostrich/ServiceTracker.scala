@@ -18,12 +18,21 @@ package com.twitter.ostrich
 
 import scala.collection.mutable
 import com.sun.net.httpserver.{HttpHandler, HttpExchange}
-import net.lag.configgy.{ConfigMap, RuntimeEnvironment}
+import net.lag.configgy.ConfigMap
 
 /**
  * Single server object that can track multiple Service implementations and multiplex the
  * shutdown & quiesce commands.
  */
+
+trait Config {
+  def jmxPackage: Option[String]
+  def collectTimeSeries = true
+  def httpPort: Int
+  def httpBacklog: Int
+  def telnetPort: Int
+}
+
 object ServiceTracker {
   val services = new mutable.HashSet[Service]
   val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]
@@ -46,25 +55,38 @@ object ServiceTracker {
     stopAdmin()
   }
 
-  def startAdmin(config: ConfigMap, runtime: RuntimeEnvironment) = synchronized {
-    val _adminHttpService = new AdminHttpService(config, runtime)
-    val _adminService = new AdminSocketService(config, runtime)
-    config.getString("admin_jmx_package").map(StatsMBean(_))
-    if (config.getBool("admin_timeseries", true)) {
-      val collector = new TimeSeriesCollector()
-      collector.registerWith(_adminHttpService)
-      collector.start()
+  def startAdmin(configgy: ConfigMap, runtime: RuntimeEnvironment) {
+    val config = new Config {
+      val jmxPackage = configgy.getString("admin_jmx_package")
+      override val collectTimeSeries = configgy.getBool("admin_timeseries", true)
+      val httpPort = configgy.getInt("admin_http_port", 0)
+      val httpBacklog = configgy.getInt("admin_http_backlog", 20)
+      val telnetPort = configgy.getInt("admin_text_port", 0)
     }
+    startAdmin(config, runtime)
+  }
 
-    for ((path, handler) <- queuedAdminHandlers) {
-      _adminHttpService.addContext(path, handler)
+  def startAdmin(config: Config, runtime: RuntimeEnvironment) {
+    synchronized {
+      val _adminHttpService = new AdminHttpService(config.httpPort, config.httpBacklog, runtime)
+      val _adminService = new AdminSocketService(config.telnetPort, runtime)
+      config.jmxPackage.map(StatsMBean(_))
+      if (config.collectTimeSeries) {
+        val collector = new TimeSeriesCollector()
+        collector.registerWith(_adminHttpService)
+        collector.start()
+      }
+
+      for ((path, handler) <- queuedAdminHandlers) {
+        _adminHttpService.addContext(path, handler)
+      }
+
+      _adminHttpService.start()
+      _adminService.start()
+
+      adminHttpService = Some(_adminHttpService)
+      adminService = Some(_adminService)
     }
-
-    _adminHttpService.start()
-    _adminService.start()
-
-    adminHttpService = Some(_adminHttpService)
-    adminService = Some(_adminService)
   }
 
   def stopAdmin() = synchronized {
