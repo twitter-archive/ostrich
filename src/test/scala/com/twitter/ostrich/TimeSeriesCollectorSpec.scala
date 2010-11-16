@@ -22,7 +22,6 @@ import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.xrayspecs.Time
 import com.twitter.xrayspecs.TimeConversions._
-import net.lag.configgy.{Config, RuntimeEnvironment}
 import net.lag.extensions._
 import org.specs._
 
