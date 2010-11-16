@@ -19,7 +19,6 @@ package com.twitter.ostrich
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
-import net.lag.configgy.Config
 import org.specs.Specification
 import org.specs.mock.Mockito
 
