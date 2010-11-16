@@ -3,6 +3,9 @@ import sbt._
 import com.twitter.sbt._
 
 class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
+  override def disableCrossPaths = true
+  override def managedStyle = ManagedStyle.Maven
+
   val specs = "org.scala-tools.testing" % "specs_2.8.0" % "1.6.5"
   val vscaladoc = "org.scala-tools" % "vscaladoc" % "1.1-md-3"
   val twitterJson = "com.twitter" % "json_2.8.0" % "2.1.4"
@@ -19,7 +22,6 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) with Subve
 
   val jbossRepo = "JBoss Repository" at "http://repository.jboss.org/nexus/content/groups/public/"
 
-  override def disableCrossPaths = false
 
   Credentials(Path.userHome / ".ivy2" / "credentials", log)
   val publishTo = "nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
