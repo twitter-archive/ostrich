@@ -16,18 +16,17 @@
 
 package com.twitter.ostrich
 
-import java.io.{DataInputStream, InputStream}
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
-import net.lag.configgy.{Config, RuntimeEnvironment}
+import net.lag.configgy.Config
 import org.specs.Specification
 import org.specs.mock.Mockito
 
 
 object AdminHttpServiceSpec extends Specification with Mockito {
   val PORT = 9996
-  val config = Config.fromMap(Map("admin_http_port" -> PORT.toString))
+  val BACKLOG = 20
 
   def get(path: String): String = {
     val url = new URL("http://localhost:%s%s".format(PORT, path))
@@ -39,7 +38,7 @@ object AdminHttpServiceSpec extends Specification with Mockito {
   "AdminHttpService" should {
 
     doBefore {
-      service = spy(new AdminHttpService(config, new RuntimeEnvironment(getClass)))
+      service = spy(new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass)))
       service.start()
     }
 

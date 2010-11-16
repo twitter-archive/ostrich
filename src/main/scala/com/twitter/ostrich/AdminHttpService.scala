@@ -17,9 +17,8 @@
 package com.twitter.ostrich
 
 import java.io.{InputStream, OutputStream}
-import java.net.{InetSocketAddress, Socket, URI, URL}
+import java.net.{InetSocketAddress, Socket}
 import scala.io.Source
-import net.lag.configgy.{Configgy, ConfigMap, RuntimeEnvironment}
 import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.xrayspecs.TimeConversions._
@@ -205,10 +204,8 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
 }
 
 
-class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends Service {
-  val port = config.getInt("admin_http_port")
-  val backlog = config.getInt("admin_http_backlog", 20)
-  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port.getOrElse(0)), backlog)
+class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) extends Service {
+  val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
   val commandHandler = new CommandHandler(runtime)
 
   def address = httpServer.getAddress
