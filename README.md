@@ -188,6 +188,15 @@ reporting:
 There are several other useful methods for creating derivative gauges or capturing timings -- check
 out the code.
 
+## Profiling
+
+If you're using [heapster](https://github.com/mariusaeriksen/heapster), you can generate a profile suitable for reading with [google perftools](http://code.google.com/p/google-perftools/)
+
+Example use:
+
+    curl -s 'localhost:9990/pprof/heap?pause=10' >| /tmp/prof
+
+This will result in a file that you can be read with [pprof](http://goog-perftools.sourceforge.net/doc/cpu_profiler.html)
 
 ## Credits
 
