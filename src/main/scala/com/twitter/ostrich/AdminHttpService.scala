@@ -21,9 +21,10 @@ import java.net.{InetSocketAddress, Socket}
 import scala.io.Source
 import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
-
+import com.twitter.xrayspecs.TimeConversions._
 
 abstract class CustomHttpHandler extends HttpHandler {
+  private val log = Logger.get(getClass)
   def render(body: String, exchange: HttpExchange) {
     render(body, exchange, 200)
   }
@@ -45,7 +46,13 @@ abstract class CustomHttpHandler extends HttpHandler {
   }
 
   def loadResource(name: String) = {
-    Source.fromInputStream(getClass.getResourceAsStream(name)).mkString
+    log.debug("Loading Resource from File: %s", name)
+    val stream = getClass.getResourceAsStream(name)
+    try {
+      Source.fromInputStream(stream).mkString
+    } catch {
+      case e => log.error(e, "Unable to load Resource from Classpath: %s", name); throw e
+    }
   }
 
   def handle(exchange: HttpExchange): Unit
@@ -75,11 +82,13 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
   def getRelativePath(requestPath: String): String = {
     val n = requestPath.lastIndexOf('/')
     if (requestPath.startsWith(staticPath)) {
-      requestPath.substring(staticPath.length)
+      requestPath.substring(staticPath.length + 1)
     } else {
       requestPath
     }
   }
+
+  def buildPath(relativePath: String) = staticPath + "/" + relativePath
 
   def handle(exchange: HttpExchange) {
     val requestPath = exchange.getRequestURI().getPath()
@@ -93,10 +102,9 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
       "application/unknown"
     }
 
-    render(loadResource(staticPath + "/" + relativePath), exchange, 200, contentType)
+    render(loadResource(buildPath(relativePath)), exchange, 200, contentType)
   }
 }
-
 
 object CgiRequestHandler {
   def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
@@ -132,6 +140,35 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]])
 }
 
+
+class HeapResourceHandler extends CgiRequestHandler {
+  private val log = Logger(getClass.getName)
+
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+    if (!Heapster.instance.isDefined) {
+      render("heapster not loaded!", exchange)
+      return
+    }
+    val heapster = Heapster.instance.get
+
+    parameters.filter(_(0) == "pause").firstOption.map(_(1)) match {
+      case Some(pause) =>
+       log.info("collecting heap profile for %s seconds".format(pause))
+       val profile = heapster.profile(pause.toInt.seconds)
+
+       // Write out the profile verbatim. It's a pprof "raw" profile.
+       exchange.sendResponseHeaders(200, profile.size)
+       val output: OutputStream = exchange.getResponseBody()
+       output.write(profile)
+       output.flush()
+       output.close()
+       exchange.close()
+
+      case None =>
+        render("failed to parse pause parameter", exchange)
+    }
+  }
+}
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
@@ -174,7 +211,8 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
   addContext("/", new CommandRequestHandler(commandHandler))
   addContext("/report/", new PageResourceHandler("/report_request_handler.html"))
   addContext("/favicon.ico", new MissingFileHandler())
-  addContext("/static/", new FolderResourceHandler("/static"))
+  addContext("/static", new FolderResourceHandler("/static"))
+  addContext("/pprof/heap", new HeapResourceHandler)
 
   httpServer.setExecutor(null)
 
