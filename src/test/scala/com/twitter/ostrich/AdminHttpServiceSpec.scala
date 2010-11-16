@@ -50,12 +50,27 @@ object AdminHttpServiceSpec extends Specification with Mockito {
     "FolderResourceHandler" in {
       val staticHandler = new FolderResourceHandler("/nested")
       "split a URI" in {
-        staticHandler.getRelativePath("/nested/1level.txt") mustEqual "/1level.txt"
-        staticHandler.getRelativePath("/nested/2level/2level.txt") mustEqual "/2level/2level.txt"
+        staticHandler.getRelativePath("/nested/1level.txt") mustEqual "1level.txt"
+        staticHandler.getRelativePath("/nested/2level/2level.txt") mustEqual "2level/2level.txt"
+      }
+
+      "build paths correctly" in {
+        staticHandler.buildPath("1level.txt") mustEqual "/nested/1level.txt"
+        staticHandler.buildPath("2level/2level.txt") mustEqual "/nested/2level/2level.txt"
+      }
+
+      "load resources" in {
+        staticHandler.loadResource("nested/1level.txt") must throwA[Exception]
+        staticHandler.loadResource("/nested/1level.txt") mustNot throwA[Exception]
       }
     }
 
     "static resources" in {
+      "drawgraph.js" in {
+        val inputStream = getClass.getResourceAsStream("/static/drawgraph.js")
+        inputStream mustNot beNull
+        Source.fromInputStream(inputStream).mkString mustNot beNull
+      }
       "unnested" in {
         val inputStream = getClass.getResourceAsStream("/unnested.txt")
         Source.fromInputStream(inputStream).mkString must beMatching("we are not nested")
