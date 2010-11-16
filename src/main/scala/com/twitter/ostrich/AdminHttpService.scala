@@ -25,6 +25,7 @@ import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.xrayspecs.TimeConversions._
 
 abstract class CustomHttpHandler extends HttpHandler {
+  private val log = Logger.get(getClass)
   def render(body: String, exchange: HttpExchange) {
     render(body, exchange, 200)
   }
@@ -46,7 +47,13 @@ abstract class CustomHttpHandler extends HttpHandler {
   }
 
   def loadResource(name: String) = {
-    Source.fromInputStream(getClass.getResourceAsStream(name)).mkString
+    log.debug("Loading Resource from File: %s", name)
+    val stream = getClass.getResourceAsStream(name)
+    try {
+      Source.fromInputStream(stream).mkString
+    } catch {
+      case e => log.error(e, "Unable to load Resource from Classpath: %s", name); throw e
+    }
   }
 
   def handle(exchange: HttpExchange): Unit
@@ -76,11 +83,13 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
   def getRelativePath(requestPath: String): String = {
     val n = requestPath.lastIndexOf('/')
     if (requestPath.startsWith(staticPath)) {
-      requestPath.substring(staticPath.length)
+      requestPath.substring(staticPath.length + 1)
     } else {
       requestPath
     }
   }
+
+  def buildPath(relativePath: String) = staticPath + "/" + relativePath
 
   def handle(exchange: HttpExchange) {
     val requestPath = exchange.getRequestURI().getPath()
@@ -94,7 +103,7 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
       "application/unknown"
     }
 
-    render(loadResource(staticPath + "/" + relativePath), exchange, 200, contentType)
+    render(loadResource(buildPath(relativePath)), exchange, 200, contentType)
   }
 }
 
@@ -205,7 +214,7 @@ class AdminHttpService(config: ConfigMap, runtime: RuntimeEnvironment) extends S
   addContext("/", new CommandRequestHandler(commandHandler))
   addContext("/report/", new PageResourceHandler("/report_request_handler.html"))
   addContext("/favicon.ico", new MissingFileHandler())
-  addContext("/static/", new FolderResourceHandler("/static"))
+  addContext("/static", new FolderResourceHandler("/static"))
   addContext("/pprof/heap", new HeapResourceHandler)
 
   httpServer.setExecutor(null)
