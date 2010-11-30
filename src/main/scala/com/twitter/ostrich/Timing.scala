@@ -27,7 +27,7 @@ class Timing {
   val log = Logger.get(getClass.getName)
 
   private var maximum = Math.MIN_INT
-  private var minimum = Math.MAX_INT
+  private var minimum = Math.MIN_INT
   private var count: Int = 0
   private var histogram = new Histogram()
   private var mean: Double = 0.0
@@ -38,7 +38,7 @@ class Timing {
    */
   def clear() = synchronized {
     maximum = Math.MIN_INT
-    minimum = Math.MAX_INT
+    minimum = Math.MIN_INT
     count = 0
     histogram.clear()
   }

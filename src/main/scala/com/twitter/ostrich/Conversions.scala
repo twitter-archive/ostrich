@@ -25,7 +25,7 @@ object Conversions {
     private def build(obj: Any): List[String] = {
       obj match {
         case m: Map[Any, Any] =>
-          Sorting.stableSort(m.keys.toList, { (a: Any, b: Any) => a.toString < b.toString }).toList.flatMap { k =>
+          Sorting.stableSort(m.keys.toList, (_: Any).toString < (_: Any).toString).toList.flatMap { k =>
             build(m(k)) match {
               case line :: Nil if (!line.contains(": ")) => List(k.toString + ": " + line)
               case list => (k.toString + ":") :: list.map { "  " + _ }

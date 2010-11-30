@@ -85,15 +85,15 @@ object StatsSpec extends Specification {
       }
 
       "boundary timing sizes" in {
-        Stats.addTiming("test", Math.MAX_INT)
+        Stats.addTiming("test", Math.MIN_INT)
         Stats.addTiming("test", 5)
-        val sum = 5.0 + Math.MAX_INT
+        val sum = 5.0 + Math.MIN_INT
         val avg = sum / 2.0
-        val sumsq = 5.0 * 5.0 + Math.MAX_INT.toDouble * Math.MAX_INT.toDouble
+        val sumsq = 5.0 * 5.0 + Math.MIN_INT.toDouble * Math.MIN_INT.toDouble
         val partial = sumsq - sum * avg
         val test = Stats.getTiming("test")
         test.get(true) mustEqual
-          new TimingStat(2, Math.MAX_INT, 5, Some(Histogram(5, Math.MAX_INT)), avg, partial)
+          new TimingStat(2, Math.MIN_INT, 5, Some(Histogram(5, Math.MIN_INT)), avg, partial)
       }
 
       "handle code blocks" in {

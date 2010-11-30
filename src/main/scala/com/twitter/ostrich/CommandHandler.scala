@@ -16,21 +16,20 @@
 
 package com.twitter.ostrich
 
+import com.twitter.json.Json
 import java.io._
 import java.lang.management.ManagementFactory
 import java.util.Date
-import scala.collection.Map
-import scala.collection.immutable
-import scala.collection.JavaConversions
-import com.twitter.json.Json
 import net.lag.configgy.Configgy
+import scala.collection.immutable
+import scala.collection.{JavaConversions, Map}
 import Conversions._
 
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 
 
-sealed abstract case class Format()
+sealed abstract class Format
 object Format {
   case object PlainText extends Format
   case object Json extends Format
@@ -82,13 +81,16 @@ class CommandHandler(runtime: RuntimeEnvironment) {
                       "uptime" -> mxRuntime.getUptime())
       case "threads" =>
         getThreadStacks()
+      case "gc" =>
+        (0 until 4).foreach(_ => System.gc)
+        Stats.getJvmStats()
       case x =>
         throw new UnknownCommandError(x)
     }
   }
 
   private def getThreadStacks(): Map[String, Map[String, Map[String, Any]]] = {
-    val stacks = JavaConversions.asMap(Thread.getAllStackTraces()).map { case (thread, stack) =>
+    val stacks = JavaConversions.asScalaMap(Thread.getAllStackTraces()).map { case (thread, stack) =>
       (thread.getId().toString, immutable.Map("thread" -> thread.getName(),
                                               "daemon" -> thread.isDaemon(),
                                               "state" -> thread.getState(),

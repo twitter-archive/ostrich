@@ -58,7 +58,7 @@ class W3CReporter(val logger: Logger, val printCrc: Boolean) {
    * a new header block will be written.
    */
   def report(stats: Map[String, Any]) {
-    val orderedKeys = stats.keys.toList.sort(_ < _)
+    val orderedKeys = stats.keys.toList.sortWith(_ < _)
     val fieldsHeader = orderedKeys.mkString("#Fields: ", " ", "")
     val crc = crc32(fieldsHeader)
     if (crc != previousCrc || Time.now >= nextHeaderDumpAt) {
