@@ -78,6 +78,10 @@ The commands are:
 - threads
 
   dump stack traces and stats about each currently running thread
+  
+- gc
+
+  perform a garbage collection and then return some JVM stats.
 
 
 ## Web graphs

@@ -82,7 +82,8 @@ class CommandHandler(runtime: RuntimeEnvironment) {
       case "threads" =>
         getThreadStacks()
       case "gc" =>
-        (0 until 4).foreach(_ => System.gc)
+        // do a few GC's to really clear things out
+        (0 until 4).foreach(_ => System.gc())
         Stats.getJvmStats()
       case x =>
         throw new UnknownCommandError(x)
