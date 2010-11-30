@@ -38,9 +38,9 @@ object StatsMBeanSpec extends Specification {
     }
 
     def getMBean() = {
-      val mbeans = JavaConversions.asSet(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
+      val mbeans = JavaConversions.asScalaSet(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
       mbeans.size mustEqual 1
-      mbeans.toList.first
+      mbeans.toList.head
     }
 
     def getAttributeNames(mbean: jmx.ObjectInstance) = {

@@ -79,21 +79,21 @@ object StatsSpec extends Specification {
       "ignore negative timings" in {
         Stats.addTiming("test", 1)
         Stats.addTiming("test", -1)
-        Stats.addTiming("test", Math.MIN_INT)
+        Stats.addTiming("test", Int.MinValue)
         val test = Stats.getTiming("test")
         test.get(true) mustEqual new TimingStat(1, 1, 1, Some(Histogram(1)), 1.0, 0.0)
       }
 
       "boundary timing sizes" in {
-        Stats.addTiming("test", Math.MIN_INT)
+        Stats.addTiming("test", Int.MaxValue)
         Stats.addTiming("test", 5)
-        val sum = 5.0 + Math.MIN_INT
+        val sum = 5.0 + Int.MaxValue
         val avg = sum / 2.0
-        val sumsq = 5.0 * 5.0 + Math.MIN_INT.toDouble * Math.MIN_INT.toDouble
+        val sumsq = 5.0 * 5.0 + Int.MaxValue.toDouble * Int.MaxValue.toDouble
         val partial = sumsq - sum * avg
         val test = Stats.getTiming("test")
         test.get(true) mustEqual
-          new TimingStat(2, Math.MIN_INT, 5, Some(Histogram(5, Math.MIN_INT)), avg, partial)
+          new TimingStat(2, Int.MaxValue, 5, Some(Histogram(5, Int.MaxValue)), avg, partial)
       }
 
       "handle code blocks" in {
