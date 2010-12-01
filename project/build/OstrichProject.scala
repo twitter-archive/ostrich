@@ -2,19 +2,19 @@ import sbt._
 import com.twitter.sbt._
 
 class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
-  val specs = "org.scala-tools.testing" % "specs" % "1.6.2.1"
-  val vscaladoc = "org.scala-tools" % "vscaladoc" % "1.1-md-3"
+  val configgy = "net.lag" % "configgy" % "1.6.8"
   val twitterJson = "com.twitter" % "json" % "1.1.8"
-  val configgy = "net.lag" % "configgy" % "1.5.5"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
-  val mockito = "org.mockito" % "mockito-core" % "1.8.1"
-  val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1"
   val xrayspecs = "com.twitter" % "xrayspecs" % "1.0.7"
-  val cglib = "cglib" % "cglib" % "2.1_3"
-  val asm = "asm" % "asm" % "1.5.3"
-  val objenesis = "org.objenesis" % "objenesis" % "1.1"
   val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
+
+  val specs = "org.scala-tools.testing" % "specs" % "1.6.2.1" % "test"
+  val mockito = "org.mockito" % "mockito-core" % "1.8.1" % "test"
+  val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
+  val cglib = "cglib" % "cglib" % "2.1_3" % "test"
+  val asm = "asm" % "asm" % "1.5.3" % "test"
+  val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
 
   override def pomExtra =
     <licenses>
