@@ -2,8 +2,8 @@ import sbt._
 import com.twitter.sbt._
 
 class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
-  val configgy = "net.lag" % "configgy" % "1.6.8"
-  val twitterJson = "com.twitter" % "json" % "1.1.8"
+  inline("net.lag" % "configgy" % "[1.6,1.7[")
+  inline("com.twitter" % "json" % "1.1.8")
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
   val xrayspecs = "com.twitter" % "xrayspecs" % "1.0.7"
