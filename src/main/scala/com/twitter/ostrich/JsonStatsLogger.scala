@@ -49,7 +49,7 @@ class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName:
       } ++
       immutable.Map("service" -> serviceName.getOrElse("unknown"),
                     "source" -> hostname,
-                    "timestamp" -> Time.now.inSeconds.toString)
+                    "timestamp" -> Time.now.inSeconds)
     val cleanedKeysStatMap = statMap.map { case (key, value) => (key.replaceAll(":", "_"), value) }
 
     logger.info(Json.build(immutable.Map(cleanedKeysStatMap.toSeq: _*)).toString)
