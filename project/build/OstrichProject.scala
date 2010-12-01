@@ -1,7 +1,7 @@
 import sbt._
 import com.twitter.sbt._
 
-class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
+class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher with InlineDependencies {
   inline("net.lag" % "configgy" % "[1.6,1.7[")
   inline("com.twitter" % "json" % "1.1.8")
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
