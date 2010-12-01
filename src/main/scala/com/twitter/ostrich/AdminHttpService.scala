@@ -73,7 +73,14 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
     val requestPath = exchange.getRequestURI().getPath()
     val n = requestPath.lastIndexOf('/')
     val relativePath = if (n >= 0) requestPath.substring(n + 1) else requestPath
-    render(loadResource(staticPath + "/" + relativePath), exchange)
+    val contentType = if (relativePath.endsWith(".js")) {
+      "text/javascript"
+    } else if (relativePath.endsWith(".html")) {
+      "text/html"
+    } else {
+      "application/unknown"
+    }
+    render(loadResource(staticPath + "/" + relativePath), exchange, 200, contentType)
   }
 }
 
@@ -133,7 +140,8 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
         }
       }
 
-      render(response, exchange)
+      val contentType = if (format == Format.PlainText) "text/plain" else "application/json"
+      render(response, exchange, 200, contentType)
     } catch {
       case e: UnknownCommandError => render("no such command", exchange, 404)
       case unknownException =>
