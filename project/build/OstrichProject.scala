@@ -2,7 +2,7 @@ import sbt._
 
 import com.twitter.sbt._
 
-class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
+class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher with InlineDependencies {
   override def disableCrossPaths = true
   override def managedStyle = ManagedStyle.Maven
 

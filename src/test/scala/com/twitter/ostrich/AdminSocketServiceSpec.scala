@@ -121,4 +121,3 @@ object AdminSocketServiceSpec extends Specification with Mockito {
     }
   }
 }
-

@@ -16,23 +16,40 @@
 
 package com.twitter.ostrich
 
-import scala.collection.Map
+import java.net.InetAddress
 import com.twitter.json.Json
 import com.twitter.xrayspecs.{Duration, Time}
 import com.twitter.xrayspecs.TimeConversions._
 import net.lag.logging.Logger
-
+import scala.collection.immutable
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.
  */
-class JsonStatsLogger(val logger: Logger, val period: Duration)
+class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName: Option[String])
       extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
+  def this(logger: Logger, period: Duration) = this(logger, period, None)
+
   val collection = Stats.fork()
+  val hostname = InetAddress.getLocalHost().getCanonicalHostName()
 
   def periodic() {
-    val statMap = Map.empty ++ collection.stats(true) ++
-      Map("jvm" -> Stats.getJvmStats(), "gauges" -> Stats.getGaugeStats(true))
-    logger.info(Json.build(statMap).body)
+    val statMap =
+      collection.getCounterStats(true) ++
+      Stats.getGaugeStats(true) ++
+      collection.getTimingStats(true).flatMap { case (key, timing) =>
+        timing.toMap.map { case (subkey, value) =>
+          ("timing_" + key + "_" + subkey, value)
+        }
+      } ++
+      Stats.getJvmStats().map { case (key, value) =>
+        ("jvm_" + key, value)
+      } ++
+      immutable.Map("service" -> serviceName.getOrElse("unknown"),
+                    "source" -> hostname,
+                    "timestamp" -> Time.now.inSeconds)
+    val cleanedKeysStatMap = statMap.map { case (key, value) => (key.replaceAll(":", "_"), value) }
+
+    logger.info(Json.build(immutable.Map(cleanedKeysStatMap.toSeq: _*)).toString)
   }
 }
