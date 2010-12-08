@@ -124,11 +124,11 @@ begin
     report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
     report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
 
-    stats["counters"].each do |name, value|
+    stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
       report_metric(name, (value.to_i rescue 0), "items")
     end
 
-    stats["gauges"].each do |name, value|
+    stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
       report_metric(name, value, "value")
     end
 
