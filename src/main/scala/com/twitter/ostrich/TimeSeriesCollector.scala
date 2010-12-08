@@ -55,19 +55,19 @@ class TimeSeriesCollector {
   var lastCollection: Time = Time(0.seconds)
 
   val collector = new PeriodicBackgroundProcess("TimeSeriesCollector", 1.minute) {
-    def periodic() {
-      val stats = Stats.fork()
+    val stats = Stats.fork()
 
+    def periodic() {
       Stats.getJvmStats().elements.foreach { case (k, v) =>
         hourly.getOrElseUpdate("jvm:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
       Stats.getGaugeStats(true).elements.foreach { case (k, v) =>
         hourly.getOrElseUpdate("gauge:" + k, new TimeSeries[Double](60, 0)).add(v)
       }
-      Stats.getCounterStats(true).elements.foreach { case (k, v) =>
+      stats.getCounterStats(true).elements.foreach { case (k, v) =>
         hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
-      Stats.getTimingStats(true).elements.foreach { case (k, v) =>
+      stats.getTimingStats(true).elements.foreach { case (k, v) =>
         val data = PERCENTILES.map { percent =>
           v.histogram.get.getPercentile(percent).toLong
         }
