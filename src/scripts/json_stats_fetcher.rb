@@ -123,6 +123,7 @@ begin
     report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
     report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
     report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
+    report_metric("jvm_uptime", (stats["jvm"]["uptime"].to_i rescue 0), "items")
 
     stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
       report_metric(name, (value.to_i rescue 0), "items")
