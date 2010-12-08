@@ -47,12 +47,14 @@ abstract class CustomHttpHandler extends HttpHandler {
   }
 
   def loadResource(name: String) = {
-    log.debug("Loading Resource from File: %s", name)
+    log.debug("Loading resource from file: %s", name)
     val stream = getClass.getResourceAsStream(name)
     try {
       Source.fromInputStream(stream).mkString
     } catch {
-      case e => log.error(e, "Unable to load Resource from Classpath: %s", name); throw e
+      case e =>
+        log.error(e, "Unable to load Resource from Classpath: %s", name)
+        throw e
     }
   }
 
@@ -76,12 +78,10 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
 }
 
 class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
-
   /**
    * Given a requestPath (e.g. /static/digraph.js), break it up into the path and filename
    */
   def getRelativePath(requestPath: String): String = {
-    val n = requestPath.lastIndexOf('/')
     if (requestPath.startsWith(staticPath)) {
       requestPath.substring(staticPath.length + 1)
     } else {

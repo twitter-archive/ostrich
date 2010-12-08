@@ -17,11 +17,11 @@
 package com.twitter.ostrich
 
 import java.net.InetAddress
+import scala.collection.immutable
 import com.twitter.json.Json
 import com.twitter.xrayspecs.{Duration, Time}
 import com.twitter.xrayspecs.TimeConversions._
 import net.lag.logging.Logger
-import scala.collection.immutable
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.

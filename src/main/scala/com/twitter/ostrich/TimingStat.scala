@@ -43,12 +43,6 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[H
   def this(_count: Int, _maximum: Int, _minimum: Int) =
     this(_count, _maximum, _minimum, None, 0.0, 0.0)
 
-  // FIXME: this ought to be generally available
-  class SortableSeq[T](seq: Iterable[T])(implicit m: ClassManifest[T], ord: Ordering[T]) {
-    def sorted = Sorting.stableSort(seq.toList)
-  }
-  implicit def sortableSeq[T](seq: Iterable[T])(implicit m: ClassManifest[T], ord: Ordering[T]) = new SortableSeq(seq)
-
   def toJson() = {
     val out: Map[String, Any] = toMap ++ (histogram match {
       case None => immutable.Map.empty[String, Any]
@@ -66,7 +60,7 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[H
 
   override def toString = {
     val out = toMap
-    out.keys.sorted.map { key => "%s=%d".format(key, out(key)) }.mkString("(", ", ", ")")
+    out.keys.toSeq.sorted.map { key => "%s=%d".format(key, out(key)) }.mkString("(", ", ", ")")
   }
 
   private def toMapWithoutHistogram = {

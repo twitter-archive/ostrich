@@ -20,11 +20,7 @@ import scala.collection.mutable
 import com.sun.net.httpserver.{HttpHandler, HttpExchange}
 import net.lag.configgy.ConfigMap
 
-/**
- * Single server object that can track multiple Service implementations and multiplex the
- * shutdown & quiesce commands.
- */
-
+// FIXME: this is in the wrong package and missing an apply() method.
 trait Config {
   def jmxPackage: Option[String]
   def collectTimeSeries = true
@@ -33,6 +29,10 @@ trait Config {
   def telnetPort: Int
 }
 
+/**
+ * Single server object that can track multiple Service implementations and multiplex the
+ * shutdown & quiesce commands.
+ */
 object ServiceTracker {
   val services = new mutable.HashSet[Service]
   val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]

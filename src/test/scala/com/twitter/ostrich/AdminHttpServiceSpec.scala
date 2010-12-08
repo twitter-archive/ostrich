@@ -48,6 +48,7 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
     "FolderResourceHandler" in {
       val staticHandler = new FolderResourceHandler("/nested")
+
       "split a URI" in {
         staticHandler.getRelativePath("/nested/1level.txt") mustEqual "1level.txt"
         staticHandler.getRelativePath("/nested/2level/2level.txt") mustEqual "2level/2level.txt"
@@ -70,6 +71,7 @@ object AdminHttpServiceSpec extends Specification with Mockito {
         inputStream mustNot beNull
         Source.fromInputStream(inputStream).mkString mustNot beNull
       }
+
       "unnested" in {
         val inputStream = getClass.getResourceAsStream("/unnested.txt")
         Source.fromInputStream(inputStream).mkString must beMatching("we are not nested")
@@ -140,10 +142,13 @@ object AdminHttpServiceSpec extends Specification with Mockito {
     }
 
     "provide stats" in {
-      "skip me" in {
-        //skip("fugged")
+      doAfter {
+        service.shutdown()
+      }
 
       "in json" in {
+        // make some statsy things happen
+        Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         val stats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
@@ -159,6 +164,8 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       }
 
       "in json, with reset" in {
+        // make some statsy things happen
+        Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         val stats = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
@@ -171,13 +178,14 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       }
 
       "in json, with histograms" in {
+        // make some statsy things happen
+        Stats.clearAll()
         Stats.addTiming("kangaroo_time", 1)
         Stats.addTiming("kangaroo_time", 2)
         Stats.addTiming("kangaroo_time", 3)
         Stats.addTiming("kangaroo_time", 4)
         Stats.addTiming("kangaroo_time", 5)
         Stats.addTiming("kangaroo_time", 6)
-
 
         val stats = get("/stats.json")
         val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
@@ -212,6 +220,7 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       }
 
       "in json, with histograms and reset" in {
+        Stats.clearAll()
         // Add items indirectly to the histogram
         Stats.addTiming("kangaroo_time", 1)
         Stats.addTiming("kangaroo_time", 2)
@@ -252,7 +261,6 @@ object AdminHttpServiceSpec extends Specification with Mockito {
         timings must haveKey("p9999")
         timings("p9999") mustEqual 6
       }
-      }
 
       "in json, with callback" in {
         val stats = get("/stats.json?callback=true")
@@ -261,6 +269,8 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       }
 
       "in text" in {
+        // make some statsy things happen
+        Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         get("/stats.txt") must beMatching("  kangaroos: 1")
