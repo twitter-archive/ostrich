@@ -47,7 +47,9 @@ object BackgroundProcess {
   def spawn(threadName: String)(f: => Unit): Thread = spawn(threadName, false)(f)
   def spawnDaemon(threadName: String)(f: => Unit): Thread = spawn(threadName, true)(f)
 
-  // FIXME: would be nice to create a BackgroundProcess from a closure.
+  def apply(f: => Unit) {
+    spawnDaemon("background")(f)
+  }
 }
 
 /**
