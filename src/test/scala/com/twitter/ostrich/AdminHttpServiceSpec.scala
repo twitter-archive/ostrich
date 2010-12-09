@@ -23,7 +23,6 @@ import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 import org.specs.mock.Mockito
 
-
 object AdminHttpServiceSpec extends Specification with Mockito {
   val PORT = 9996
   val BACKLOG = 20
