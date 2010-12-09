@@ -20,94 +20,106 @@ import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 import scala.collection.immutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.extensions._
-import net.lag.logging.{GenericFormatter, Level, Logger, StringHandler}
-import org.specs._
-
+import com.twitter.Time
+import com.twitter.conversions.string._
+import com.twitter.conversions.time._
+import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
+import org.specs.Specification
 
 class W3CReporterSpec extends Specification {
   "W3CReporter" should {
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
 
-    val handler = new StringHandler(new GenericFormatter("%2$s: "))
+    val handler = new StringHandler(BareFormatter, None)
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
     var reporter: W3CReporter = null
 
-    def expectedHeader(crc: Long) = "w3c: #Version: 1.0" :: "w3c: #Date: 03-Aug-2009 19:23:04" :: ("w3c: #CRC: " + crc) :: Nil
+    def expectedHeader(crc: Long) = "#Version: 1.0" :: "#Date: 03-Aug-2009 19:23:04" :: ("#CRC: " + crc) :: Nil
+
+    val now = Time.at("2009-08-03 19:23:04 +0000")
 
     doBefore {
       Stats.clearAll()
       handler.clear()
-      Time.now = Time.at("2009-08-03 19:23:04 +0000")
       reporter = new W3CReporter(logger)
     }
 
     "log basic stats" in {
-      reporter.report(Map("cats" -> 10, "dogs" -> 9))
-      handler.toString.split("\n").toList mustEqual
-        expectedHeader(948200938) ::: "w3c: #Fields: cats dogs" :: "w3c: 10 9" :: Nil
+      Time.withTimeAt(now) { time =>
+        reporter.report(Map("cats" -> 10, "dogs" -> 9))
+        handler.get.split("\n").toList mustEqual
+          expectedHeader(948200938) ::: "#Fields: cats dogs" :: "10 9" :: Nil
+      }
     }
 
     "convert values appropriately" in {
-      reporter.report(Map("date" -> new Date(0), "size" -> (1L << 32), "address" -> InetAddress.getByName("127.0.0.1"), "x" -> new Object))
-      handler.toString.split("\n").last mustEqual "w3c: 127.0.0.1 01-Jan-1970_00:00:00 4294967296 -"
+      Time.withTimeAt(now) { time =>
+        reporter.report(Map("date" -> new Date(0), "size" -> (1L << 32), "address" -> InetAddress.getByName("127.0.0.1"), "x" -> new Object))
+        handler.get.split("\n").last mustEqual "127.0.0.1 01-Jan-1970_00:00:00 4294967296 -"
+      }
     }
 
     "not repeat the header too often" in {
-      reporter.report(Map("a" -> 1))
-      reporter.report(Map("a" -> 2))
-      reporter.nextHeaderDumpAt = Time.now
-      reporter.report(Map("a" -> 3))
-      handler.toString.split("\n").toList mustEqual
-        expectedHeader(276919822) :::
-        "w3c: #Fields: a" ::
-        "w3c: 1" ::
-        "w3c: 2" ::
-        expectedHeader(276919822) :::
-        "w3c: #Fields: a" ::
-        "w3c: 3" :: Nil
+      Time.withTimeAt(now) { time =>
+        reporter.report(Map("a" -> 1))
+        reporter.report(Map("a" -> 2))
+        reporter.nextHeaderDumpAt = Time.now
+        reporter.report(Map("a" -> 3))
+        handler.get.split("\n").toList mustEqual
+          expectedHeader(276919822) :::
+          "#Fields: a" ::
+          "1" ::
+          "2" ::
+          expectedHeader(276919822) :::
+          "#Fields: a" ::
+          "3" :: Nil
+      }
     }
 
     "repeat the header when the fields change" in {
-      reporter.report(Map("a" -> 1))
-      reporter.report(Map("a" -> 2))
-      reporter.report(Map("a" -> 3, "b" -> 1))
-      handler.toString.split("\n").toList mustEqual
-        expectedHeader(276919822) :::
-        "w3c: #Fields: a" ::
-        "w3c: 1" ::
-        "w3c: 2" ::
-        expectedHeader(1342496559) :::
-        "w3c: #Fields: a b" ::
-        "w3c: 3 1" :: Nil
+      Time.withTimeAt(now) { time =>
+        reporter.report(Map("a" -> 1))
+        reporter.report(Map("a" -> 2))
+        reporter.report(Map("a" -> 3, "b" -> 1))
+        handler.get.split("\n").toList mustEqual
+          expectedHeader(276919822) :::
+          "#Fields: a" ::
+          "1" ::
+          "2" ::
+          expectedHeader(1342496559) :::
+          "#Fields: a b" ::
+          "3 1" :: Nil
+      }
     }
 
     "per line crc printing"  >> {
       val crcReporter = new W3CReporter(logger, true)
 
       "should print" in {
-        crcReporter.report(Map("a" -> 3, "b" -> 1))
-        handler.toString.split("\n").toList mustEqual
-          expectedHeader(1342496559) :::
-          "w3c: #Fields: a b" ::
-          "w3c: 1342496559 3 1" :: Nil
+        Time.withTimeAt(now) { time =>
+          crcReporter.report(Map("a" -> 3, "b" -> 1))
+          handler.get.split("\n").toList mustEqual
+            expectedHeader(1342496559) :::
+            "#Fields: a b" ::
+            "1342496559 3 1" :: Nil
+        }
       }
 
       "changes appropriately when column headers change" in {
-        crcReporter.report(Map("a" -> 1))
-        crcReporter.report(Map("a" -> 3, "b" -> 1))
-        handler.toString.split("\n").toList mustEqual
-          expectedHeader(276919822) :::
-          "w3c: #Fields: a" ::
-          "w3c: 276919822 1" ::
-          expectedHeader(1342496559) :::
-          "w3c: #Fields: a b" ::
-          "w3c: 1342496559 3 1" :: Nil
+        Time.withTimeAt(now) { time =>
+          crcReporter.report(Map("a" -> 1))
+          crcReporter.report(Map("a" -> 3, "b" -> 1))
+          handler.get.split("\n").toList mustEqual
+            expectedHeader(276919822) :::
+            "#Fields: a" ::
+            "276919822 1" ::
+            expectedHeader(1342496559) :::
+            "#Fields: a b" ::
+            "1342496559 3 1" :: Nil
+        }
       }
     }
   }

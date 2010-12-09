@@ -16,13 +16,12 @@
 
 package com.twitter.ostrich
 
-import net.lag.extensions._
-import net.lag.logging.{Formatter, Level, Logger, StringHandler}
-import org.specs._
-import scala.collection.immutable
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import scala.collection.immutable
+import com.twitter.conversions.string._
+import com.twitter.logging.{Formatter, Level, Logger, StringHandler}
+import org.specs.Specification
 
 object W3CStatsSpec extends Specification {
   "w3c Stats" should {
@@ -33,7 +32,7 @@ object W3CStatsSpec extends Specification {
       override def dateFormat = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
       override def formatPrefix(level: java.util.logging.Level, date: String, name: String) = name + ": "
     }
-    val handler = new StringHandler(formatter)
+    val handler = new StringHandler(formatter, None)
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
@@ -90,7 +89,7 @@ object W3CStatsSpec extends Specification {
         w3c.log("widgets", 8)
         w3c.log("wodgets", 3)
       }
-      handler.toString.replaceAll(" -", "") mustEqual "w3c: 8 3"
+      handler.get.replaceAll(" -", "") mustEqual "w3c: 8 3"
     }
 
     "sum multiple counts within a transaction" in {
@@ -98,7 +97,7 @@ object W3CStatsSpec extends Specification {
         w3c.log("widgets", 8)
         w3c.log("widgets", 8)
       }
-      handler.toString.replaceAll(" -", "") mustEqual "w3c: 16"
+      handler.get.replaceAll(" -", "") mustEqual "w3c: 16"
     }
 
     "concat multiple string values within a transaction" in {
@@ -106,7 +105,7 @@ object W3CStatsSpec extends Specification {
         w3c.log("widgets", "hello")
         w3c.log("widgets", "kitty")
       }
-      handler.toString.replaceAll(" -", "") mustEqual "w3c: hello,kitty"
+      handler.get.replaceAll(" -", "") mustEqual "w3c: hello,kitty"
     }
   }
 }

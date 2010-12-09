@@ -17,11 +17,10 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.extensions._
-import org.specs._
-
+import com.twitter.Time
+import com.twitter.conversions.string._
+import com.twitter.conversions.time._
+import org.specs.Specification
 
 object StatsSpec extends Specification {
   "Stats" should {
@@ -97,11 +96,13 @@ object StatsSpec extends Specification {
       }
 
       "handle code blocks" in {
-        Stats.time("test") {
-          Time.advance(10.millis)
+        Time.withCurrentTimeFrozen { time =>
+          Stats.time("test") {
+            time.advance(10.millis)
+          }
+          val test = Stats.getTiming("test")
+          test.get(true).average must be_>=(10)
         }
-        val test = Stats.getTiming("test")
-        test.get(true).average must be_>=(10)
       }
 
       "reset when asked" in {
@@ -211,15 +212,6 @@ object StatsSpec extends Specification {
         Stats.getGaugeStats(false) mustEqual Map("results_per_query" -> 2.0)
         Stats.getGaugeStats(false) mustEqual Map("results_per_query" -> 2.0)
       }
-    }
-
-    "report to JMX" in {
-      Stats.incr("widgets", 1)
-      Stats.time("nothing") { 2 * 2 }
-
-      val mbean = new StatsMBean
-      val names = mbean.getMBeanInfo().getAttributes().toList.map { _.getName() }
-      names mustEqual List("counter_widgets", "timing_nothing")
     }
 
     "fork" in {

@@ -16,13 +16,12 @@
 
 package com.twitter.ostrich
 
-import net.lag.extensions._
-import net.lag.logging.{Formatter, Level, Logger, StringHandler}
-import org.specs._
-import scala.collection.immutable
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import scala.collection.immutable
+import com.twitter.conversions.string._
+import com.twitter.logging.{Formatter, Level, Logger, StringHandler}
+import org.specs.Specification
 
 object W3CEntrySpec extends Specification {
   "w3c entries" should {
@@ -34,7 +33,7 @@ object W3CEntrySpec extends Specification {
       override def formatPrefix(level: java.util.logging.Level, date: String, name: String) = ""
     }
 
-    val handler = new StringHandler(formatter)
+    val handler = new StringHandler(formatter, None)
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
@@ -52,7 +51,7 @@ object W3CEntrySpec extends Specification {
     "log and check a single timing" in {
       w3c.addTiming("backend-response-time", 57)
       w3c.flush
-      handler.toString() must beMatching("57")
+      handler.get must beMatching("57")
       handler.clear()
     }
 
@@ -62,7 +61,7 @@ object W3CEntrySpec extends Specification {
       handler.clear()
 
       w3c.flush
-      handler.toString() mustNot beMatching("57")
+      handler.get mustNot beMatching("57")
     }
 
     "incr works with positive and negative numbers" in {
@@ -73,32 +72,32 @@ object W3CEntrySpec extends Specification {
       w3c.incr("widgets", -1)
       w3c.flush
 
-      handler.toString() must endWith("0 2")
+      handler.get must endWith("0 2")
     }
 
     "works with Strings" in {
       w3c.log("backend-response-time", "57")
       w3c.flush
-      handler.toString must beMatching("57")
+      handler.get must beMatching("57")
     }
 
     "rejects a column that isn't registered" in {
       w3c.incr("whatwhatlol", 100)
-      handler.toString() mustNot beMatching("100")
+      handler.get mustNot beMatching("100")
     }
 
     "start and end Timing" in {
       "flushing before ending a timing means it doesn't get logged" in {
         w3c.startTiming("backend-response-time")
         w3c.flush
-        handler.toString() must startWith("- ")
+        handler.get must startWith("- ")
       }
 
       "end" in {
         w3c.startTiming("backend-response-time")
         w3c.endTiming("backend-response-time")
         w3c.flush
-        handler.toString() mustNot startWith("- ")
+        handler.get mustNot startWith("- ")
       }
     }
   }

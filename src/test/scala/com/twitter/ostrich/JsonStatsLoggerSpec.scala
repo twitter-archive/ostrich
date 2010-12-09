@@ -17,26 +17,25 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.extensions._
-import net.lag.logging.{GenericFormatter, Level, Logger, StringHandler}
+import com.twitter.Time
+import com.twitter.conversions.string._
+import com.twitter.conversions.time._
+import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import org.specs._
-
 
 object JsonStatsLoggerSpec extends Specification {
   "JsonStatsLogger" should {
     val logger = Logger.get("stats")
     logger.setLevel(Level.INFO)
 
-    val handler = new StringHandler(new GenericFormatter(""))
+    val handler = new StringHandler(BareFormatter, None)
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
     var statsLogger: JsonStatsLogger = null
 
     def getLines() = {
-      handler.toString.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
+      handler.get.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
     }
 
     doBefore {
@@ -55,15 +54,16 @@ object JsonStatsLoggerSpec extends Specification {
     }
 
     "log timings" in {
-      Time.freeze
-      Stats.time("zzz") { Time.now += 10.milliseconds }
-      Stats.time("zzz") { Time.now += 20.milliseconds }
-      statsLogger.periodic()
-      val line = getLines()(0)
-      line mustMatch "\"timing_zzz_count\":2"
-      line mustMatch "\"timing_zzz_average\":15"
-      line mustMatch "\"timing_zzz_p50\":10"
-      line mustMatch "\"timing_zzz_standard_deviation\":7"
+      Time.withCurrentTimeFrozen { time =>
+        Stats.time("zzz") { time advance 10.milliseconds }
+        Stats.time("zzz") { time advance 20.milliseconds }
+        statsLogger.periodic()
+        val line = getLines()(0)
+        line mustMatch "\"timing_zzz_count\":2"
+        line mustMatch "\"timing_zzz_average\":15"
+        line mustMatch "\"timing_zzz_p50\":10"
+        line mustMatch "\"timing_zzz_standard_deviation\":7"
+      }
     }
   }
 }

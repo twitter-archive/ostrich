@@ -17,26 +17,25 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.extensions._
-import net.lag.logging.{GenericFormatter, Level, Logger, StringHandler}
-import org.specs._
-
+import com.twitter.Time
+import com.twitter.conversions.string._
+import com.twitter.conversions.time._
+import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
+import org.specs.Specification
 
 object W3CStatsLoggerSpec extends Specification {
   "W3CStatsLogger" should {
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
 
-    val handler = new StringHandler(new GenericFormatter(""))
+    val handler = new StringHandler(BareFormatter, None)
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
     var statsLogger: W3CStatsLogger = null
 
     def getLines() = {
-      handler.toString.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
+      handler.get.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
     }
 
     doBefore {
@@ -53,23 +52,26 @@ object W3CStatsLoggerSpec extends Specification {
     }
 
     "log timings" in {
-      Time.freeze
-      Stats.time("zzz") { Time.now += 10.milliseconds }
-      Stats.time("zzz") { Time.now += 20.milliseconds }
-      statsLogger.logStats()
-      getLines() mustEqual "#Fields: zzz_avg zzz_count zzz_max zzz_min zzz_std" :: "15 2 20 10 7" :: Nil
+      Time.withCurrentTimeFrozen { time =>
+        Stats.time("zzz") { time advance 10.milliseconds }
+        Stats.time("zzz") { time advance 20.milliseconds }
+        statsLogger.logStats()
+        getLines() mustEqual "#Fields: zzz_avg zzz_count zzz_max zzz_min zzz_std" :: "15 2 20 10 7" :: Nil
+      }
     }
 
     "log multiple lines" in {
-      Stats.incr("cats")
-      Stats.incr("dogs", 3)
-      Stats.time("zzz") { Time.now += 10.milliseconds }
-      statsLogger.logStats()
-      Stats.incr("cats")
-      Stats.time("zzz") { Time.now += 20.milliseconds }
-      statsLogger.logStats()
-      getLines() mustEqual "#Fields: cats dogs zzz_avg zzz_count zzz_max zzz_min zzz_std" ::
-        "1 3 10 1 10 10 0" :: "1 0 20 1 20 20 0" :: Nil
+      Time.withCurrentTimeFrozen { time =>
+        Stats.incr("cats")
+        Stats.incr("dogs", 3)
+        Stats.time("zzz") { time advance 10.milliseconds }
+        statsLogger.logStats()
+        Stats.incr("cats")
+        Stats.time("zzz") { time advance 20.milliseconds }
+        statsLogger.logStats()
+        getLines() mustEqual "#Fields: cats dogs zzz_avg zzz_count zzz_max zzz_min zzz_std" ::
+          "1 3 10 1 10 10 0" :: "1 0 20 1 20 20 0" :: Nil
+      }
     }
   }
 }
