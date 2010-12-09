@@ -21,6 +21,7 @@ import java.net.{InetSocketAddress, Socket}
 import scala.io.Source
 import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
+import com.twitter.xrayspecs.Duration
 import com.twitter.xrayspecs.TimeConversions._
 
 abstract class CustomHttpHandler extends HttpHandler {
@@ -145,30 +146,41 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
 
 class HeapResourceHandler extends CgiRequestHandler {
   private val log = Logger(getClass.getName)
+  case class Params(pause: Duration, samplingPeriod: Int, forceGC: Boolean)
 
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+
     if (!Heapster.instance.isDefined) {
       render("heapster not loaded!", exchange)
       return
     }
     val heapster = Heapster.instance.get
 
-    parameters.filter(_(0) == "pause").firstOption.map(_(1)) match {
-      case Some(pause) =>
-       log.info("collecting heap profile for %s seconds".format(pause))
-       val profile = heapster.profile(pause.toInt.seconds)
+    val params = 
+      parameters.foldLeft(Params(10.seconds, 10<<19, true)) {
+        case (params, "pause" :: pauseVal :: _) =>
+          params.copy(pause = pauseVal.toInt.seconds)
+        case (params, "sample_period" :: sampleVal :: _) =>
+          params.copy(samplingPeriod = sampleVal.toInt)
+        case (params, "force_gc" :: "no" :: _) =>
+          params.copy(forceGC = false)
+        case (params, "force_gc" :: "0" :: _) =>
+          params.copy(forceGC = false)
+        case (params, _) =>
+          params
+      }
 
-       // Write out the profile verbatim. It's a pprof "raw" profile.
-       exchange.sendResponseHeaders(200, profile.size)
-       val output: OutputStream = exchange.getResponseBody()
-       output.write(profile)
-       output.flush()
-       output.close()
-       exchange.close()
+    log.info("collecting heap profile for %s seconds".format(params.pause))
+    val profile = heapster.profile(params.pause, params.samplingPeriod, params.forceGC)
 
-      case None =>
-        render("failed to parse pause parameter", exchange)
-    }
+    // Write out the profile verbatim. It's a pprof "raw" profile.
+    exchange.getResponseHeaders.set("Content-Type", "pprof/raw")
+    exchange.sendResponseHeaders(200, profile.size)
+    val output: OutputStream = exchange.getResponseBody()
+    output.write(profile)
+    output.flush()
+    output.close()
+    exchange.close()
   }
 }
 
