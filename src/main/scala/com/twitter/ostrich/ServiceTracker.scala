@@ -18,11 +18,9 @@ package com.twitter.ostrich
 
 import scala.collection.mutable
 import com.sun.net.httpserver.{HttpHandler, HttpExchange}
-import net.lag.configgy.ConfigMap
 
 // FIXME: this is in the wrong package and missing an apply() method.
 trait Config {
-  def jmxPackage: Option[String]
   def collectTimeSeries = true
   def httpPort: Int
   def httpBacklog: Int
@@ -55,22 +53,14 @@ object ServiceTracker {
     stopAdmin()
   }
 
-  def startAdmin(configgy: ConfigMap, runtime: RuntimeEnvironment) {
-    val config = new Config {
-      val jmxPackage = configgy.getString("admin_jmx_package")
-      override val collectTimeSeries = configgy.getBool("admin_timeseries", true)
-      val httpPort = configgy.getInt("admin_http_port", 0)
-      val httpBacklog = configgy.getInt("admin_http_backlog", 20)
-      val telnetPort = configgy.getInt("admin_text_port", 0)
-    }
-    startAdmin(config, runtime)
+  def reload() {
+    services.foreach { _.reload() }
   }
 
   def startAdmin(config: Config, runtime: RuntimeEnvironment) {
     synchronized {
       val _adminHttpService = new AdminHttpService(config.httpPort, config.httpBacklog, runtime)
       val _adminService = new AdminSocketService(config.telnetPort, runtime)
-      config.jmxPackage.map(StatsMBean(_))
       if (config.collectTimeSeries) {
         val collector = new TimeSeriesCollector()
         collector.registerWith(_adminHttpService)
@@ -96,7 +86,6 @@ object ServiceTracker {
     adminService.map { _.shutdown() }
     adminService = None
   }
-
 
   def registerAdminHttpHandler(path: String)(generator: (List[List[String]]) => String) = {
     val handler = new CustomHttpHandler {

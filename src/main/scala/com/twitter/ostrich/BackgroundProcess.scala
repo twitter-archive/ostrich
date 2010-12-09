@@ -17,10 +17,9 @@
 package com.twitter.ostrich
 
 import java.util.concurrent.CountDownLatch
-import com.twitter.xrayspecs.{Duration, Time}
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.logging.Logger
-
+import com.twitter.{Duration, Time}
+import com.twitter.conversions.time._
+import com.twitter.logging.Logger
 
 object BackgroundProcess {
   val log = Logger.get(getClass.getName)

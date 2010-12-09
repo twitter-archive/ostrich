@@ -19,14 +19,14 @@ package com.twitter.ostrich
 import scala.collection.Map
 import scala.util.Sorting
 
-
 object Conversions {
   class RichAny(obj: Any) {
     private def build(obj: Any): List[String] = {
       obj match {
-        case m: Map[Any, Any] =>
-          Sorting.stableSort(m.keys.toList, { (a: Any, b: Any) => a.toString < b.toString }).toList.flatMap { k =>
-            build(m(k)) match {
+        case m: Map[_, _] =>
+          m.keys.map { _.toString }.toList.sorted.flatMap { k =>
+            val value = m.asInstanceOf[Map[Any, Any]](k)
+            build(value) match {
               case line :: Nil if (!line.contains(": ")) => List(k.toString + ": " + line)
               case list => (k.toString + ":") :: list.map { "  " + _ }
             }

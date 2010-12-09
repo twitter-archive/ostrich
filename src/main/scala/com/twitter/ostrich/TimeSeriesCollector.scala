@@ -18,11 +18,10 @@ package com.twitter.ostrich
 
 import scala.collection.{immutable, mutable}
 import com.sun.net.httpserver.HttpExchange
+import com.twitter.{Duration, Time}
+import com.twitter.conversions.time._
 import com.twitter.json.Json
-import com.twitter.xrayspecs.{Duration, Time}
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.logging.Logger
-
+import com.twitter.logging.Logger
 
 /**
  * Collect stats over a rolling window of the last hour and report them to a web handler,
@@ -30,7 +29,7 @@ import net.lag.logging.Logger
  */
 class TimeSeriesCollector {
   val PERCENTILES = List(0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999, 0.9999)
-  val EMPTY_TIMINGS = List.make(PERCENTILES.size, 0L)
+  val EMPTY_TIMINGS = List.fill(PERCENTILES.size)(0L)
 
   class TimeSeries[T](val size: Int, empty: => T) {
     val data = new mutable.ArrayBuffer[T]()
@@ -58,16 +57,16 @@ class TimeSeriesCollector {
     val stats = Stats.fork()
 
     def periodic() {
-      Stats.getJvmStats().elements.foreach { case (k, v) =>
+      Stats.getJvmStats().foreach { case (k, v) =>
         hourly.getOrElseUpdate("jvm:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
-      Stats.getGaugeStats(true).elements.foreach { case (k, v) =>
+      Stats.getGaugeStats(true).foreach { case (k, v) =>
         hourly.getOrElseUpdate("gauge:" + k, new TimeSeries[Double](60, 0)).add(v)
       }
-      stats.getCounterStats(true).elements.foreach { case (k, v) =>
+      stats.getCounterStats(true).foreach { case (k, v) =>
         hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
-      stats.getTimingStats(true).elements.foreach { case (k, v) =>
+      stats.getTimingStats(true).foreach { case (k, v) =>
         val data = PERCENTILES.map { percent =>
           v.histogram.get.getPercentile(percent).toLong
         }
@@ -103,7 +102,7 @@ class TimeSeriesCollector {
         if (path.size == 1) {
           render(Json.build(Map("keys" -> keys.toList)).toString + "\n", exchange)
         } else {
-          val keep = parameters.filter { _(0) == "p" }.firstOption.map {
+          val keep = parameters.filter { _(0) == "p" }.headOption.map {
             _(1).split(",").map { _.toInt }
           }.getOrElse((0 until PERCENTILES.size).toArray)
           render(get(path.last, keep), exchange, 200, "application/json")

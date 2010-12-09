@@ -40,7 +40,7 @@ class StatsCollection extends StatsProvider {
 
   def getCounterStats(reset: Boolean): Map[String, Long] = {
     val rv = new mutable.HashMap[String, Long]
-    for((key, counter) <- JavaConversions.asMap(counterMap)) {
+    for((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
       rv += (key -> counter(reset))
     }
     rv
@@ -48,7 +48,7 @@ class StatsCollection extends StatsProvider {
 
   def getTimingStats(reset: Boolean): Map[String, TimingStat] = {
     val out = new mutable.HashMap[String, TimingStat]
-    for ((key, timing) <- JavaConversions.asMap(timingMap)) {
+    for ((key, timing) <- JavaConversions.asScalaMap(timingMap)) {
       out += (key -> timing.get(reset))
     }
     out

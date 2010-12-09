@@ -23,10 +23,9 @@ import java.util.zip.CRC32
 import scala.collection.Map
 import scala.collection.mutable
 import scala.util.Sorting._
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.logging.Logger
-
+import com.twitter.logging.Logger
+import com.twitter.Time
+import com.twitter.conversions.time._
 
 object W3CReporter {
   protected val formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss")

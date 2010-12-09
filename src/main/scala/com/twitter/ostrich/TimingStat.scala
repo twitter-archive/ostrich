@@ -37,7 +37,7 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[H
   def mean = if (_count > 0) _mean else 0.0
   def partialVariance = if (_count > 1) _partialVariance else 0.0
   def variance = if (_count > 1) (_partialVariance / (_count - 1)) else 0.0
-  def standardDeviation = Math.round(Math.sqrt(variance))
+  def standardDeviation = math.round(math.sqrt(variance))
   def histogram = _histogram
 
   def this(_count: Int, _maximum: Int, _minimum: Int) =

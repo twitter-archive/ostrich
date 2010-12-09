@@ -17,10 +17,9 @@
 package com.twitter.ostrich
 
 import scala.collection.mutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
-import net.lag.logging.Logger
-
+import com.twitter.Time
+import com.twitter.conversions.time._
+import com.twitter.logging.Logger
 
 /**
  * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.

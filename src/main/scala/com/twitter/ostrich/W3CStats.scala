@@ -16,13 +16,12 @@
 
 package com.twitter.ostrich
 
-import net.lag.logging.Logger
-import scala.collection.mutable
-import java.util.{Date, HashSet}
-import java.util.zip.CRC32
 import java.net.InetAddress
 import java.text.SimpleDateFormat
-
+import java.util.{Date, HashSet}
+import java.util.zip.CRC32
+import scala.collection.mutable
+import com.twitter.logging.Logger
 
 /**
  * Implements a W3C Extended Log and contains convenience methods for timing blocks and

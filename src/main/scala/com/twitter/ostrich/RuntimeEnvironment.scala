@@ -19,7 +19,7 @@ package com.twitter.ostrich
 import java.io.File
 import java.util.Properties
 import scala.collection.mutable
-import net.lag.extensions._
+import com.twitter.conversions.string._
 
 object RuntimeEnvironment {
   /**

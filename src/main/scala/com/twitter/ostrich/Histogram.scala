@@ -73,7 +73,7 @@ class Histogram {
     if (index == 0) {
       0
     } else if (index - 1 >= Histogram.BUCKET_OFFSETS.size) {
-      Math.MAX_INT
+      Int.MaxValue
     } else {
       Histogram.BUCKET_OFFSETS(index - 1) - 1
     }

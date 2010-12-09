@@ -16,7 +16,6 @@
 
 package com.twitter.ostrich
 
-
 trait Service {
   /**
    * Shutdown this server.
@@ -30,4 +29,11 @@ trait Service {
    * new connections.
    */
   def quiesce(): Unit
+
+  /**
+   * Reload configuration, if supported by the server.
+   */
+  def reload() {
+    // default is to do nothing.
+  }
 }

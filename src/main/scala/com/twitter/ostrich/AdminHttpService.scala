@@ -19,13 +19,14 @@ package com.twitter.ostrich
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket}
 import scala.io.Source
-import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
-import com.twitter.xrayspecs.Duration
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.{Duration, Time}
+import com.twitter.logging.Logger
+import com.twitter.conversions.time._
 
 abstract class CustomHttpHandler extends HttpHandler {
   private val log = Logger.get(getClass)
+
   def render(body: String, exchange: HttpExchange) {
     render(body, exchange, 200)
   }
@@ -61,13 +62,11 @@ abstract class CustomHttpHandler extends HttpHandler {
   def handle(exchange: HttpExchange): Unit
 }
 
-
 class MissingFileHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange) {
     render("no such file", exchange, 404)
   }
 }
-
 
 class PageResourceHandler(path: String) extends CustomHttpHandler {
   lazy val page = loadResource(path)
@@ -141,7 +140,6 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]])
 }
 
-
 class HeapResourceHandler extends CgiRequestHandler {
   private val log = Logger(getClass.getName)
   case class Params(pause: Duration, samplingPeriod: Int, forceGC: Boolean)
@@ -184,7 +182,7 @@ class HeapResourceHandler extends CgiRequestHandler {
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
-    val command = path.last.split('.').first
+    val command = path.last.split('.').head
     val format: Format = path.last.split('.').last match {
       case "txt" => Format.PlainText
       case _ => Format.Json
@@ -212,7 +210,6 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
     }
   }
 }
-
 
 class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) extends Service {
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)

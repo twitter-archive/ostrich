@@ -18,18 +18,16 @@ package com.twitter.ostrich
 
 import java.net.InetSocketAddress
 import java.util.concurrent.Executors
-import net.lag.logging.Logger
+import com.twitter.logging.Logger
 import org.jboss.netty.bootstrap.ServerBootstrap
 import org.jboss.netty.channel.group.{ChannelGroupFuture, ChannelGroupFutureListener, DefaultChannelGroup}
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory
 import org.jboss.netty.channel.{ChannelHandlerContext, ChannelPipelineCoverage, ExceptionEvent, MessageEvent, SimpleChannelUpstreamHandler, ChannelStateEvent}
 import org.jboss.netty.handler.codec.string.{StringDecoder, StringEncoder}
 
-
 object AdminSocketService {
   val allChannels = new DefaultChannelGroup("AdminSocketService")
 }
-
 
 class AdminSocketService(port: Int, runtime: RuntimeEnvironment) extends Service {
   private val log = Logger.get
@@ -68,7 +66,6 @@ class AdminSocketService(port: Int, runtime: RuntimeEnvironment) extends Service
     log.debug("Shutdown completed: " + completed)
   }
 }
-
 
 @ChannelPipelineCoverage("all")
 class AdminSocketServiceHandler(commandHandler: CommandHandler) extends SimpleChannelUpstreamHandler {

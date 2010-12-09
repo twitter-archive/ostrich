@@ -20,9 +20,8 @@ import java.lang.management._
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
-import com.twitter.xrayspecs.Time
-import net.lag.logging.Logger
-
+import com.twitter.logging.Logger
+import com.twitter.Time
 
 /**
  * Basic StatsProvider gathering object that returns performance data for the application.

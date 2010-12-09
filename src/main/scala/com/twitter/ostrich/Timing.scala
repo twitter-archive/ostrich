@@ -16,8 +16,7 @@
 
 package com.twitter.ostrich
 
-import net.lag.logging.Logger
-
+import com.twitter.logging.Logger
 
 /**
  * A Timing collates durations of an event and can report
@@ -26,8 +25,8 @@ import net.lag.logging.Logger
 class Timing {
   val log = Logger.get(getClass.getName)
 
-  private var maximum = Math.MIN_INT
-  private var minimum = Math.MAX_INT
+  private var maximum = Int.MinValue
+  private var minimum = Int.MaxValue
   private var count: Int = 0
   private var histogram = new Histogram()
   private var mean: Double = 0.0
@@ -37,8 +36,8 @@ class Timing {
    * Resets the state of this Timing. Clears the durations and counts collected so far.
    */
   def clear() = synchronized {
-    maximum = Math.MIN_INT
-    minimum = Math.MAX_INT
+    maximum = Int.MinValue
+    minimum = Int.MaxValue
     count = 0
     histogram.clear()
   }
