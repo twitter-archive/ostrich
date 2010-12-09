@@ -20,11 +20,13 @@ import scala.collection.immutable
 import com.twitter.Time
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
+import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 
 object StatsSpec extends Specification {
   "Stats" should {
     doBefore {
+      Logger.get("").setLevel(Level.OFF)
       Stats.clearAll()
     }
 

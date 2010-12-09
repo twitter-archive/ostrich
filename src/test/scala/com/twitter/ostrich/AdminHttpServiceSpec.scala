@@ -19,6 +19,7 @@ package com.twitter.ostrich
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
+import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 import org.specs.mock.Mockito
 
@@ -35,8 +36,8 @@ object AdminHttpServiceSpec extends Specification with Mockito {
   var service: AdminHttpService = null
 
   "AdminHttpService" should {
-
     doBefore {
+      Logger.get("").setLevel(Level.OFF)
       service = spy(new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass)))
       service.start()
     }

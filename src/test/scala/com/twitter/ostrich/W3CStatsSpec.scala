@@ -39,6 +39,7 @@ object W3CStatsSpec extends Specification {
     val w3c = new W3CStats(logger, Array("backend-response-time", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
 
     doBefore {
+      Logger.get("").setLevel(Level.OFF)
       Stats.clearAll()
       handler.clear()
     }

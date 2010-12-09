@@ -24,7 +24,7 @@ import com.twitter.logging.{Formatter, Level, Logger, StringHandler}
 import org.specs.Specification
 
 object W3CEntrySpec extends Specification {
-  "w3c entries" should {
+  "W3CEntry" should {
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
     val formatter = new Formatter {
@@ -40,6 +40,7 @@ object W3CEntrySpec extends Specification {
     val w3c = new W3CEntry(logger, Array("backend-response-time", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
 
     doBefore {
+      Logger.get("").setLevel(Level.OFF)
       Stats.clearAll()
       handler.clear()
     }
