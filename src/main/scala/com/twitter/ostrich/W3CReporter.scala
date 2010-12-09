@@ -57,7 +57,7 @@ class W3CReporter(val logger: Logger, val printCrc: Boolean) {
    * a new header block will be written.
    */
   def report(stats: Map[String, Any]) {
-    val orderedKeys = stats.keys.toList.sort(_ < _)
+    val orderedKeys = stats.keys.toList.sorted
     val fieldsHeader = orderedKeys.mkString("#Fields: ", " ", "")
     val crc = crc32(fieldsHeader)
     if (crc != previousCrc || Time.now >= nextHeaderDumpAt) {
@@ -73,10 +73,10 @@ class W3CReporter(val logger: Logger, val printCrc: Boolean) {
 
   private def logHeader(fieldsHeader: String, crc: Long) {
     val header =
-      Array("#Version: 1.0", "\n",
-            "#Date: ", formatter.format(new Date(Time.now.inMilliseconds)), "\n",
-            "#CRC: ", crc.toString, "\n",
-            fieldsHeader, "\n").mkString("")
+      Array("#Version: 1.0",
+            "#Date: " + formatter.format(new Date(Time.now.inMilliseconds)),
+            "#CRC: " + crc.toString,
+            fieldsHeader).mkString("\n")
     logger.info(header)
     previousCrc = crc
     nextHeaderDumpAt = headerRepeatFrequencyInMilliseconds.milliseconds.fromNow
