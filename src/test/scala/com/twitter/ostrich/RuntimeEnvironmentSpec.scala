@@ -21,7 +21,7 @@ import org.specs.Specification
 class RuntimeEnvironmentSpec extends Specification {
   "RuntimeEnvironment" should {
     "find executable jar path" in {
-      val runtime = new RuntimeEnvironment(classOf[Config])
+      val runtime = new RuntimeEnvironment(classOf[Timing])
       runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1.jar"), "flockdb", "1.4.1") mustEqual
         Some("./dist/flockdb/flockdb-1.4.1.jar")
       runtime.findCandidateJar(List("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"), "flockdb", "1.4.1") mustEqual

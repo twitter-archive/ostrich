@@ -19,72 +19,56 @@ package com.twitter.ostrich
 import scala.collection.mutable
 import com.sun.net.httpserver.{HttpHandler, HttpExchange}
 
-// FIXME: this is in the wrong package and missing an apply() method.
-trait Config {
-  def collectTimeSeries = true
-  def httpPort: Int
-  def httpBacklog: Int
-  def telnetPort: Int
-}
-
 /**
  * Single server object that can track multiple Service implementations and multiplex the
  * shutdown & quiesce commands.
  */
 object ServiceTracker {
-  val services = new mutable.HashSet[Service]
-  val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]
-  var adminHttpService: Option[AdminHttpService] = None
-  var adminService: Option[AdminSocketService] = None
+  private val services = new mutable.HashSet[Service]
+  private val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]
+  private var adminHttpService: Option[AdminHttpService] = None
 
   def register(service: Service) {
-    services += service
+    synchronized {
+      services += service
+    }
   }
 
   def shutdown() {
-    services.foreach { _.shutdown() }
-    services.clear()
+    synchronized {
+      val rv = services.toList
+      services.clear()
+      rv
+    }.foreach { _.shutdown() }
     stopAdmin()
   }
 
   def quiesce() {
-    services.foreach { _.quiesce() }
-    services.clear()
+    synchronized { services.toList }.foreach { _.quiesce() }
     stopAdmin()
   }
 
   def reload() {
-    services.foreach { _.reload() }
+    synchronized { services.toList }.foreach { _.reload() }
   }
 
-  def startAdmin(config: Config, runtime: RuntimeEnvironment) {
+  def startAdmin(service: Option[AdminHttpService]) {
     synchronized {
-      val _adminHttpService = new AdminHttpService(config.httpPort, config.httpBacklog, runtime)
-      val _adminService = new AdminSocketService(config.telnetPort, runtime)
-      if (config.collectTimeSeries) {
-        val collector = new TimeSeriesCollector()
-        collector.registerWith(_adminHttpService)
-        collector.start()
+      adminHttpService = service
+      service.foreach { s =>
+        for ((path, handler) <- queuedAdminHandlers) {
+          s.addContext(path, handler)
+        }
+        s.start()
       }
-
-      for ((path, handler) <- queuedAdminHandlers) {
-        _adminHttpService.addContext(path, handler)
-      }
-
-      _adminHttpService.start()
-      _adminService.start()
-
-      adminHttpService = Some(_adminHttpService)
-      adminService = Some(_adminService)
     }
   }
 
-  def stopAdmin() = synchronized {
-    adminHttpService.map { _.shutdown() }
-    adminHttpService = None
-
-    adminService.map { _.shutdown() }
-    adminService = None
+  def stopAdmin() {
+    synchronized {
+      adminHttpService.map { _.shutdown() }
+      adminHttpService = None
+    }
   }
 
   def registerAdminHttpHandler(path: String)(generator: (List[List[String]]) => String) = {
