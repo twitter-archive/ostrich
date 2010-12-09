@@ -22,7 +22,7 @@ def valid_gmetric_name?(name)
   # some common symbols.
   #
   # Returns true if the metric is a valid gmetric name, otherwise false.
-  if name =~ /^[A-Za-z0-9_-]+$/
+  if name =~ /^[A-Za-z0-9_\-\.]+$/
     return true
   else
     $stderr.puts "Metric <#{name}> contains invalid characters."
