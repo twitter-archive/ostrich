@@ -73,7 +73,6 @@ object Stats extends StatsProvider {
     stats
   }
 
-  // FIXME: should ditch this API.
   def getCounter(name: String): Counter = {
     new Counter {
       final override def incr() = incr(1)
@@ -86,9 +85,16 @@ object Stats extends StatsProvider {
     }
   }
 
-  // FIXME: should ditch this API. this version is broken for forked collections.
   def getTiming(name: String): Timing = {
-    collection.getTiming(name)
+    new Timing {
+      final override def clear() {
+        collection.getTiming(name).clear()
+        forkedCollections.foreach { _.getTiming(name).clear() }
+      }
+      final override def add(n: Int) = addTiming(name, n)
+      final override def add(timingStat: TimingStat) = addTiming(name, timingStat)
+      final override def get(reset: Boolean) = collection.getTiming(name).get(reset)
+    }
   }
 
   override def clearAll() {
