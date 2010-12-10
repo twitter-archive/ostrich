@@ -26,8 +26,8 @@ object RuntimeEnvironment {
    * Use the given class to find the `build.properties` file, parse any
    * command-line arguments, and return the resulting RuntimeEnvironment.
    */
-  def apply(clazz: Class[_], args: Array[String]) = {
-    val runtime = new RuntimeEnvironment(clazz)
+  def apply(obj: AnyRef, args: Array[String]) = {
+    val runtime = new RuntimeEnvironment(obj)
     runtime.parseArgs(args.toList)
     runtime
   }
