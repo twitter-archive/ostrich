@@ -19,6 +19,27 @@ package com.twitter.ostrich
 import scala.collection.{Map, JavaConversions, mutable, immutable}
 import java.util.concurrent.ConcurrentHashMap
 
+
+object StatsCollection {
+  /**
+   * Returns a new StatsCollection with the keys of the original StatsCollection
+   * already created.
+   */
+  def shallowClone(original: StatsCollection): StatsCollection = {
+    val stats = new StatsCollection
+
+    for (key <- original.getCounterKeys) {
+      stats.getCounter(key)
+    }
+
+    for (key <- original.getTimingKeys) {
+      stats.getTiming(key)
+    }
+
+    stats
+  }
+}
+
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
@@ -38,12 +59,20 @@ class StatsCollection extends StatsProvider {
     getCounter(name).value.addAndGet(count)
   }
 
+  def getCounterKeys(): Iterable[String] = {
+    JavaConversions.asScalaSet(counterMap.keySet)
+  }
+
   def getCounterStats(reset: Boolean): Map[String, Long] = {
     val rv = new mutable.HashMap[String, Long]
     for((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
       rv += (key -> counter(reset))
     }
     rv
+  }
+
+  def getTimingKeys(): Iterable[String] = {
+    JavaConversions.asScalaSet(timingMap.keySet)
   }
 
   def getTimingStats(reset: Boolean): Map[String, TimingStat] = {
