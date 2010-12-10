@@ -42,14 +42,14 @@ object RuntimeEnvironment {
  * An example of how to generate a `build.properties` file is included in
  * sbt stanard-project: <http://github.com/twitter/standard-project>
  *
- * You have to pass in a class from your package in order to identify the
+ * You have to pass in an object from your package in order to identify the
  * location of the `build.properties` file.
  */
-class RuntimeEnvironment(clazz: Class[_]) {
+class RuntimeEnvironment(obj: AnyRef) {
   private val buildProperties = new Properties
 
   try {
-    buildProperties.load(clazz.getResource("build.properties").openStream)
+    buildProperties.load(obj.getClass.getResource("build.properties").openStream)
   } catch {
     case _ =>
   }
