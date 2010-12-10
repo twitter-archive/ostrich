@@ -17,12 +17,13 @@
 package com.twitter.ostrich
 package config
 
-class AdminServiceConfig {
+import com.twitter.config.Config
+
+class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] {
   /**
    * (optional) HTTP port.
    */
   var httpPort: Option[Int] = None
-  def httpPort_=(x: Int) { httpPort = Some(x) }
 
   var httpBacklog: Int = 20
 
@@ -32,7 +33,7 @@ class AdminServiceConfig {
    */
   var collectTimeSeries = true
 
-  def apply(runtime: RuntimeEnvironment) {
+  def apply() = { (runtime: RuntimeEnvironment) =>
     val adminHttpService = httpPort.map { port =>
       val service = new AdminHttpService(port, httpBacklog, runtime)
 
@@ -46,5 +47,6 @@ class AdminServiceConfig {
     }
 
     ServiceTracker.startAdmin(adminHttpService)
+    adminHttpService
   }
 }
