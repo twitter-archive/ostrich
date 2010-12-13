@@ -89,7 +89,9 @@ class RuntimeEnvironment(obj: AnyRef) {
     case None => new File("/etc/" + jarName)
   }
 
-  val loggingConfigPath: File = new File(configPath, "logging.scala")
+  val loggingConfigFile: File = new File(configPath, "logging.scala")
+
+  val configFile: File = new File(configPath, jarName + ".scala")
 
   /**
    * Perform baseline command-line argument parsing. Responds to `--help`,
