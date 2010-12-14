@@ -60,7 +60,7 @@ object BackgroundProcess {
  * timeout.
  */
 abstract class BackgroundProcess(name: String) extends Thread(name) with Service {
-  private val log = Logger.get
+  private val log = Logger.get(getClass.getName)
 
   @volatile var running = false
   val startLatch = new CountDownLatch(1)
@@ -71,6 +71,7 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
       running = true
       super.start()
       startLatch.await()
+      log.info("Started %s", name)
     }
   }
 
@@ -94,8 +95,13 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
 
   def shutdown() {
     running = false
-    interrupt()
-    join()
+    try {
+      interrupt()
+      join()
+    } catch {
+      case e: Exception =>
+        log.error(e, "Failed to shutdown background process %s", name)
+    }
   }
 
   def quiesce() {
