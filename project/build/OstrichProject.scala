@@ -19,7 +19,7 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) with Subve
   val cglib = "cglib" % "cglib" % "2.1_3"
   val asm = "asm" % "asm" % "1.5.3"
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
-  val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
+  val netty = "org.jboss.netty" % "netty" % "3.2.3.Final"
 
   val jbossRepo = "JBoss Repository" at "http://repository.jboss.org/nexus/content/groups/public/"
 

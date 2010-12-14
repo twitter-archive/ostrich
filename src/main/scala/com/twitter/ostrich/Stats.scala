@@ -74,15 +74,21 @@ object Stats extends StatsProvider {
     stats
   }
 
+  // FIXME: should ditch this API.
   def getCounter(name: String): Counter = {
-    // make sure any new counters get added to forked collections
-    forkedCollections.foreach { _.getCounter(name)}
-    collection.getCounter(name)
+    new Counter {
+      final override def incr() = incr(1)
+      final override def incr(n: Int) = Stats.incr(name)
+      final override def apply(reset: Boolean) = collection.getCounter(name).apply(reset)
+      final override def update(n: Long) = {
+        collection.getCounter(name).update(n)
+        forkedCollections.foreach { _.getCounter(name).update(n) }
+      }
+    }
   }
 
+  // FIXME: should ditch this API. this version is broken for forked collections.
   def getTiming(name: String): Timing = {
-    // make sure any new timings get added to forked collections
-    forkedCollections.foreach { _.getTiming(name)}
     collection.getTiming(name)
   }
 
@@ -103,7 +109,7 @@ object Stats extends StatsProvider {
    * This method is not thread-safe. Create forked collections before going multi-threaded.
    */
   def fork(): StatsCollection = {
-    val x = new StatsCollection
+    val x = StatsCollection.shallowClone(collection)
     forkedCollections += x
     x
   }
@@ -131,8 +137,8 @@ object Stats extends StatsProvider {
       var lastDenom: Long = 0
 
       def apply(reset: Boolean) = {
-        val nom = nomCounter.value.get
-        val denom = denomCounter.value.get
+        val nom = nomCounter(false)
+        val denom = denomCounter(false)
         val deltaNom = nom - lastNom
         val deltaDenom = denom - lastDenom
         if (reset) {
