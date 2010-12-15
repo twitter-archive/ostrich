@@ -99,7 +99,7 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
       interrupt()
       join()
     } catch {
-      case e: Exception =>
+      case e: Throwable =>
         log.error(e, "Failed to shutdown background process %s", name)
     }
   }
