@@ -42,7 +42,7 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
    */
   private val tl = new ThreadLocal[mutable.Map[String, Any]]() {
     override def initialValue(): mutable.Map[String, Any] = new mutable.HashMap[String, Any] {
-      override def initialSize = fields.length * 2
+      override def initialSize = Math.max(fields.length, 1) * 2
     }
   }
 
