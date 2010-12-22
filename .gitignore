@@ -18,3 +18,4 @@ src_managed
 .ensime
 project/plugins/project
 ostrich.tmproj
+.ivyjars
