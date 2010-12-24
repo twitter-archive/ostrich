@@ -21,8 +21,8 @@ import java.net.{InetSocketAddress, Socket}
 import scala.io.Source
 import net.lag.logging.Logger
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
-import com.twitter.xrayspecs.Duration
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.Duration
+import com.twitter.util.TimeConversions._
 
 abstract class CustomHttpHandler extends HttpHandler {
   private val log = Logger.get(getClass)
@@ -186,7 +186,7 @@ class HeapResourceHandler extends CgiRequestHandler {
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
-    val command = path.last.split('.').first
+    val command = path.last.split('.').head
     val format: Format = path.last.split('.').last match {
       case "txt" => Format.PlainText
       case _ => Format.Json

@@ -93,7 +93,7 @@ object HistogramSpec extends Specification {
 
     "handle a very large timing" in {
       histogram.add(100000000)
-      histogram.getPercentile(1.0) mustEqual Math.MAX_INT
+      histogram.getPercentile(1.0) mustEqual Int.MaxValue
     }
 
   }

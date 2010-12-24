@@ -17,8 +17,8 @@
 package com.twitter.ostrich
 
 import scala.collection.mutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.Time
+import com.twitter.util.TimeConversions._
 import net.lag.logging.Logger
 
 

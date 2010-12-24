@@ -4,7 +4,7 @@
 
 package com.twitter.ostrich
 
-import com.twitter.xrayspecs.Duration
+import com.twitter.util.Duration
 
 class Heapster(klass: Class[_]) {
   private val startM = klass.getDeclaredMethod("start")

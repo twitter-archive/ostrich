@@ -18,8 +18,8 @@ package com.twitter.ostrich
 
 import java.net.InetAddress
 import com.twitter.json.Json
-import com.twitter.xrayspecs.{Duration, Time}
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.{Duration, Time}
+import com.twitter.util.TimeConversions._
 import net.lag.logging.Logger
 import scala.collection.immutable
 

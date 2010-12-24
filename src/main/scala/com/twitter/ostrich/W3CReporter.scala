@@ -23,8 +23,8 @@ import java.util.zip.CRC32
 import scala.collection.Map
 import scala.collection.mutable
 import scala.util.Sorting._
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.Time
+import com.twitter.util.TimeConversions._
 import net.lag.logging.Logger
 
 
@@ -58,7 +58,7 @@ class W3CReporter(val logger: Logger, val printCrc: Boolean) {
    * a new header block will be written.
    */
   def report(stats: Map[String, Any]) {
-    val orderedKeys = stats.keys.toList.sort(_ < _)
+    val orderedKeys = stats.keys.toList.sortWith(_ < _)
     val fieldsHeader = orderedKeys.mkString("#Fields: ", " ", "")
     val crc = crc32(fieldsHeader)
     if (crc != previousCrc || Time.now >= nextHeaderDumpAt) {

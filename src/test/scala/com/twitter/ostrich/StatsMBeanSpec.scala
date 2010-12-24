@@ -20,8 +20,8 @@ import java.lang.management.ManagementFactory
 import javax.{management => jmx}
 import scala.collection.{immutable, JavaConversions}
 import scala.util.Sorting
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.Time
+import com.twitter.util.TimeConversions._
 import net.lag.extensions._
 import org.specs._
 
@@ -38,9 +38,9 @@ object StatsMBeanSpec extends Specification {
     }
 
     def getMBean() = {
-      val mbeans = JavaConversions.asSet(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
+      val mbeans = JavaConversions.asScalaSet(mbeanServer.queryMBeans(new jmx.ObjectName("com.example.foo:*"), null))
       mbeans.size mustEqual 1
-      mbeans.toList.first
+      mbeans.toList.head
     }
 
     def getAttributeNames(mbean: jmx.ObjectInstance) = {
@@ -60,8 +60,10 @@ object StatsMBeanSpec extends Specification {
     }
 
     "report timings" in {
-      Stats.time("procrastinate") {
-        Time.advance(10.millis)
+      Time.withCurrentTimeFrozen { tc =>
+        Stats.time("procrastinate") {
+          tc.advance(10.millis)
+        }
       }
 
       val mbean = getMBean()

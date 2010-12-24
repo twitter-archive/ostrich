@@ -17,8 +17,8 @@
 package com.twitter.ostrich
 
 import java.util.concurrent.CountDownLatch
-import com.twitter.xrayspecs.{Duration, Time}
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.{Duration, Time}
+import com.twitter.util.TimeConversions._
 import net.lag.logging.Logger
 
 
@@ -113,13 +113,9 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
 abstract class PeriodicBackgroundProcess(name: String, private val period: Duration)
          extends BackgroundProcess(name) {
   def nextRun: Duration = {
-    val t = Time.now + period
-    // truncate to nearest round multiple of the desired repeat in seconds.
-    if (period >= 1.second) {
-      ((t.inSeconds / period.inSeconds) * period.inSeconds).seconds - Time.now
-    } else {
-      t - Time.now
-    }
+    // adjust to top of indicated period, such as the top of the minute
+    val now = Time.now
+    now.floor(period) + period - now
   }
 
   def runLoop() {

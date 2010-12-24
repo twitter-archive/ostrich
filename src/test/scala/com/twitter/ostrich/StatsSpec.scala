@@ -17,8 +17,8 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.Time
+import com.twitter.util.TimeConversions._
 import net.lag.extensions._
 import org.specs._
 
@@ -79,26 +79,28 @@ object StatsSpec extends Specification {
       "ignore negative timings" in {
         Stats.addTiming("test", 1)
         Stats.addTiming("test", -1)
-        Stats.addTiming("test", Math.MIN_INT)
+        Stats.addTiming("test", Int.MinValue)
         val test = Stats.getTiming("test")
         test.get(true) mustEqual new TimingStat(1, 1, 1, Some(Histogram(1)), 1.0, 0.0)
       }
 
       "boundary timing sizes" in {
-        Stats.addTiming("test", Math.MAX_INT)
+        Stats.addTiming("test", Int.MaxValue)
         Stats.addTiming("test", 5)
-        val sum = 5.0 + Math.MAX_INT
+        val sum = 5.0 + Int.MaxValue
         val avg = sum / 2.0
-        val sumsq = 5.0 * 5.0 + Math.MAX_INT.toDouble * Math.MAX_INT.toDouble
+        val sumsq = 5.0 * 5.0 + Int.MaxValue.toDouble * Int.MaxValue.toDouble
         val partial = sumsq - sum * avg
         val test = Stats.getTiming("test")
         test.get(true) mustEqual
-          new TimingStat(2, Math.MAX_INT, 5, Some(Histogram(5, Math.MAX_INT)), avg, partial)
+          new TimingStat(2, Int.MaxValue, 5, Some(Histogram(5, Int.MaxValue)), avg, partial)
       }
 
       "handle code blocks" in {
-        Stats.time("test") {
-          Time.advance(10.millis)
+        Time.withCurrentTimeFrozen { tc =>
+          Stats.time("test") {
+            tc.advance(10.millis)
+          }
         }
         val test = Stats.getTiming("test")
         test.get(true).average must be_>=(10)
@@ -170,8 +172,8 @@ object StatsSpec extends Specification {
 
     "gauges" in {
       "report" in {
-        Stats.makeGauge("pi") { java.lang.Math.PI }
-        Stats.getGaugeStats(false) mustEqual Map("pi" -> java.lang.Math.PI)
+        Stats.makeGauge("pi") { math.Pi }
+        Stats.getGaugeStats(false) mustEqual Map("pi" -> math.Pi)
       }
 
       "setGauge" in {

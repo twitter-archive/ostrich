@@ -17,6 +17,7 @@
 package com.twitter.ostrich
 
 import scala.collection.{Map, JavaConversions, mutable, immutable}
+import scala.collection.JavaConversions.JConcurrentMapWrapper
 import java.util.concurrent.ConcurrentHashMap
 
 
@@ -44,8 +45,8 @@ object StatsCollection {
  * Concrete StatsProvider that tracks counters and timings.
  */
 class StatsCollection extends StatsProvider {
-  private val counterMap = new ConcurrentHashMap[String, Counter]()
-  private val timingMap = new ConcurrentHashMap[String, Timing]()
+  private val counterMap = new JConcurrentMapWrapper(new ConcurrentHashMap[String, Counter]())
+  private val timingMap = new JConcurrentMapWrapper(new ConcurrentHashMap[String, Timing]())
 
   def addTiming(name: String, duration: Int): Long = {
     getTiming(name).add(duration)
@@ -60,24 +61,24 @@ class StatsCollection extends StatsProvider {
   }
 
   def getCounterKeys(): Iterable[String] = {
-    JavaConversions.asScalaSet(counterMap.keySet)
+    counterMap.keySet
   }
 
   def getCounterStats(reset: Boolean): Map[String, Long] = {
     val rv = new mutable.HashMap[String, Long]
-    for((key, counter) <- JavaConversions.asMap(counterMap)) {
+    for ((key, counter) <- counterMap) {
       rv += (key -> counter(reset))
     }
     rv
   }
 
   def getTimingKeys(): Iterable[String] = {
-    JavaConversions.asScalaSet(timingMap.keySet)
+    timingMap.keySet
   }
 
   def getTimingStats(reset: Boolean): Map[String, TimingStat] = {
     val out = new mutable.HashMap[String, TimingStat]
-    for ((key, timing) <- JavaConversions.asMap(timingMap)) {
+    for ((key, timing) <- timingMap) {
       out += (key -> timing.get(reset))
     }
     out
@@ -93,11 +94,11 @@ class StatsCollection extends StatsProvider {
    */
   def getCounter(name: String): Counter = {
     var counter = counterMap.get(name)
-    while (counter == null) {
-      counter = counterMap.putIfAbsent(name, new Counter)
+    while (counter.isEmpty) {
+      counterMap.putIfAbsent(name, new Counter)
       counter = counterMap.get(name)
     }
-    counter
+    counter.get
   }
 
   /**
@@ -105,10 +106,10 @@ class StatsCollection extends StatsProvider {
    */
   def getTiming(name: String): Timing = {
     var timing = timingMap.get(name)
-    while (timing == null) {
-      timing = timingMap.putIfAbsent(name, new Timing)
+    while (timing.isEmpty) {
+      timingMap.putIfAbsent(name, new Timing)
       timing = timingMap.get(name)
     }
-    timing
+    timing.get
   }
 }

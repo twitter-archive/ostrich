@@ -17,8 +17,8 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
-import com.twitter.xrayspecs.Time
-import com.twitter.xrayspecs.TimeConversions._
+import com.twitter.util.Time
+import com.twitter.util.TimeConversions._
 import net.lag.extensions._
 import net.lag.logging.{GenericFormatter, Level, Logger, StringHandler}
 import org.specs._
@@ -55,15 +55,16 @@ object JsonStatsLoggerSpec extends Specification {
     }
 
     "log timings" in {
-      Time.freeze
-      Stats.time("zzz") { Time.now += 10.milliseconds }
-      Stats.time("zzz") { Time.now += 20.milliseconds }
-      statsLogger.periodic()
-      val line = getLines()(0)
-      line mustMatch "\"timing_zzz_count\":2"
-      line mustMatch "\"timing_zzz_average\":15"
-      line mustMatch "\"timing_zzz_p50\":10"
-      line mustMatch "\"timing_zzz_standard_deviation\":7"
+      Time.withCurrentTimeFrozen { tc =>
+        Stats.time("zzz") { tc.advance(10.milliseconds) }
+        Stats.time("zzz") { tc.advance(20.milliseconds) }
+        statsLogger.periodic()
+        val line = getLines()(0)
+        line mustMatch "\"timing_zzz_count\":2"
+        line mustMatch "\"timing_zzz_average\":15"
+        line mustMatch "\"timing_zzz_p50\":10"
+        line mustMatch "\"timing_zzz_standard_deviation\":7"
+      }
     }
   }
 }
