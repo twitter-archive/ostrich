@@ -18,10 +18,10 @@ package com.twitter.ostrich
 
 import scala.collection.{immutable, mutable}
 import com.sun.net.httpserver.HttpExchange
-import com.twitter.{Duration, Time}
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.Logger
+import com.twitter.util.{Duration, Time}
 
 /**
  * Collect stats over a rolling window of the last hour and report them to a web handler,

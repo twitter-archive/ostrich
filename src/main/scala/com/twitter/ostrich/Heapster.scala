@@ -16,7 +16,7 @@
 
 package com.twitter.ostrich
 
-import com.twitter.Duration
+import com.twitter.util.Duration
 
 /**
  * Support for heapster profiling (google perftools compatible):

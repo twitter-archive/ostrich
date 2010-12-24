@@ -17,9 +17,9 @@
 package com.twitter.ostrich
 
 import scala.collection.mutable
-import com.twitter.Time
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
+import com.twitter.util.Time
 
 /**
  * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.

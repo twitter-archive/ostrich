@@ -20,10 +20,10 @@ import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 import scala.collection.immutable
-import com.twitter.Time
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
+import com.twitter.util.Time
 import org.specs.Specification
 
 class W3CReporterSpec extends Specification {

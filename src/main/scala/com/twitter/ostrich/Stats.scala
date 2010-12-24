@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
 import com.twitter.logging.Logger
-import com.twitter.Time
+import com.twitter.util.Time
 
 /**
  * Basic StatsProvider gathering object that returns performance data for the application.

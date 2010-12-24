@@ -17,9 +17,9 @@
 package com.twitter.ostrich
 
 import java.util.concurrent.CountDownLatch
-import com.twitter.{Duration, Time}
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
+import com.twitter.util.{Duration, Time}
 
 object BackgroundProcess {
   val log = Logger.get(getClass.getName)
@@ -117,7 +117,7 @@ abstract class PeriodicBackgroundProcess(name: String, private val period: Durat
     val t = Time.now + period
     // truncate to nearest round multiple of the desired repeat in seconds.
     if (period >= 1.second) {
-      ((t.inSeconds / period.inSeconds) * period.inSeconds).seconds - Time.now
+      Time((t.inSeconds / period.inSeconds) * period.inSeconds) - Time.now
     } else {
       t - Time.now
     }

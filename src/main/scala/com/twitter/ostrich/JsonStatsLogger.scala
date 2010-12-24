@@ -18,10 +18,10 @@ package com.twitter.ostrich
 
 import java.net.InetAddress
 import scala.collection.immutable
-import com.twitter.json.Json
-import com.twitter.{Duration, Time}
 import com.twitter.conversions.time._
+import com.twitter.json.Json
 import com.twitter.logging.Logger
+import com.twitter.util.{Duration, Time}
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.

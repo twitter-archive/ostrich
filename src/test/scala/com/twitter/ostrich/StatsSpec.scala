@@ -17,10 +17,10 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
-import com.twitter.Time
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
+import com.twitter.util.Time
 import org.specs.Specification
 
 object StatsSpec extends Specification {

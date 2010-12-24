@@ -20,9 +20,9 @@ import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket}
 import scala.io.Source
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
-import com.twitter.{Duration, Time}
-import com.twitter.logging.Logger
 import com.twitter.conversions.time._
+import com.twitter.logging.Logger
+import com.twitter.util.{Duration, Time}
 
 abstract class CustomHttpHandler extends HttpHandler {
   private val log = Logger.get(getClass)
