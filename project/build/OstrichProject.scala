@@ -2,7 +2,8 @@ import sbt._
 
 import com.twitter.sbt._
 
-class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher with InlineDependencies {
+class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher {
+  override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
   override def disableCrossPaths = true
   override def managedStyle = ManagedStyle.Maven
 
@@ -18,9 +19,12 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) with Subve
   val cglib = "cglib" % "cglib" % "2.1_3"
   val asm = "asm" % "asm" % "1.5.3"
   val objenesis = "org.objenesis" % "objenesis" % "1.1"
-  val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
+  val netty = "org.jboss.netty" % "netty" % "3.2.3.Final"
 
   val jbossRepo = "JBoss Repository" at "http://repository.jboss.org/nexus/content/groups/public/"
+
+  // Credentials(Path.userHome / ".ivy2" / "credentials", log)
+  // val publishTo = "nexus" at "http://nexus.scala-tools.org/content/repositories/releases/"
 
   override def pomExtra =
     <licenses>
@@ -30,6 +34,4 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) with Subve
         <distribution>repo</distribution>
       </license>
     </licenses>
-
-  override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
 }

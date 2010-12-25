@@ -223,13 +223,31 @@ object StatsSpec extends Specification {
     }
 
     "fork" in {
-      val collection = Stats.fork()
-      Stats.incr("widgets", 5)
-      collection.getCounterStats(false) mustEqual Map("widgets" -> 5)
-      Stats.getCounterStats(true) mustEqual Map("widgets" -> 5)
-      Stats.incr("widgets", 5)
-      collection.getCounterStats(false) mustEqual Map("widgets" -> 10)
-      Stats.getCounterStats(true) mustEqual Map("widgets" -> 5)
+      "newly created stats are available in the fork and in the global Stats" in {
+        val collection = Stats.fork()
+        Stats.incr("widgets", 5)
+        collection.getCounterStats(false) mustEqual Map("widgets" -> 5)
+        Stats.getCounterStats(true) mustEqual Map("widgets" -> 5)
+      }
+
+      "modifications to forks are available only in the fork" in {
+        val collection = Stats.fork()
+        Stats.incr("widgets", 5)
+        collection.getCounterStats(false) mustEqual Map("widgets" -> 5)
+        Stats.getCounterStats(true) mustEqual Map("widgets" -> 5)
+
+        Stats.incr("widgets", 5)
+        collection.getCounterStats(false) mustEqual Map("widgets" -> 10)
+        Stats.getCounterStats(true) mustEqual Map("widgets" -> 5)
+      }
+
+      "keeps the name of older generated stats with zeroed out values" in {
+        Stats.incr("wodgets", 1)
+        val collection = Stats.fork()
+
+        Stats.getCounterStats(false) must havePair("wodgets" -> 1)
+        collection.getCounterStats(false) must havePair("wodgets" -> 0)
+      }
     }
   }
 }

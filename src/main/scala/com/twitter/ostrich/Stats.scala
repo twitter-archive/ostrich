@@ -109,7 +109,7 @@ object Stats extends StatsProvider {
    * This method is not thread-safe. Create forked collections before going multi-threaded.
    */
   def fork(): StatsCollection = {
-    val x = new StatsCollection
+    val x = StatsCollection.shallowClone(collection)
     forkedCollections += x
     x
   }
