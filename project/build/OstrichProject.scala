@@ -9,10 +9,10 @@ class OstrichProject(info: ProjectInfo) extends StandardProject(info) with Subve
 
   val jbossRepo = "JBoss Repository" at "http://repository.jboss.org/nexus/content/groups/public/"
 
-  val twitterJson = "com.twitter" % "json_2.8.0" % "2.1.4"
-  val configgy = "net.lag" % "configgy" % "2.0.1"
+  val twitterJson = "com.twitter" % "json_2.8.1" % "2.1.5"
+  val configgy = "net.lag" % "configgy" % "2.0.2"
   val netty = "org.jboss.netty" % "netty" % "3.2.3.Final"
-  val xrayspecs = "com.twitter" % "xrayspecs_2.8.0" % "2.0"
+  val xrayspecs = "com.twitter" % "xrayspecs_2.8.1" % "2.1.2"
 
   // test-only dependencies
   val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"
