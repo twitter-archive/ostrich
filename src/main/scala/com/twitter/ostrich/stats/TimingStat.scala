@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import scala.collection.Map
 import scala.collection.immutable

@@ -15,21 +15,19 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import java.util.concurrent.atomic.AtomicLong
 
-
 /**
- * A Counter is a measure that simply keeps track of how
- * many times an event occurred.
+ * A Counter is simply keeps track of how many times an event occurred.
  */
 class Counter {
-  var value = new AtomicLong
+  val value = new AtomicLong()
 
   def incr() = value.incrementAndGet
   def incr(n: Int) = value.addAndGet(n)
-  def apply(reset: Boolean) = if (reset) value.getAndSet(0) else value.get()
-  def apply(): Long = this(false)
+  def apply(): Long = value.get()
   def update(n: Long) = value.set(n)
   def reset() = update(0L)
 }
