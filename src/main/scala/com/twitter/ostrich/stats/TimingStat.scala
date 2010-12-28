@@ -22,27 +22,16 @@ import scala.collection.immutable
 import scala.util.Sorting
 import com.twitter.json.{Json, JsonSerializable}
 
-
 /**
- * A pre-calculated timing. If you have timing stats from an external source but
- * still want to report them via the Stats interface, use this.
- *
- * Partial variance is `(count - 1)(s^2)`, or `sum(x^2) - sum(x) * mean`.
+ * A set of data points summarized into a histogram, mean, min, and max.
+ * Metrics are immutable.
  */
-class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[Histogram],
-                 _mean: Double, _partialVariance: Double) extends JsonSerializable {
-  def count = _count
-  def minimum = if (_count > 0) _minimum else 0
-  def maximum = if (_count > 0) _maximum else 0
-  def average = if (_count > 0) _mean.toInt else 0
-  def mean = if (_count > 0) _mean else 0.0
-  def partialVariance = if (_count > 1) _partialVariance else 0.0
-  def variance = if (_count > 1) (_partialVariance / (_count - 1)) else 0.0
-  def standardDeviation = math.round(math.sqrt(variance))
-  def histogram = _histogram
+case class Metric(count: Int, maximum: Int, minimum: Int, histogram: Option[Histogram],
+                  mean: Double) extends JsonSerializable {
+  def average = mean
 
-  def this(_count: Int, _maximum: Int, _minimum: Int) =
-    this(_count, _maximum, _minimum, None, 0.0, 0.0)
+  def this(count: Int, maximum: Int, minimum: Int, mean: Double) =
+    this(count, maximum, minimum, None, mean)
 
   def toJson() = {
     val out: Map[String, Any] = toMap ++ (histogram match {
@@ -65,20 +54,20 @@ class TimingStat(_count: Int, _maximum: Int, _minimum: Int, _histogram: Option[H
   }
 
   private def toMapWithoutHistogram = {
-    immutable.Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
-                                "average" -> average, "standard_deviation" -> standardDeviation.toLong)
+    Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
+                      "average" -> average)
   }
 
-  def toMap: immutable.Map[String, Long] = {
+  def toMap: Map[String, Long] = {
     toMapWithoutHistogram ++ (histogram match {
-      case None => immutable.Map.empty[String, Long]
-      case Some(h) => immutable.Map[String, Long]("p25" -> h.getPercentile(0.25),
-                                                  "p50" -> h.getPercentile(0.5),
-                                                  "p75" -> h.getPercentile(0.75),
-                                                  "p90" -> h.getPercentile(0.9),
-                                                  "p99" -> h.getPercentile(0.99),
-                                                  "p999" -> h.getPercentile(0.999),
-                                                  "p9999" -> h.getPercentile(0.9999))
+      case None => Map.empty[String, Long]
+      case Some(h) => Map[String, Long]("p25" -> h.getPercentile(0.25),
+                                        "p50" -> h.getPercentile(0.5),
+                                        "p75" -> h.getPercentile(0.75),
+                                        "p90" -> h.getPercentile(0.9),
+                                        "p99" -> h.getPercentile(0.99),
+                                        "p999" -> h.getPercentile(0.999),
+                                        "p9999" -> h.getPercentile(0.9999))
     })
   }
 }
