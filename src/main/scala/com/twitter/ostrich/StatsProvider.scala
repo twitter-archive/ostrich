@@ -15,104 +15,113 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import scala.collection.{Map, mutable, immutable}
+import com.twitter.util.Duration
 
+case class StatsSummary(
+  counters: Map[String, Long],
+  metrics: Map[String, Distribution],
+  gauges: Map[String, Double]
+)
 
 /**
- * Trait for anything that collects counters and timings, can report them in name/value maps,
- * and can reset those maps when asked.
+ * Trait for anything that collects counters, timings, and gauges, and can report them in
+ * name/value maps.
  */
 trait StatsProvider {
+  /**
+   * Adds a value to a named metric, which tracks min, max, mean, and a histogram.
+   */
+  def addMetric(name: String, value: Int)
+
+  /**
+   * Adds a set of values to a named metric. Effectively the incoming distribution is merged with
+   * the named metric.
+   */
+  def addMetric(name: String, distribution: Distribution)
+
+  /**
+   * Increments a counter, returning the new value.
+   */
+  def incr(name: String, count: Int): Long
+
+  /**
+   * Increments a counter by one, returning the new value.
+   */
+  def incr(name: String): Long = incr(name, 1)
+
+  /**
+   * Add a gauge function, which is used to sample instantaneous values.
+   */
+  def addGauge(name: String, gauge: => Double)
+
+  /**
+   * Set a gauge to a specific value. This overwrites any previous value or function.
+   */
+  def setGauge(name: String, value: Double) {
+    addGauge(name, value)
+  }
+
+  /**
+   * Remove a gauge from the provided stats.
+   */
+  def clearGauge(name: String)
+
+  /**
+   * Get the Counter object representing a named counter.
+   */
+  def getCounter(name: String): Counter
+
+  /**
+   * Get the Metric object representing a named metric.
+   */
+  def getMetric(name: String): Metric
+
+  /**
+   * Get the current value of a named gauge.
+   */
+  def getGauge(name: String): Double
+
+  /**
+   * Summarize all the counters, metrics, and gauges in this collection.
+   */
+  def get(): StatsSummary
+
+  /**
+   * Reset all collected stats and erase the history.
+   * Probably only useful for unit tests.
+   */
+  def clearAll()
+
   /**
    * Runs the function f and logs that duration, in milliseconds, with the given name.
    */
   def time[T](name: String)(f: => T): T = {
-    val (rv, msec) = Stats.duration(f)
-    addTiming(name, msec.toInt)
-    rv
-  }
-
-  /**
-   * Runs the function f and logs that duration, in nanoseconds, with the given name.
-   *
-   * When using nanoseconds, be sure to encode your field with that fact. Consider
-   * using the suffix `_nsec` in your field.
-   */
-  def timeNanos[T](name: String)(f: => T): T = {
-    val (rv, nsec) = Stats.durationNanos(f)
-    addTiming(name, nsec.toInt)
+    val (rv, duration) = Duration.inMilliseconds(f)
+    addMetric(name + "_msec", duration.inMilliseconds)
     rv
   }
 
   /**
    * Runs the function f and logs that duration, in microseconds, with the given name.
-   *
-   * When using microseconds, be sure to encode your field with that fact. Consider
-   * using the suffix `_usec` in your field.
    */
   def timeMicros[T](name: String)(f: => T): T = {
-    val (rv, nsec) = Stats.durationNanos(f)
-    addTiming(name, (nsec / 1000).toInt)
+    val (rv, duration) = Duration.inNanoseconds(f)
+    addTiming(name + "_usec", duration.inMicroseconds)
     rv
   }
 
   /**
-   * Stores a timing (in arbirtrary units). Returns the total number of timings stored so far.
+   * Runs the function f and logs that duration, in nanoseconds, with the given name.
    */
-  def addTiming(name: String, duration: Int): Long
-
-  /**
-   * Stores a set of summarized timings.
-   */
-  def addTiming(name: String, timingStat: TimingStat): Long
-
-  /**
-   * Increments a count in the stats, returning the new value.
-   */
-  def incr(name: String, count: Int): Long
-
-  /**
-   * Increments a count in the stats, returning the new value.
-   */
-  def incr(name: String): Long = incr(name, 1)
-
-  /**
-   * Returns a map of counters and their current values.
-   * @param reset whether or not to reset the counters after reading them
-   */
-  def getCounterStats(reset: Boolean): Map[String, Long]
-
-  /**
-   * Returns a map of counters and their current values.
-   */
-  def getCounterStats(): Map[String, Long] = getCounterStats(false)
-
-  /**
-   * Returns a map of timings.
-   @ param reset whether or not to reset the timing stats after reading them
-   */
-  def getTimingStats(reset: Boolean): Map[String, TimingStat]
-
-  /**
-   * Returns a map of timings.
-   */
-  def getTimingStats(): Map[String, TimingStat] = getTimingStats(false)
-
-  /**
-   * Return a nested map containing counters, timings, gauges, and the JVM stats, suitable for
-   * encoding into JSON or XML, or flattening into text.
-   */
-  def stats(reset: Boolean): Map[String, Map[String, Any]] = {
-    immutable.Map("counters" -> getCounterStats(reset), "timings" -> getTimingStats(reset))
+  def timeNanos[T](name: String)(f: => T): T = {
+    val (rv, duration) = Duration.inNanoseconds(f)
+    addMetric(name + "_nsec", duration.inNanoseconds)
+    rv
   }
-
-  /**
-   * Reset all collected stats and erase the history.
-   */
-  def clearAll()
 }
-
 
 /**
  * A StatsProvider that doesn't actually save or report anything.
