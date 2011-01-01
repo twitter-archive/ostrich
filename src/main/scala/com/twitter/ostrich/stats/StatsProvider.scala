@@ -100,7 +100,7 @@ trait StatsProvider {
    */
   def time[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inMilliseconds(f)
-    addMetric(name + "_msec", duration.inMilliseconds)
+    addMetric(name + "_msec", duration.inMilliseconds.toInt)
     rv
   }
 
@@ -109,7 +109,7 @@ trait StatsProvider {
    */
   def timeMicros[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inNanoseconds(f)
-    addTiming(name + "_usec", duration.inMicroseconds)
+    addMetric(name + "_usec", duration.inMicroseconds.toInt)
     rv
   }
 
@@ -118,7 +118,7 @@ trait StatsProvider {
    */
   def timeNanos[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inNanoseconds(f)
-    addMetric(name + "_nsec", duration.inNanoseconds)
+    addMetric(name + "_nsec", duration.inNanoseconds.toInt)
     rv
   }
 }
@@ -127,10 +127,14 @@ trait StatsProvider {
  * A StatsProvider that doesn't actually save or report anything.
  */
 object DevNullStats extends StatsProvider {
-  def addTiming(name: String, duration: Int) = 0
-  def addTiming(name: String, timingStat: TimingStat) = 0
-  def incr(name: String, count: Int): Long = count.toLong
-  def getCounterStats(reset: Boolean) = immutable.Map.empty
-  def getTimingStats(reset: Boolean) = immutable.Map.empty
+  def addMetric(name: String, value: Int) = ()
+  def addMetric(name: String, distribution: Distribution) = ()
+  def incr(name: String, count: Int) = count.toLong
+  def addGauge(name: String, gauge: => Double) = ()
+  def clearGauge(name: String) = ()
+  def getCounter(name: String) = new Counter()
+  def getMetric(name: String) = new Metric()
+  def getGauge(name: String) = 0.0
+  def get() = StatsSummary(Map.empty, Map.empty, Map.empty)
   def clearAll() = ()
 }

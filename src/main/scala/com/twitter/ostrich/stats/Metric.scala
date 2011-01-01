@@ -54,7 +54,7 @@ case class Distribution(count: Int, maximum: Int, minimum: Int, histogram: Optio
 
   private def toMapWithoutHistogram = {
     Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
-                      "average" -> average)
+                      "average" -> average.toLong)
   }
 
   def toMap: Map[String, Long] = {
