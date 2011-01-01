@@ -91,9 +91,24 @@ trait StatsProvider {
   def getGauge(name: String): Option[Double]
 
   /**
+   * Summarize all the counters in this collection.
+   */
+  def getCounters(): Map[String, Long]
+
+  /**
+   * Summarize all the metrics in this collection.
+   */
+  def getMetrics(): Map[String, Distribution]
+
+  /**
+   * Summarize all the gauges in this collection.
+   */
+  def getGauges(): Map[String, Double]
+
+  /**
    * Summarize all the counters, metrics, and gauges in this collection.
    */
-  def get(): StatsSummary
+  def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges())
 
   /**
    * Reset all collected stats and erase the history.
@@ -138,6 +153,8 @@ object DevNullStats extends StatsProvider {
   def getCounter(name: String) = new Counter()
   def getMetric(name: String) = new Metric()
   def getGauge(name: String) = None
-  def get() = StatsSummary(Map.empty, Map.empty, Map.empty)
+  def getCounters() = Map.empty
+  def getMetrics() = Map.empty
+  def getGauges() = Map.empty
   def clearAll() = ()
 }

@@ -17,6 +17,7 @@
 package com.twitter.ostrich
 package stats
 
+import scala.collection.mutable
 import com.twitter.logging.Logger
 
 /**
@@ -84,5 +85,30 @@ class Metric {
     val rv = new Distribution(count, maximum, minimum, Some(histogram.clone()), mean)
     if (reset) clear()
     rv
+  }
+}
+
+class FanoutMetric extends Metric {
+  private val fanout = new mutable.HashSet[Metric]
+
+  def addFanout(metric: Metric) {
+    fanout += metric
+  }
+
+  override def clear() {
+    synchronized {
+      super.clear()
+      fanout.foreach { _.clear() }
+    }
+  }
+
+  override def add(n: Int) = synchronized {
+    fanout.foreach { _.add(n) }
+    super.add(n)
+  }
+
+  override def add(distribution: Distribution) = synchronized {
+    fanout.foreach { _.add(distribution) }
+    super.add(distribution)
   }
 }

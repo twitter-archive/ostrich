@@ -21,25 +21,19 @@ import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 
-object StatsCollection {
-  /**
-   * Returns a new StatsCollection with the keys of the original StatsCollection
-   * already created.
-   -- FIXME -- probably not needed anymore.
-  def shallowClone(original: StatsCollection): StatsCollection = {
-    val stats = new StatsCollection
+class StatsReporter(collection: StatsCollection) {
+  private val metricMap = new ConcurrentHashMap[String, Metric]()
 
-    for (key <- original.getCounterKeys) {
-      stats.getCounter(key)
+  collection.addReporter(this)
+
+  def getMetric(name: String) = {
+    var metric = metricMap.get(name)
+    while (metric == null) {
+      metric = metricMap.putIfAbsent(name, new Metric())
+      metric = metricMap.get(name)
     }
-
-    for (key <- original.getTimingKeys) {
-      stats.getTiming(key)
-    }
-
-    stats
+    metric
   }
-  */
 }
 
 /**
@@ -47,8 +41,10 @@ object StatsCollection {
  */
 class StatsCollection extends StatsProvider {
   private val counterMap = new ConcurrentHashMap[String, Counter]()
-  private val metricMap = new ConcurrentHashMap[String, Metric]()
+  private val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
   private val gaugeMap = new ConcurrentHashMap[String, () => Double]()
+
+  private val reporters = new mutable.ListBuffer[StatsReporter]
 
   /** Set this to true to have the collection fill in a set of automatic gauges from the JVM. */
   var includeJvmStats = false
@@ -81,6 +77,15 @@ class StatsCollection extends StatsProvider {
     out
   }
 
+  def addReporter(reporter: StatsReporter) {
+    synchronized {
+      reporters += reporter
+      for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
+        metric.addFanout(reporter.getMetric(key))
+      }
+    }
+  }
+
   def addGauge(name: String, gauge: => Double) {
     gaugeMap.put(name, { () => gauge })
   }
@@ -100,8 +105,12 @@ class StatsCollection extends StatsProvider {
 
   def getMetric(name: String) = {
     var metric = metricMap.get(name)
-    while (metric == null) {
-      metric = metricMap.putIfAbsent(name, new Metric())
+    if (metric == null) {
+      metric = new FanoutMetric()
+      synchronized {
+        reporters.foreach { reporter => metric.addFanout(reporter.getMetric(name)) }
+      }
+      metricMap.putIfAbsent(name, metric)
       metric = metricMap.get(name)
     }
     metric
@@ -112,26 +121,35 @@ class StatsCollection extends StatsProvider {
     if (gauge == null) None else Some(gauge())
   }
 
-  def get() = {
+  def getCounters() = {
     val counters = new mutable.HashMap[String, Long]
     for ((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
       counters += (key -> counter())
     }
+    counters
+  }
+
+  def getMetrics() = {
     val metrics = new mutable.HashMap[String, Distribution]
     for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
       metrics += (key -> metric(true))
     }
+    metrics
+  }
+
+  def getGauges() = {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
     for ((key, gauge) <- JavaConversions.asScalaMap(gaugeMap)) {
       gauges += (key -> gauge())
     }
-    StatsSummary(counters, metrics, gauges)
+    gauges
   }
 
   def clearAll() {
     counterMap.clear()
     metricMap.clear()
     gaugeMap.clear()
+    reporters.clear()
   }
 }
