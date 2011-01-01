@@ -24,10 +24,10 @@ import com.twitter.json.{Json, JsonSerializable}
 
 /**
  * A set of data points summarized into a histogram, mean, min, and max.
- * Metrics are immutable.
+ * Distributions are immutable.
  */
-case class Metric(count: Int, maximum: Int, minimum: Int, histogram: Option[Histogram],
-                  mean: Double) extends JsonSerializable {
+case class Distribution(count: Int, maximum: Int, minimum: Int, histogram: Option[Histogram],
+                        mean: Double) extends JsonSerializable {
   def average = mean
 
   def this(count: Int, maximum: Int, minimum: Int, mean: Double) =
