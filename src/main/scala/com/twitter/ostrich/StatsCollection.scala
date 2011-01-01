@@ -15,16 +15,17 @@
  */
 
 package com.twitter.ostrich
+package stats
 
-import scala.collection.{Map, JavaConversions, mutable, immutable}
+import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
-
+import scala.collection.{JavaConversions, Map, mutable, immutable}
 
 object StatsCollection {
   /**
    * Returns a new StatsCollection with the keys of the original StatsCollection
    * already created.
-   */
+   -- FIXME -- probably not needed anymore.
   def shallowClone(original: StatsCollection): StatsCollection = {
     val stats = new StatsCollection
 
@@ -38,6 +39,7 @@ object StatsCollection {
 
     stats
   }
+  */
 }
 
 /**
@@ -45,70 +47,91 @@ object StatsCollection {
  */
 class StatsCollection extends StatsProvider {
   private val counterMap = new ConcurrentHashMap[String, Counter]()
-  private val timingMap = new ConcurrentHashMap[String, Timing]()
+  private val metricMap = new ConcurrentHashMap[String, Metric]()
+  private val gaugeMap = new ConcurrentHashMap[String, () => Double]()
 
-  def addTiming(name: String, duration: Int): Long = {
-    getTiming(name).add(duration)
-  }
+  /** Set this to true to have the collection fill in a set of automatic gauges from the JVM. */
+  var includeJvmStats = false
 
-  def addTiming(name: String, timingStat: TimingStat): Long = {
-    getTiming(name).add(timingStat)
-  }
+  def fillInJvmGauges(out: mutable.Map[String, Double]) {
+    val mem = ManagementFactory.getMemoryMXBean()
 
-  def incr(name: String, count: Int): Long = {
-    getCounter(name).value.addAndGet(count)
-  }
+    val heap = mem.getHeapMemoryUsage()
+    out += ("heap_committed" -> heap.getCommitted())
+    out += ("heap_max" -> heap.getMax())
+    out += ("heap_used" -> heap.getUsed())
 
-  def getCounterKeys(): Iterable[String] = {
-    JavaConversions.asScalaSet(counterMap.keySet)
-  }
+    val nonheap = mem.getNonHeapMemoryUsage()
+    out += ("nonheap_committed" -> nonheap.getCommitted())
+    out += ("nonheap_max" -> nonheap.getMax())
+    out += ("nonheap_used" -> nonheap.getUsed())
 
-  def getCounterStats(reset: Boolean): Map[String, Long] = {
-    val rv = new mutable.HashMap[String, Long]
-    for((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
-      rv += (key -> counter(reset))
-    }
-    rv
-  }
+    val threads = ManagementFactory.getThreadMXBean()
+    out += ("thread_daemon_count" -> threads.getDaemonThreadCount().toLong)
+    out += ("thread_count" -> threads.getThreadCount().toLong)
+    out += ("thread_peak_count" -> threads.getPeakThreadCount().toLong)
 
-  def getTimingKeys(): Iterable[String] = {
-    JavaConversions.asScalaSet(timingMap.keySet)
-  }
+    val runtime = ManagementFactory.getRuntimeMXBean()
+    out += ("start_time" -> runtime.getStartTime())
+    out += ("uptime" -> runtime.getUptime())
 
-  def getTimingStats(reset: Boolean): Map[String, TimingStat] = {
-    val out = new mutable.HashMap[String, TimingStat]
-    for ((key, timing) <- JavaConversions.asScalaMap(timingMap)) {
-      out += (key -> timing.get(reset))
-    }
+    val os = ManagementFactory.getOperatingSystemMXBean()
+    out += ("num_cpus" -> os.getAvailableProcessors().toLong)
+
     out
   }
 
-  def clearAll() {
-    counterMap.clear()
-    timingMap.clear()
+  def addGauge(name: String, gauge: => Double) {
+    gaugeMap.put(name, { () => gauge })
   }
 
-  /**
-   * Find or create a counter with the given name.
-   */
-  def getCounter(name: String): Counter = {
+  def clearGauge(name: String) {
+    gaugeMap.remove(name)
+  }
+
+  def getCounter(name: String) = {
     var counter = counterMap.get(name)
     while (counter == null) {
-      counter = counterMap.putIfAbsent(name, new Counter)
+      counter = counterMap.putIfAbsent(name, new Counter())
       counter = counterMap.get(name)
     }
     counter
   }
 
-  /**
-   * Find or create a timing measurement with the given name.
-   */
-  def getTiming(name: String): Timing = {
-    var timing = timingMap.get(name)
-    while (timing == null) {
-      timing = timingMap.putIfAbsent(name, new Timing)
-      timing = timingMap.get(name)
+  def getMetric(name: String) = {
+    var metric = metricMap.get(name)
+    while (metric == null) {
+      metric = metricMap.putIfAbsent(name, new Metric())
+      metric = metricMap.get(name)
     }
-    timing
+    metric
+  }
+
+  def getGauge(name: String) = {
+    val gauge = gaugeMap.get(name)
+    if (gauge == null) None else Some(gauge())
+  }
+
+  def get() = {
+    val counters = new mutable.HashMap[String, Long]
+    for ((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
+      counters += (key -> counter())
+    }
+    val metrics = new mutable.HashMap[String, Distribution]
+    for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
+      metrics += (key -> metric(true))
+    }
+    val gauges = new mutable.HashMap[String, Double]
+    if (includeJvmStats) fillInJvmGauges(gauges)
+    for ((key, gauge) <- JavaConversions.asScalaMap(gaugeMap)) {
+      gauges += (key -> gauge())
+    }
+    StatsSummary(counters, metrics, gauges)
+  }
+
+  def clearAll() {
+    counterMap.clear()
+    metricMap.clear()
+    gaugeMap.clear()
   }
 }

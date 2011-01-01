@@ -17,6 +17,8 @@
 package com.twitter.ostrich
 package stats
 
+import scala.annotation.tailrec
+
 object Histogram {
   // (0..53).map { |n| (1.3 ** n).to_i + 1 }.uniq
   val BUCKET_OFFSETS =
