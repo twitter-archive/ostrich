@@ -34,18 +34,24 @@ trait StatsProvider {
   /**
    * Adds a value to a named metric, which tracks min, max, mean, and a histogram.
    */
-  def addMetric(name: String, value: Int)
+  def addMetric(name: String, value: Int) {
+    getMetric(name).add(value)
+  }
 
   /**
    * Adds a set of values to a named metric. Effectively the incoming distribution is merged with
    * the named metric.
    */
-  def addMetric(name: String, distribution: Distribution)
+  def addMetric(name: String, distribution: Distribution) {
+    getMetric(name).add(distribution)
+  }
 
   /**
    * Increments a counter, returning the new value.
    */
-  def incr(name: String, count: Int): Long
+  def incr(name: String, count: Int): Long = {
+    getCounter(name).value.addAndGet(count)
+  }
 
   /**
    * Increments a counter by one, returning the new value.
@@ -55,13 +61,13 @@ trait StatsProvider {
   /**
    * Add a gauge function, which is used to sample instantaneous values.
    */
-  def addGauge(name: String, gauge: => Double)
+  def addGauge(name: String)(gauge: => Double)
 
   /**
    * Set a gauge to a specific value. This overwrites any previous value or function.
    */
   def setGauge(name: String, value: Double) {
-    addGauge(name, value)
+    addGauge(name)(value)
   }
 
   /**
@@ -82,7 +88,7 @@ trait StatsProvider {
   /**
    * Get the current value of a named gauge.
    */
-  def getGauge(name: String): Double
+  def getGauge(name: String): Option[Double]
 
   /**
    * Summarize all the counters, metrics, and gauges in this collection.
@@ -127,14 +133,11 @@ trait StatsProvider {
  * A StatsProvider that doesn't actually save or report anything.
  */
 object DevNullStats extends StatsProvider {
-  def addMetric(name: String, value: Int) = ()
-  def addMetric(name: String, distribution: Distribution) = ()
-  def incr(name: String, count: Int) = count.toLong
-  def addGauge(name: String, gauge: => Double) = ()
+  def addGauge(name: String)(gauge: => Double) = ()
   def clearGauge(name: String) = ()
   def getCounter(name: String) = new Counter()
   def getMetric(name: String) = new Metric()
-  def getGauge(name: String) = 0.0
+  def getGauge(name: String) = None
   def get() = StatsSummary(Map.empty, Map.empty, Map.empty)
   def clearAll() = ()
 }
