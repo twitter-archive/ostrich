@@ -42,9 +42,8 @@ case class Distribution(count: Int, maximum: Int, minimum: Int, histogram: Optio
   }
 
   override def equals(other: Any) = other match {
-    case t: TimingStat =>
-      t.count == count && t.maximum == maximum && t.minimum == minimum && t.average == average &&
-        t.variance == variance
+    case t: Distribution =>
+      t.count == count && t.maximum == maximum && t.minimum == minimum && t.mean == mean
     case _ => false
   }
 
