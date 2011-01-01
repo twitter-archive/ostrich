@@ -15,14 +15,14 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import com.twitter.logging.Logger
 
 /**
- * A Timing collates durations of an event and can report
- * min/max/avg along with how often the event occurred.
+ * A Metric collates data points and can report a Distribution.
  */
-class Timing {
+class Metric {
   val log = Logger.get(getClass.getName)
 
   private var maximum = Int.MinValue
@@ -30,10 +30,9 @@ class Timing {
   private var count: Int = 0
   private var histogram = new Histogram()
   private var mean: Double = 0.0
-  private var partialVariance: Double = 0.0
 
   /**
-   * Resets the state of this Timing. Clears the durations and counts collected so far.
+   * Resets the state of this Metric. Clears all data points collected so far.
    */
   def clear() = synchronized {
     maximum = Int.MinValue
@@ -43,7 +42,7 @@ class Timing {
   }
 
   /**
-   * Adds a duration to our current Timing.
+   * Adds a data point.
    */
   def add(n: Int): Long = synchronized {
     if (n > -1) {
@@ -53,44 +52,36 @@ class Timing {
       histogram.add(n)
       if (count == 1) {
         mean = n
-        partialVariance = 0.0
       } else {
-        val newMean = mean + (n - mean) / count
-        partialVariance += (n - mean) * (n - newMean)
-        mean = newMean
+        mean += (n.toDouble - mean) / count
       }
     } else {
-      log.warning("Tried to add a negative timing duration. Was the clock adjusted?")
+      log.warning("Tried to add a negative data point.")
     }
     count
   }
 
   /**
-   * Add a summarized set of timings.
+   * Add a summarized set of data points.
    */
-  def add(timingStat: TimingStat): Long = synchronized {
-    if (timingStat.count > 0) {
+  def add(distribution: Distribution): Long = synchronized {
+    if (distribution.count > 0) {
       // these equations end up using the sum again, and may be lossy. i couldn't find or think of
       // a better way.
-      val newMean = (mean * count + timingStat.mean * timingStat.count) / (count + timingStat.count)
-      partialVariance = partialVariance + timingStat.partialVariance +
-        (mean - newMean) * mean * count +
-        (timingStat.mean - newMean) * timingStat.mean * timingStat.count
-      mean = newMean
-      count += timingStat.count
-      maximum = timingStat.maximum max maximum
-      minimum = timingStat.minimum min minimum
-      timingStat.histogram.map { h => histogram.merge(h) }
+      mean = (mean * count + distribution.mean * distribution.count) / (count + distribution.count)
+      count += distribution.count
+      maximum = distribution.maximum max maximum
+      minimum = distribution.minimum min minimum
+      distribution.histogram.map { h => histogram.merge(h) }
     }
     count
   }
 
   /**
-   * Returns a TimingStat for the measured event.
-   * @param reset whether to erase the current history afterwards
+   * Returns a Distribution for this Metric.
    */
-  def get(reset: Boolean): TimingStat = synchronized {
-    val rv = new TimingStat(count, maximum, minimum, Some(histogram.clone()), mean, partialVariance)
+  def get(reset: Boolean): Distribution = synchronized {
+    val rv = new Distribution(count, maximum, minimum, Some(histogram.clone()), mean)
     if (reset) clear()
     rv
   }
