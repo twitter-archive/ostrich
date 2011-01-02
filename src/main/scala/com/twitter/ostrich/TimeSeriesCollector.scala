@@ -22,6 +22,7 @@ import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
+import stats._
 
 /**
  * Collect stats over a rolling window of the last hour and report them to a web handler,
@@ -54,23 +55,21 @@ class TimeSeriesCollector {
   var lastCollection: Time = Time(0.seconds)
 
   val collector = new PeriodicBackgroundProcess("TimeSeriesCollector", 1.minute) {
-    val stats = Stats.fork()
+    val reporter = new StatsReporter(Stats)
 
     def periodic() {
-      Stats.getJvmStats().foreach { case (k, v) =>
-        hourly.getOrElseUpdate("jvm:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
-      }
-      Stats.getGaugeStats(true).foreach { case (k, v) =>
+      val stats = reporter.get()
+      stats.gauges.foreach { case (k, v) =>
         hourly.getOrElseUpdate("gauge:" + k, new TimeSeries[Double](60, 0)).add(v)
       }
-      stats.getCounterStats(true).foreach { case (k, v) =>
+      stats.counters.foreach { case (k, v) =>
         hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
-      stats.getTimingStats(true).foreach { case (k, v) =>
+      stats.metrics.foreach { case (k, v) =>
         val data = PERCENTILES.map { percent =>
           v.histogram.get.getPercentile(percent).toLong
         }
-        hourlyTimings.getOrElseUpdate("timing:" + k, new TimeSeries[List[Long]](60, EMPTY_TIMINGS)).add(data)
+        hourlyTimings.getOrElseUpdate("metric:" + k, new TimeSeries[List[Long]](60, EMPTY_TIMINGS)).add(data)
       }
       lastCollection = Time.now
     }

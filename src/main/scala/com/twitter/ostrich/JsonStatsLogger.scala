@@ -22,34 +22,35 @@ import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
+import stats._
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.
  */
 class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName: Option[String])
-      extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
+extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
   def this(logger: Logger, period: Duration) = this(logger, period, None)
 
-  val collection = Stats.fork()
+  val reporter = new StatsReporter(Stats)
   val hostname = InetAddress.getLocalHost().getCanonicalHostName()
 
   def periodic() {
+    val stats = reporter.get()
     val statMap =
-      collection.getCounterStats(true) ++
-      Stats.getGaugeStats(true) ++
-      collection.getTimingStats(true).flatMap { case (key, timing) =>
-        timing.toMap.map { case (subkey, value) =>
-          ("timing_" + key + "_" + subkey, value)
+      stats.counters ++
+      stats.gauges ++
+      stats.metrics.flatMap { case (key, distribution) =>
+        distribution.toMap.map { case (subkey, value) =>
+          (key + "_" + subkey, value)
         }
       } ++
-      Stats.getJvmStats().map { case (key, value) =>
-        ("jvm_" + key, value)
-      } ++
-      immutable.Map("service" -> serviceName.getOrElse("unknown"),
-                    "source" -> hostname,
-                    "timestamp" -> Time.now.inSeconds)
+      Map(
+        "service" -> serviceName.getOrElse("unknown"),
+        "source" -> hostname,
+        "timestamp" -> Time.now.inSeconds
+      )
     val cleanedKeysStatMap = statMap.map { case (key, value) => (key.replaceAll(":", "_"), value) }
 
-    logger.info(Json.build(immutable.Map(cleanedKeysStatMap.toSeq: _*)).toString)
+    logger.info(Json.build(Map(cleanedKeysStatMap.toSeq: _*)).toString)
   }
 }

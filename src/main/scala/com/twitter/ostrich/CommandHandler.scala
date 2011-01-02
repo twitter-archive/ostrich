@@ -22,7 +22,7 @@ import java.util.Date
 import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
 import com.twitter.json.Json
-import Conversions._
+import stats._
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 
@@ -33,11 +33,32 @@ object Format {
 }
 
 class CommandHandler(runtime: RuntimeEnvironment) {
+  private def build(obj: Any): List[String] = {
+    obj match {
+      case m: Map[_, _] =>
+        m.keys.map { _.toString }.toList.sorted.flatMap { k =>
+          val value = m.asInstanceOf[Map[Any, Any]](k)
+          build(value) match {
+            case line :: Nil if (!line.contains(": ")) => List(k.toString + ": " + line)
+            case list => (k.toString + ":") :: list.map { "  " + _ }
+          }
+        }
+      case a: Array[_] =>
+        a.flatMap { build(_) }.toList
+      case s: Seq[_] =>
+        s.flatMap { build(_) }.toList
+      case x =>
+        List(x.toString)
+    }
+  }
+
+  def flatten(obj: Any): String = build(obj).mkString("\n") + "\n"
+
   def apply(command: String, parameters: List[String], format: Format): String = {
     val rv = handleRawCommand(command, parameters)
     format match {
       case Format.PlainText =>
-        rv.flatten
+        flatten(rv)
       case Format.Json =>
         // force it into a map because some json clients expect the top-level object to be a map.
         Json.build(rv match {
@@ -69,12 +90,13 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         }
         "ok"
       case "stats" =>
-        val reset = parameters.contains("reset")
-        Stats.stats(reset)
+        stats.Stats.toMap
       case "server_info" =>
         val mxRuntime = ManagementFactory.getRuntimeMXBean()
-        immutable.Map("name" -> runtime.jarName, "version" -> runtime.jarVersion,
-                      "build" -> runtime.jarBuild, "build_revision" -> runtime.jarBuildRevision,
+        immutable.Map("name" -> runtime.jarName,
+                      "version" -> runtime.jarVersion,
+                      "build" -> runtime.jarBuild,
+                      "build_revision" -> runtime.jarBuildRevision,
                       "start_time" -> (new Date(mxRuntime.getStartTime())).toString,
                       "uptime" -> mxRuntime.getUptime())
       case "threads" =>

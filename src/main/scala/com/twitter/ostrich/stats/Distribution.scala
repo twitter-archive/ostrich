@@ -27,7 +27,8 @@ import com.twitter.json.{Json, JsonSerializable}
  * Distributions are immutable.
  */
 case class Distribution(count: Int, maximum: Int, minimum: Int, histogram: Option[Histogram],
-                        mean: Double) extends JsonSerializable {
+                        mean: Double)
+extends JsonSerializable {
   def average = mean
 
   def this(count: Int, maximum: Int, minimum: Int, mean: Double) =
