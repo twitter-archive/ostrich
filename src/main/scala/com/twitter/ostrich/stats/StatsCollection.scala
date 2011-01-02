@@ -20,26 +20,12 @@ package stats
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
-
-class StatsReporter(collection: StatsCollection) {
-  private val metricMap = new ConcurrentHashMap[String, Metric]()
-
-  collection.addReporter(this)
-
-  def getMetric(name: String) = {
-    var metric = metricMap.get(name)
-    while (metric == null) {
-      metric = metricMap.putIfAbsent(name, new Metric())
-      metric = metricMap.get(name)
-    }
-    metric
-  }
-}
+import com.twitter.json.{Json, JsonSerializable}
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
-class StatsCollection extends StatsProvider {
+class StatsCollection extends StatsProvider with JsonSerializable {
   private val counterMap = new ConcurrentHashMap[String, Counter]()
   private val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
   private val gaugeMap = new ConcurrentHashMap[String, () => Double]()
@@ -151,5 +137,17 @@ class StatsCollection extends StatsProvider {
     metricMap.clear()
     gaugeMap.clear()
     reporters.clear()
+  }
+
+  def toMap: Map[String, Any] = {
+    Map(
+      "counters" -> getCounters(),
+      "metrics" -> getMetrics(),
+      "gauges" -> getGauges()
+    )
+  }
+
+  def toJson = {
+    Json.build(toMap).toString
   }
 }
