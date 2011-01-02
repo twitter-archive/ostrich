@@ -20,4 +20,6 @@ package stats
 /**
  * Singleton StatsCollector that collects performance data for the application.
  */
-object Stats extends StatsCollection
+object Stats extends StatsCollection {
+  includeJvmStats = true
+}
