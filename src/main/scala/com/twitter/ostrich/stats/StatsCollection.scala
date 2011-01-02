@@ -53,26 +53,26 @@ class StatsCollection extends StatsProvider {
     val mem = ManagementFactory.getMemoryMXBean()
 
     val heap = mem.getHeapMemoryUsage()
-    out += ("heap_committed" -> heap.getCommitted())
-    out += ("heap_max" -> heap.getMax())
-    out += ("heap_used" -> heap.getUsed())
+    out += ("jvm_heap_committed" -> heap.getCommitted())
+    out += ("jvm_heap_max" -> heap.getMax())
+    out += ("jvm_heap_used" -> heap.getUsed())
 
     val nonheap = mem.getNonHeapMemoryUsage()
-    out += ("nonheap_committed" -> nonheap.getCommitted())
-    out += ("nonheap_max" -> nonheap.getMax())
-    out += ("nonheap_used" -> nonheap.getUsed())
+    out += ("jvm_nonheap_committed" -> nonheap.getCommitted())
+    out += ("jvm_nonheap_max" -> nonheap.getMax())
+    out += ("jvm_nonheap_used" -> nonheap.getUsed())
 
     val threads = ManagementFactory.getThreadMXBean()
-    out += ("thread_daemon_count" -> threads.getDaemonThreadCount().toLong)
-    out += ("thread_count" -> threads.getThreadCount().toLong)
-    out += ("thread_peak_count" -> threads.getPeakThreadCount().toLong)
+    out += ("jvm_thread_daemon_count" -> threads.getDaemonThreadCount().toLong)
+    out += ("jvm_thread_count" -> threads.getThreadCount().toLong)
+    out += ("jvm_thread_peak_count" -> threads.getPeakThreadCount().toLong)
 
     val runtime = ManagementFactory.getRuntimeMXBean()
-    out += ("start_time" -> runtime.getStartTime())
-    out += ("uptime" -> runtime.getUptime())
+    out += ("jvm_start_time" -> runtime.getStartTime())
+    out += ("jvm_uptime" -> runtime.getUptime())
 
     val os = ManagementFactory.getOperatingSystemMXBean()
-    out += ("num_cpus" -> os.getAvailableProcessors().toLong)
+    out += ("jvm_num_cpus" -> os.getAvailableProcessors().toLong)
 
     out
   }
