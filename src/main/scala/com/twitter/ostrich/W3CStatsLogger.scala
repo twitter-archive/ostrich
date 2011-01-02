@@ -15,49 +15,39 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import scala.collection.mutable
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.util.Time
+import com.twitter.util.{Duration, Time}
+import stats._
 
 /**
  * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.
  */
-class W3CStatsLogger(val logger: Logger, val frequencyInSeconds: Int, includeJvmStats: Boolean) extends BackgroundProcess("W3CStatsLogger") {
-  def this(logger: Logger, frequencyInSeconds: Int) = this(logger, frequencyInSeconds, true)
+class W3CStatsLogger(val logger: Logger, val frequency: Duration, includeJvmStats: Boolean)
+extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
+  def this(logger: Logger, frequency: Duration) = this(logger, frequency, true)
 
-  val collection = Stats.fork()
   val reporter = new W3CReporter(logger)
-  var nextRun = Time.now + frequencyInSeconds.seconds
+  val statsReporter = new StatsReporter(Stats)
 
-  def runLoop() {
-    val delay = (nextRun - Time.now).inMilliseconds
-
-    if (delay > 0) {
-      Thread.sleep(delay)
-    }
-
-    nextRun += frequencyInSeconds.seconds
-    logStats()
-  }
-
-  def logStats() {
+  def periodic() {
     val report = new mutable.HashMap[String, Any]
 
     if (includeJvmStats) {
       Stats.getJvmStats() foreach { case (key, value) => report("jvm_" + key) = value }
     }
 
-    collection.getCounterStats(true) foreach { case (key, value) => report(key) = value }
-    Stats.getGaugeStats(true) foreach { case (key, value) => report(key) = value }
+    Stats.getCounters() foreach { case (key, value) => report(key) = value }
+    Stats.getGauges() foreach { case (key, value) => report(key) = value }
 
-    collection.getTimingStats(true) foreach { case (key, timing) =>
-      report(key + "_count") = timing.count
-      report(key + "_min") = timing.minimum
-      report(key + "_max") = timing.maximum
-      report(key + "_avg") = timing.average
-      report(key + "_std") = timing.standardDeviation
+    Stats.getMetrics() foreach { case (key, distribution) =>
+      report(key + "_count") = distribution.count
+      report(key + "_min") = distribution.minimum
+      report(key + "_max") = distribution.maximum
+      report(key + "_avg") = distribution.average
     }
 
     reporter.report(report)

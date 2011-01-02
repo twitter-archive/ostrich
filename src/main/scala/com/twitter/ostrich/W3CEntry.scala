@@ -15,11 +15,14 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import java.net.InetAddress
 import java.util.Date
 import scala.collection.mutable
 import com.twitter.logging.Logger
+import com.twitter.util.Time
+import stats._
 
 /**
  * Implementation of a W3C log line. For each request or unit of work, create a new W3CEntry instance and
@@ -35,34 +38,30 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
   val fieldNames: Set[String] = Set.empty ++ fields
   val reporter = new W3CReporter(logger)
 
-  protected[ostrich] val map: mutable.Map[String, Any] = new mutable.HashMap[String, Any] {
-    override def initialSize = fields.length * 2
-  }
+  protected[ostrich] val map: mutable.Map[String, Any] = new mutable.HashMap[String, Any]()
 
   /**
    * Temporary Map of Timing info (things that have been started but not finished yet.
    * It is expected that endTiming will remove the entry from this map.
    */
-  protected[ostrich] val timingMap: mutable.Map[String, Long] = new mutable.HashMap[String, Long] {
-    override def initialSize = fields.length * 2
-  }
+  protected[ostrich] val timingMap: mutable.Map[String, Time] = new mutable.HashMap[String, Time]()
 
   def clearAll() = map.clear()
 
-  def getCounterStats(reset: Boolean) = Stats.getCounterStats(reset)
-  def getTimingStats(reset: Boolean) = Stats.getTimingStats(reset)
+  def getCounters() = Stats.getCounters()
+  def getMetrics() = Stats.getMetrics()
 
-  def addTiming(name: String, duration: Int): Long = {
-    log(name, duration)
-    Stats.addTiming(name, duration)
+  def addMetric(name: String, value: Int) {
+    log(name, value)
+    Stats.addMetric(name, value)
   }
 
   /**
    * TimingStats don't fit naturally into a W3C entry so they are only logged globally.
    */
-  def addTiming(name: String, timingStat: TimingStat): Long = {
+  def addMetric(name: String, distribution: Distribution) {
     // can't really w3c these.
-    Stats.addTiming(name, timingStat)
+    Stats.addMetric(name, distribution)
   }
 
   /**
@@ -119,15 +118,14 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
     if (map.contains(name)) {
       log.warning("adding timing for an already timed column")
     }
-    timingMap += (name -> System.currentTimeMillis)
+    timingMap += (name -> Time.now)
   }
 
   def endTiming(name: String): Unit = timingMap.get(name) match {
-    case None => log.error("endTiming called for name that had no start time: %s", name)
-    case Some(start) => {
-      val startTime = start.asInstanceOf[Long]
-      addTiming(name, (System.currentTimeMillis - startTime).toInt)
+    case None =>
+      log.error("endTiming called for name that had no start time: %s", name)
+    case Some(start) =>
+      addMetric(name + "_msec", (Time.now - start).inMilliseconds.toInt)
       timingMap -= name
-    }
   }
 }

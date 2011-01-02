@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat
@@ -22,6 +23,7 @@ import java.util.{Date, HashSet}
 import java.util.zip.CRC32
 import scala.collection.mutable
 import com.twitter.logging.Logger
+import stats._
 
 /**
  * Implements a W3C Extended Log and contains convenience methods for timing blocks and
@@ -92,14 +94,14 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
    */
   def log_entry: String = reporter.generateLine(fields, get())
 
-  def addTiming(name: String, duration: Int): Long = {
-    log(name, duration)
-    Stats.addTiming(name, duration)
+  def addMetric(name: String, value: Int) {
+    log(name, value)
+    Stats.addMetric(name, value)
   }
 
-  def addTiming(name: String, timingStat: TimingStat): Long = {
+  def addMetric(name: String, distribution: Distribution) {
     // can't really w3c these.
-    Stats.addTiming(name, timingStat)
+    Stats.addMetric(name, distribution)
   }
 
   def incr(name: String, count: Int) = {
@@ -107,8 +109,8 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
     Stats.incr(name, count)
   }
 
-  def getCounterStats(reset: Boolean) = Stats.getCounterStats(reset)
-  def getTimingStats(reset: Boolean) = Stats.getTimingStats(reset)
+  def getCounters() = Stats.getCounters()
+  def getMetrics() = Stats.getMetrics()
 
   /**
    * Coalesce all w3c events (counters, timings, etc.) that happen in this thread within this
