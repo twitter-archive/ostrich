@@ -36,10 +36,6 @@ extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
   def periodic() {
     val report = new mutable.HashMap[String, Any]
 
-    if (includeJvmStats) {
-      Stats.getJvmStats() foreach { case (key, value) => report("jvm_" + key) = value }
-    }
-
     Stats.getCounters() foreach { case (key, value) => report(key) = value }
     Stats.getGauges() foreach { case (key, value) => report(key) = value }
 
