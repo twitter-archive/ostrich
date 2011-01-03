@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import java.net.URL
 import scala.collection.immutable
@@ -122,10 +123,10 @@ object TimeSeriesCollectorSpec extends Specification {
 
     "fetch specific timing percentiles" in {
       Time.withCurrentTimeFrozen { time =>
-        Stats.addTiming("run", 5)
-        Stats.addTiming("run", 10)
-        Stats.addTiming("run", 15)
-        Stats.addTiming("run", 20)
+        Stats.addMetric("run", 5)
+        Stats.addMetric("run", 10)
+        Stats.addMetric("run", 15)
+        Stats.addMetric("run", 20)
         collector.collector.periodic()
 
         val service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))

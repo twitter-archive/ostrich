@@ -17,11 +17,12 @@
 package com.twitter.ostrich
 
 import org.specs.Specification
+import stats._
 
 class RuntimeEnvironmentSpec extends Specification {
   "RuntimeEnvironment" should {
     "find executable jar path" in {
-      val runtime = new RuntimeEnvironment(classOf[Timing])
+      val runtime = new RuntimeEnvironment(classOf[Histogram])
       runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1.jar"), "flockdb", "1.4.1") mustEqual
         Some("./dist/flockdb/flockdb-1.4.1.jar")
       runtime.findCandidateJar(List("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"), "flockdb", "1.4.1") mustEqual

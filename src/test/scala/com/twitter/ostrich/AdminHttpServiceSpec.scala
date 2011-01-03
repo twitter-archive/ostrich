@@ -22,6 +22,7 @@ import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 import org.specs.mock.Mockito
+import stats._
 
 object AdminHttpServiceSpec extends Specification with Mockito {
   val PORT = 9996
@@ -180,12 +181,12 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       "in json, with histograms" in {
         // make some statsy things happen
         Stats.clearAll()
-        Stats.addTiming("kangaroo_time", 1)
-        Stats.addTiming("kangaroo_time", 2)
-        Stats.addTiming("kangaroo_time", 3)
-        Stats.addTiming("kangaroo_time", 4)
-        Stats.addTiming("kangaroo_time", 5)
-        Stats.addTiming("kangaroo_time", 6)
+        Stats.addMetric("kangaroo_time", 1)
+        Stats.addMetric("kangaroo_time", 2)
+        Stats.addMetric("kangaroo_time", 3)
+        Stats.addMetric("kangaroo_time", 4)
+        Stats.addMetric("kangaroo_time", 5)
+        Stats.addMetric("kangaroo_time", 6)
 
         val stats = get("/stats.json")
         val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
@@ -222,12 +223,12 @@ object AdminHttpServiceSpec extends Specification with Mockito {
       "in json, with histograms and reset" in {
         Stats.clearAll()
         // Add items indirectly to the histogram
-        Stats.addTiming("kangaroo_time", 1)
-        Stats.addTiming("kangaroo_time", 2)
-        Stats.addTiming("kangaroo_time", 3)
-        Stats.addTiming("kangaroo_time", 4)
-        Stats.addTiming("kangaroo_time", 5)
-        Stats.addTiming("kangaroo_time", 6)
+        Stats.addMetric("kangaroo_time", 1)
+        Stats.addMetric("kangaroo_time", 2)
+        Stats.addMetric("kangaroo_time", 3)
+        Stats.addMetric("kangaroo_time", 4)
+        Stats.addMetric("kangaroo_time", 5)
+        Stats.addMetric("kangaroo_time", 6)
 
 
         val stats = get("/stats.json?reset")

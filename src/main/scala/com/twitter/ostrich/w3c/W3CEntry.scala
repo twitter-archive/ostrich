@@ -48,10 +48,16 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
 
   def clearAll() = map.clear()
 
+  def getCounter(name: String) = Stats.getCounter(name)
+  def getMetric(name: String) = Stats.getMetric(name)
+  def getGauge(name: String) = Stats.getGauge(name)
   def getCounters() = Stats.getCounters()
   def getMetrics() = Stats.getMetrics()
+  def getGauges() = Stats.getGauges()
+  def addGauge(name: String)(gauge: => Double) = Stats.addGauge(name)(gauge)
+  def clearGauge(name: String) = Stats.clearGauge(name)
 
-  def addMetric(name: String, value: Int) {
+  override def addMetric(name: String, value: Int) {
     log(name, value)
     Stats.addMetric(name, value)
   }
@@ -59,7 +65,7 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
   /**
    * TimingStats don't fit naturally into a W3C entry so they are only logged globally.
    */
-  def addMetric(name: String, distribution: Distribution) {
+  override def addMetric(name: String, distribution: Distribution) {
     // can't really w3c these.
     Stats.addMetric(name, distribution)
   }
@@ -93,7 +99,7 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
     log_safe(name, ip)
   }
 
-  def incr(name: String, count: Int) = {
+  override def incr(name: String, count: Int) = {
     log_safe(name, map.getOrElse(name, 0L).asInstanceOf[Long] + count)
     Stats.incr(name, count)
   }
@@ -128,4 +134,6 @@ class W3CEntry(val logger: Logger, val fields: Array[String]) extends StatsProvi
       addMetric(name + "_msec", (Time.now - start).inMilliseconds.toInt)
       timingMap -= name
   }
+
+  
 }

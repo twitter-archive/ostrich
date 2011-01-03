@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import scala.collection.immutable
 import com.twitter.conversions.string._
@@ -31,70 +32,68 @@ object StatsSpec extends Specification {
     }
 
     "jvm stats" in {
-      val jvmStats = Stats.getJvmStats()
-      jvmStats.keys.toList must contain("num_cpus")
-      jvmStats.keys.toList must contain("heap_used")
-      jvmStats.keys.toList must contain("start_time")
+      val jvmStats = Stats.getGauges()
+      jvmStats.keys.toList must contain("jvm_num_cpus")
+      jvmStats.keys.toList must contain("jvm_heap_used")
+      jvmStats.keys.toList must contain("jvm_start_time")
     }
 
     "counters" in {
       Stats.incr("widgets", 1)
       Stats.incr("wodgets", 12)
       Stats.incr("wodgets")
-      Stats.getCounterStats() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
+      Stats.getCounters() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
     }
 
-    "timings" in {
+    "metrics" in {
       "empty" in {
-        Stats.addTiming("test", 0)
-        val test = Stats.getTiming("test")
-        test.get(true) mustEqual new TimingStat(1, 0, 0)
+        Stats.addMetric("test", 0)
+        val test = Stats.getMetric("test")
+        test(true) mustEqual new Distribution(1, 0, 0, 0.0)
         // the timings list will be empty here:
-        test.get(true) mustEqual new TimingStat(0, 0, 0)
+        test(true) mustEqual new Distribution(0, 0, 0, 0.0)
       }
 
       "basic min/max/average" in {
-        Stats.addTiming("test", 1)
-        Stats.addTiming("test", 2)
-        Stats.addTiming("test", 3)
-        val test = Stats.getTiming("test")
-        test.get(true) mustEqual new TimingStat(3, 3, 1, Some(Histogram(1, 2, 3)), 2.0, 2.0)
+        Stats.addMetric("test", 1)
+        Stats.addMetric("test", 2)
+        Stats.addMetric("test", 3)
+        val test = Stats.getMetric("test")
+        test(true) mustEqual new Distribution(3, 3, 1, Some(Histogram(1, 2, 3)), 2.0)
       }
 
       "report" in {
         var x = 0
         Stats.time("hundred") { for (i <- 0 until 100) x += i }
-        val timings = Stats.getTimingStats(false)
-        timings.keys.toList mustEqual List("hundred")
-        timings("hundred").count mustEqual 1
-        timings("hundred").minimum mustEqual timings("hundred").average
-        timings("hundred").maximum mustEqual timings("hundred").average
+        val timings = Stats.getMetrics()
+        timings.keys.toList mustEqual List("hundred_msec")
+        timings("hundred_msec").count mustEqual 1
+        timings("hundred_msec").minimum mustEqual timings("hundred_msec").average
+        timings("hundred_msec").maximum mustEqual timings("hundred_msec").average
       }
 
       "average of 0" in {
-        Stats.addTiming("test", 0)
-        val test = Stats.getTiming("test")
-        test.get(true) mustEqual new TimingStat(1, 0, 0)
+        Stats.addMetric("test", 0)
+        val test = Stats.getMetric("test")
+        test(true) mustEqual new Distribution(1, 0, 0, 0.0)
       }
 
       "ignore negative timings" in {
-        Stats.addTiming("test", 1)
-        Stats.addTiming("test", -1)
-        Stats.addTiming("test", Int.MinValue)
-        val test = Stats.getTiming("test")
-        test.get(true) mustEqual new TimingStat(1, 1, 1, Some(Histogram(1)), 1.0, 0.0)
+        Stats.addMetric("test", 1)
+        Stats.addMetric("test", -1)
+        Stats.addMetric("test", Int.MinValue)
+        val test = Stats.getMetric("test")
+        test(true) mustEqual new Distribution(1, 1, 1, Some(Histogram(1)), 1.0)
       }
 
       "boundary timing sizes" in {
-        Stats.addTiming("test", Int.MaxValue)
-        Stats.addTiming("test", 5)
+        Stats.addMetric("test", Int.MaxValue)
+        Stats.addMetric("test", 5)
         val sum = 5.0 + Int.MaxValue
         val avg = sum / 2.0
-        val sumsq = 5.0 * 5.0 + Int.MaxValue.toDouble * Int.MaxValue.toDouble
-        val partial = sumsq - sum * avg
-        val test = Stats.getTiming("test")
-        test.get(true) mustEqual
-          new TimingStat(2, Int.MaxValue, 5, Some(Histogram(5, Int.MaxValue)), avg, partial)
+        val test = Stats.getMetric("test")
+        test(true) mustEqual
+          new Distribution(2, Int.MaxValue, 5, Some(Histogram(5, Int.MaxValue)), avg)
       }
 
       "handle code blocks" in {
@@ -102,106 +101,94 @@ object StatsSpec extends Specification {
           Stats.time("test") {
             time.advance(10.millis)
           }
-          val test = Stats.getTiming("test")
-          test.get(true).average must be_>=(10)
+          val test = Stats.getMetric("test_msec")
+          test(true).average must be_>=(10.0)
         }
       }
 
       "reset when asked" in {
         var x = 0
         Stats.time("hundred") { for (i <- 0 until 100) x += i }
-        Stats.getTimingStats(false)("hundred").count mustEqual 1
+        Stats.getMetric("hundred_msec")(false).count mustEqual 1
         Stats.time("hundred") { for (i <- 0 until 100) x += i }
-        Stats.getTimingStats(false)("hundred").count mustEqual 2
-        Stats.getTimingStats(true)("hundred").count mustEqual 2
+        Stats.getMetric("hundred_msec")(false).count mustEqual 2
+        Stats.getMetric("hundred_msec")(true).count mustEqual 2
         Stats.time("hundred") { for (i <- 0 until 100) x += i }
-        Stats.getTimingStats(false)("hundred").count mustEqual 1
+        Stats.getMetric("hundred_msec")(true).count mustEqual 1
       }
 
       "add bundle of timings at once" in {
-        val timingStat = new TimingStat(3, 20, 10, Some(Histogram(10, 15, 20)), 15.0, 50.0)
-        Stats.addTiming("test", timingStat)
-        Stats.addTiming("test", 25)
-        Stats.getTimingStats(false)("test").count mustEqual 4
-        Stats.getTimingStats(false)("test").average mustEqual 17
-        Stats.getTimingStats(false)("test").standardDeviation.toInt mustEqual 6
+        val timingStat = new Distribution(3, 20, 10, Some(Histogram(10, 15, 20)), 15.0)
+        Stats.addMetric("test", timingStat)
+        Stats.addMetric("test", 25)
+        Stats.getMetric("test")(true).count mustEqual 4
+        Stats.getMetric("test")(true).average mustEqual 17.5
       }
 
       "add multiple bundles of timings" in {
-        val timingStat1 = new TimingStat(2, 25, 15, Some(Histogram(15, 25)), 20.0, 50.0)
-        val timingStat2 = new TimingStat(2, 20, 10, Some(Histogram(10, 20)), 15.0, 50.0)
-        Stats.addTiming("test", timingStat1)
-        Stats.addTiming("test", timingStat2)
-        Stats.getTimingStats(false)("test").count mustEqual 4
-        Stats.getTimingStats(false)("test").average mustEqual 17
-        Stats.getTimingStats(false)("test").standardDeviation.toInt mustEqual 6
+        val timingStat1 = new Distribution(2, 25, 15, Some(Histogram(15, 25)), 20.0)
+        val timingStat2 = new Distribution(2, 20, 10, Some(Histogram(10, 20)), 15.0)
+        Stats.addMetric("test", timingStat1)
+        Stats.addMetric("test", timingStat2)
+        Stats.getMetric("test")(true).count mustEqual 4
+        Stats.getMetric("test")(true).average mustEqual 17.5
       }
 
-      "timing stats can be added and reflected in Stats.getTimingStats" in {
-        var x = 0
-        Stats.time("hundred") { for (i <- 0 until 100) x += 1 }
-        Stats.getTimingStats(false).size mustEqual 1
-
-        Stats.addTiming("foobar", new TimingStat(1, 0, 0))
-        Stats.getTimingStats(false).size mustEqual 2
-        Stats.getTimingStats(true)("foobar").count mustEqual 1
-        Stats.addTiming("foobar", new TimingStat(3, 0, 0))
-        Stats.getTimingStats(false)("foobar").count mustEqual 3
-      }
-
-      "timing stats can be pulled from a passive external source" in {
-        Stats.registerTimingSource { () => Map("made_up" -> new TimingStat(1, 1, 1, None, 1.0, 0.0)) }
-        Stats.getTimingStats(false).size mustEqual 1
-        Stats.getTimingStats(false)("made_up").count mustEqual 1
-        Stats.getTimingStats(false)("made_up").average mustEqual 1
+      "timing stats can be added and reflected in Stats.getMetrics" in {
+        Stats.addMetric("foobar", new Distribution(1, 0, 0, 0.0))
+        Stats.getMetrics()("foobar").count mustEqual 1
+        Stats.addMetric("foobar", new Distribution(3, 0, 0, 0.0))
+        Stats.getMetrics()("foobar").count mustEqual 3
       }
 
       "report text in sorted order" in {
-        Stats.addTiming("alpha", new TimingStat(1, 0, 0))
-        Stats.getTimingStats(false)("alpha").toString mustEqual
+        Stats.addMetric("alpha", new Distribution(1, 0, 0, 0.0))
+        Stats.getMetrics()("alpha").toString mustEqual
           "(average=0, count=1, maximum=0, minimum=0, " +
-          "p25=0, p50=0, p75=0, p90=0, p99=0, p999=0, p9999=0, " +
-          "standard_deviation=0)"
+          "p25=0, p50=0, p75=0, p90=0, p99=0, p999=0, p9999=0)"
       }
 
       "json contains histogram buckets" in {
-        Stats.addTiming("alpha", new TimingStat(1, 0, 0))
-        val json = Stats.getTimingStats(false)("alpha").toJson
+        Stats.addMetric("alpha", new Distribution(1, 0, 0, 0.0))
+        val json = Stats.getMetrics()("alpha").toJson
         json mustMatch("\"histogram\":\\[")
       }
     }
 
     "gauges" in {
+      val collection = new StatsCollection()
+
       "report" in {
-        Stats.makeGauge("pi") { java.lang.Math.PI }
-        Stats.getGaugeStats(false) mustEqual Map("pi" -> java.lang.Math.PI)
+        collection.addGauge("pi") { java.lang.Math.PI }
+        collection.getGauges() mustEqual Map("pi" -> java.lang.Math.PI)
       }
 
       "setGauge" in {
-        Stats.setGauge("stew", 11.0)
-        Stats.getGauge("stew") mustEqual Some(11.0)
+        collection.setGauge("stew", 11.0)
+        collection.getGauge("stew") mustEqual Some(11.0)
       }
 
       "getGauge" in {
-        Stats.setGauge("stew", 11.0)
-        Stats.getGaugeStats(true) mustEqual Map("stew" -> 11.0)
+        collection.setGauge("stew", 11.0)
+        collection.getGauges() mustEqual Map("stew" -> 11.0)
       }
 
       "clearGauge" in {
-        Stats.setGauge("stew", 11.0)
-        Stats.clearGauge("stew")
-        Stats.getGaugeStats(true) mustEqual Map()
+        collection.setGauge("stew", 11.0)
+        collection.clearGauge("stew")
+        collection.getGauges() mustEqual Map()
       }
 
       "update" in {
         var potatoes = 100.0
         // gauge that increments every time it's read:
-        Stats.makeGauge("stew") { potatoes += 1.0; potatoes }
-        Stats.getGaugeStats(true) mustEqual Map("stew" -> 101.0)
-        Stats.getGaugeStats(true) mustEqual Map("stew" -> 102.0)
-        Stats.getGaugeStats(true) mustEqual Map("stew" -> 103.0)
+        collection.addGauge("stew") { potatoes += 1.0; potatoes }
+        collection.getGauges() mustEqual Map("stew" -> 101.0)
+        collection.getGauges() mustEqual Map("stew" -> 102.0)
+        collection.getGauges() mustEqual Map("stew" -> 103.0)
       }
 
+/*
       "derivative" in {
         Stats.incr("results", 100)
         Stats.incr("queries", 25)
@@ -214,8 +201,10 @@ object StatsSpec extends Specification {
         Stats.getGaugeStats(false) mustEqual Map("results_per_query" -> 2.0)
         Stats.getGaugeStats(false) mustEqual Map("results_per_query" -> 2.0)
       }
+      */
     }
 
+/*
     "fork" in {
       "newly created stats are available in the fork and in the global Stats" in {
         val collection = Stats.fork()
@@ -243,5 +232,6 @@ object StatsSpec extends Specification {
         collection.getCounterStats(false) must havePair("wodgets" -> 0)
       }
     }
+    */
   }
 }

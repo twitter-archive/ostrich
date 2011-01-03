@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import org.specs.Specification
 import org.specs.matcher.Matcher

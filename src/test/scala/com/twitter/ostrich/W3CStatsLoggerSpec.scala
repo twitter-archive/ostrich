@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import scala.collection.immutable
 import com.twitter.conversions.string._
@@ -22,6 +23,7 @@ import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import com.twitter.util.Time
 import org.specs.Specification
+import stats._
 
 object W3CStatsLoggerSpec extends Specification {
   "W3CStatsLogger" should {
@@ -41,13 +43,13 @@ object W3CStatsLoggerSpec extends Specification {
     doBefore {
       Stats.clearAll()
       handler.clear()
-      statsLogger = new W3CStatsLogger(logger, 1, false)
+      statsLogger = new W3CStatsLogger(logger, 1.second, false)
     }
 
     "log basic stats" in {
       Stats.incr("cats")
       Stats.incr("dogs", 3)
-      statsLogger.logStats()
+      statsLogger.periodic()
       getLines() mustEqual "#Fields: cats dogs" :: "1 3" :: Nil
     }
 
@@ -55,7 +57,7 @@ object W3CStatsLoggerSpec extends Specification {
       Time.withCurrentTimeFrozen { time =>
         Stats.time("zzz") { time advance 10.milliseconds }
         Stats.time("zzz") { time advance 20.milliseconds }
-        statsLogger.logStats()
+        statsLogger.periodic()
         getLines() mustEqual "#Fields: zzz_avg zzz_count zzz_max zzz_min zzz_std" :: "15 2 20 10 7" :: Nil
       }
     }
@@ -65,10 +67,10 @@ object W3CStatsLoggerSpec extends Specification {
         Stats.incr("cats")
         Stats.incr("dogs", 3)
         Stats.time("zzz") { time advance 10.milliseconds }
-        statsLogger.logStats()
+        statsLogger.periodic()
         Stats.incr("cats")
         Stats.time("zzz") { time advance 20.milliseconds }
-        statsLogger.logStats()
+        statsLogger.periodic()
         getLines() mustEqual "#Fields: cats dogs zzz_avg zzz_count zzz_max zzz_min zzz_std" ::
           "1 3 10 1 10 10 0" :: "1 0 20 1 20 20 0" :: Nil
       }

@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package stats
 
 import scala.collection.immutable
 import com.twitter.conversions.string._

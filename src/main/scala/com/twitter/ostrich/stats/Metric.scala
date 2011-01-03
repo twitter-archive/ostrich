@@ -82,7 +82,7 @@ class Metric {
    * Returns a Distribution for this Metric.
    */
   def apply(reset: Boolean): Distribution = synchronized {
-    val rv = new Distribution(count, maximum, minimum, Some(histogram.clone()), mean)
+    val rv = new Distribution(count, if (count > 0) maximum else 0, if (count > 0) minimum else 0, Some(histogram.clone()), mean)
     if (reset) clear()
     rv
   }

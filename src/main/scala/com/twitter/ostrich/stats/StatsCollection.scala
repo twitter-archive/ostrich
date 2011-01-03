@@ -72,7 +72,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     }
   }
 
-  def addGauge(name: String, gauge: => Double) {
+  def addGauge(name: String)(gauge: => Double) {
     gaugeMap.put(name, { () => gauge })
   }
 

@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat
@@ -25,6 +26,7 @@ import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import com.twitter.util.Time
 import org.specs.Specification
+import stats._
 
 class W3CReporterSpec extends Specification {
   "W3CReporter" should {
