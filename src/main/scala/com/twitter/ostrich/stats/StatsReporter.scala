@@ -43,7 +43,7 @@ class StatsReporter(collection: StatsCollection) {
     if (oldValue <= newValue) {
       newValue - oldValue
     } else {
-      0
+      (Long.MaxValue - oldValue) + (newValue - Long.MinValue) + 1
     }
   }
 
