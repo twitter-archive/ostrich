@@ -38,7 +38,17 @@ object W3CStatsSpec extends Specification {
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
-    val w3c = new W3CStats(logger, Array("backend-response-time", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
+    val fields = Array(
+      "backend-response-time_msec",
+      "backend-response-method",
+      "request-uri",
+      "backend-response-time_nsec",
+      "unsupplied-field",
+      "finish_timestamp",
+      "widgets",
+      "wodgets"
+    )
+    val w3c = new W3CStats(logger, fields)
 
     doBefore {
       Logger.get("").setLevel(Level.OFF)
@@ -56,7 +66,7 @@ object W3CStatsSpec extends Specification {
 
       w3c.log("finish_timestamp", new Date(0))
 
-      val response2: Int = w3c.timeNanos[Int]("backend-response-time_ns") {
+      val response2: Int = w3c.timeNanos[Int]("backend-response-time") {
         1 + 2
       }
       response2 mustEqual 3

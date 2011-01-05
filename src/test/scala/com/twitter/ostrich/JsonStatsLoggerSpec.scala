@@ -60,10 +60,9 @@ object JsonStatsLoggerSpec extends Specification {
         Stats.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
         val line = getLines()(0)
-        line mustMatch "\"timing_zzz_count\":2"
-        line mustMatch "\"timing_zzz_average\":15"
-        line mustMatch "\"timing_zzz_p50\":10"
-        line mustMatch "\"timing_zzz_standard_deviation\":7"
+        line mustMatch "\"zzz_msec_count\":2"
+        line mustMatch "\"zzz_msec_average\":15"
+        line mustMatch "\"zzz_msec_p50\":10"
       }
     }
   }

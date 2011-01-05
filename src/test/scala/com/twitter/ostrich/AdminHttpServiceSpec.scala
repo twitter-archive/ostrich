@@ -153,12 +153,12 @@ object AdminHttpServiceSpec extends Specification with Mockito {
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         val stats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats("jvm") must haveKey("uptime")
-        stats("jvm") must haveKey("heap_used")
+        stats("gauges") must haveKey("jvm_uptime")
+        stats("gauges") must haveKey("jvm_heap_used")
         stats("counters") must haveKey("kangaroos")
-        stats("timings") must haveKey("kangaroo_time")
+        stats("metrics") must haveKey("kangaroo_time_msec")
 
-        val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")
         timing("average") mustEqual timing("maximum")
@@ -170,11 +170,11 @@ object AdminHttpServiceSpec extends Specification with Mockito {
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         val stats = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing = stats("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
 
         val stats2 = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing2 = stats2("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val timing2 = stats2("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
         timing2("count") mustEqual 0
       }
 
@@ -190,16 +190,13 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
         val stats = get("/stats.json")
         val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timings = json("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 
         timings must haveKey("count")
         timings("count") mustEqual 6
 
         timings must haveKey("average")
         timings("average") mustEqual 3
-
-        timings must haveKey("standard_deviation")
-        timings("standard_deviation") mustEqual 2
 
         timings must haveKey("p25")
         timings("p25") mustEqual 2
@@ -233,16 +230,13 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
         val stats = get("/stats.json?reset")
         val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timings = json("timings")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 
         timings must haveKey("count")
         timings("count") mustEqual 6
 
         timings must haveKey("average")
         timings("average") mustEqual 3
-
-        timings must haveKey("standard_deviation")
-        timings("standard_deviation") mustEqual 2
 
         timings must haveKey("p25")
         timings("p25") mustEqual 2

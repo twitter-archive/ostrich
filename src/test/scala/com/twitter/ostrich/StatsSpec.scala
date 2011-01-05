@@ -188,6 +188,7 @@ object StatsSpec extends Specification {
         collection.getGauges() mustEqual Map("stew" -> 103.0)
       }
 
+// FIXME
 /*
       "derivative" in {
         Stats.incr("results", 100)
