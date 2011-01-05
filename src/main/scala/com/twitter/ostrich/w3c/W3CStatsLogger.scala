@@ -26,24 +26,25 @@ import stats._
 /**
  * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.
  */
-class W3CStatsLogger(val logger: Logger, val frequency: Duration, includeJvmStats: Boolean)
+class W3CStatsLogger(val logger: Logger, val frequency: Duration, collection: StatsCollection)
 extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
-  def this(logger: Logger, frequency: Duration) = this(logger, frequency, true)
+  def this(logger: Logger, frequency: Duration) = this(logger, frequency, Stats)
 
   val reporter = new W3CReporter(logger)
-  val statsReporter = new StatsReporter(Stats)
+  val statsReporter = new StatsReporter(collection)
 
   def periodic() {
     val report = new mutable.HashMap[String, Any]
+    val summary = statsReporter.get()
 
-    Stats.getCounters() foreach { case (key, value) => report(key) = value }
-    Stats.getGauges() foreach { case (key, value) => report(key) = value }
+    summary.counters foreach { case (key, value) => report(key) = value }
+    summary.gauges foreach { case (key, value) => report(key) = value }
 
-    Stats.getMetrics() foreach { case (key, distribution) =>
+    summary.metrics foreach { case (key, distribution) =>
       report(key + "_count") = distribution.count
       report(key + "_min") = distribution.minimum
       report(key + "_max") = distribution.maximum
-      report(key + "_avg") = distribution.average
+      report(key + "_avg") = distribution.average.toLong
     }
 
     reporter.report(report)

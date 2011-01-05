@@ -34,6 +34,7 @@ object W3CStatsLoggerSpec extends Specification {
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
+    var collection: StatsCollection = null
     var statsLogger: W3CStatsLogger = null
 
     def getLines() = {
@@ -41,38 +42,38 @@ object W3CStatsLoggerSpec extends Specification {
     }
 
     doBefore {
-      Stats.clearAll()
+      collection = new StatsCollection()
       handler.clear()
-      statsLogger = new W3CStatsLogger(logger, 1.second, false)
+      statsLogger = new W3CStatsLogger(logger, 1.second, collection)
     }
 
     "log basic stats" in {
-      Stats.incr("cats")
-      Stats.incr("dogs", 3)
+      collection.incr("cats")
+      collection.incr("dogs", 3)
       statsLogger.periodic()
       getLines() mustEqual "#Fields: cats dogs" :: "1 3" :: Nil
     }
 
     "log timings" in {
       Time.withCurrentTimeFrozen { time =>
-        Stats.time("zzz") { time advance 10.milliseconds }
-        Stats.time("zzz") { time advance 20.milliseconds }
+        collection.time("zzz") { time advance 10.milliseconds }
+        collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
-        getLines() mustEqual "#Fields: zzz_avg zzz_count zzz_max zzz_min zzz_std" :: "15 2 20 10 7" :: Nil
+        getLines() mustEqual "#Fields: zzz_msec_avg zzz_msec_count zzz_msec_max zzz_msec_min" :: "15 2 20 10" :: Nil
       }
     }
 
     "log multiple lines" in {
       Time.withCurrentTimeFrozen { time =>
-        Stats.incr("cats")
-        Stats.incr("dogs", 3)
-        Stats.time("zzz") { time advance 10.milliseconds }
+        collection.incr("cats")
+        collection.incr("dogs", 3)
+        collection.time("zzz") { time advance 10.milliseconds }
         statsLogger.periodic()
-        Stats.incr("cats")
-        Stats.time("zzz") { time advance 20.milliseconds }
+        collection.incr("cats")
+        collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
-        getLines() mustEqual "#Fields: cats dogs zzz_avg zzz_count zzz_max zzz_min zzz_std" ::
-          "1 3 10 1 10 10 0" :: "1 0 20 1 20 20 0" :: Nil
+        getLines() mustEqual "#Fields: cats dogs zzz_msec_avg zzz_msec_count zzz_msec_max zzz_msec_min" ::
+          "1 3 10 1 10 10" :: "1 0 20 1 20 20" :: Nil
       }
     }
   }
