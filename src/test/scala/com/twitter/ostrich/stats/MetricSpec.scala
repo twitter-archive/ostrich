@@ -29,11 +29,7 @@ object MetricSpec extends Specification {
       metric.add(60)
       metric.apply(false) mustEqual Distribution(3, 60, 10, None, 30.0)
 
-      val histogram = new Histogram
-      histogram.add(10)
-      histogram.add(20)
-      histogram.add(60)
-      metric.apply(false).histogram.get.get(false) mustEqual histogram.get(false)
+      metric.apply(false).histogram.get.get(false) mustEqual Histogram(10, 20, 60).get(false)
     }
 
     "add distribution" in {

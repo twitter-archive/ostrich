@@ -21,9 +21,7 @@ import org.specs.Specification
 
 object DistributionSpec extends Specification {
   "Distribution" should {
-    val histogram = new Histogram
-    histogram.add(10)
-    histogram.add(20)
+    val histogram = Histogram(10, 20)
 
     "equals" in {
       Distribution(1, 10, 10, None, 10.0) mustEqual Distribution(1, 10, 10, None, 10.0)
