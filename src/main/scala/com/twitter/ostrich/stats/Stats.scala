@@ -22,4 +22,27 @@ package stats
  */
 object Stats extends StatsCollection {
   includeJvmStats = true
+
+  // helper function for computing deltas over counters
+  final def delta(oldValue: Long, newValue: Long): Long = {
+    if (oldValue <= newValue) {
+      newValue - oldValue
+    } else {
+      (Long.MaxValue - oldValue) + (newValue - Long.MinValue) + 1
+    }
+  }
+
+  /**
+   * Create a function that returns the delta of a counter each time it's called.
+   */
+  def makeDeltaFunction(counter: Counter): () => Double = {
+    var lastValue: Long = 0
+
+    () => {
+      val newValue = counter()
+      val rv = delta(lastValue, newValue)
+      lastValue = newValue
+      rv.toDouble
+    }
+  }
 }

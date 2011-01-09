@@ -30,4 +30,6 @@ class Counter {
   def apply(): Long = value.get()
   def update(n: Long) = value.set(n)
   def reset() = update(0L)
+
+  override def toString() = "Counter(%d)".format(value.get())
 }

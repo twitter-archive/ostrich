@@ -39,18 +39,10 @@ class StatsReporter(collection: StatsCollection) {
     metric
   }
 
-  final def delta(oldValue: Long, newValue: Long): Long = {
-    if (oldValue <= newValue) {
-      newValue - oldValue
-    } else {
-      (Long.MaxValue - oldValue) + (newValue - Long.MinValue) + 1
-    }
-  }
-
   def getCounters() = synchronized {
     val deltas = new mutable.HashMap[String, Long]
     for ((key, newValue) <- collection.getCounters()) {
-      deltas(key) = delta(lastCounterMap.getOrElse(key, 0), newValue)
+      deltas(key) = Stats.delta(lastCounterMap.getOrElse(key, 0), newValue)
       lastCounterMap(key) = newValue
     }
     deltas

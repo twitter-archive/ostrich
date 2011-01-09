@@ -76,6 +76,24 @@ trait StatsProvider {
   def clearGauge(name: String)
 
   /**
+   * Add a gauge which represents the division of one gauge by another.
+   */
+  def addDerivativeGauge(name: String, nominator: () => Double, denominator: () => Double) {
+    addGauge(name) {
+      val p = nominator()
+      val q = denominator()
+      if (q == 0.0) 0.0 else (p / q)
+    }
+  }
+
+  /**
+   * Add a gauge which represents the division of one counter's delta over time by another.
+   */
+  def addDerivativeGauge(name: String, nominator: Counter, denominator: Counter) {
+    addDerivativeGauge(name, Stats.makeDeltaFunction(nominator), Stats.makeDeltaFunction(denominator))
+  }
+
+  /**
    * Get the Counter object representing a named counter.
    */
   def getCounter(name: String): Counter

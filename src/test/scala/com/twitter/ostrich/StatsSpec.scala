@@ -31,6 +31,14 @@ object StatsSpec extends Specification {
       Stats.clearAll()
     }
 
+    "delta" in {
+      Stats.delta(0, 5) mustEqual 5
+      Stats.delta(Long.MaxValue - 10, Long.MaxValue) mustEqual 10
+      Stats.delta(-4000, -3000) mustEqual 1000
+      Stats.delta(Long.MaxValue, Long.MinValue) mustEqual 1
+      Stats.delta(Long.MaxValue - 5, Long.MinValue + 3) mustEqual 9
+    }
+
     "jvm stats" in {
       val jvmStats = Stats.getGauges()
       jvmStats.keys.toList must contain("jvm_num_cpus")
@@ -188,21 +196,18 @@ object StatsSpec extends Specification {
         collection.getGauges() mustEqual Map("stew" -> 103.0)
       }
 
-// FIXME
-/*
       "derivative" in {
-        Stats.incr("results", 100)
-        Stats.incr("queries", 25)
-        Stats.makeDerivativeGauge("results_per_query", Stats.getCounter("results"),
-                                  Stats.getCounter("queries"))
-        Stats.getGaugeStats(true) mustEqual Map("results_per_query" -> 4.0)
-        Stats.getGaugeStats(true) mustEqual Map("results_per_query" -> 0.0)
-        Stats.incr("results", 10)
-        Stats.incr("queries", 5)
-        Stats.getGaugeStats(false) mustEqual Map("results_per_query" -> 2.0)
-        Stats.getGaugeStats(false) mustEqual Map("results_per_query" -> 2.0)
+        collection.incr("results", 100)
+        collection.incr("queries", 25)
+        collection.addDerivativeGauge("results_per_query", collection.getCounter("results"),
+                                      collection.getCounter("queries"))
+        collection.getGauges() mustEqual Map("results_per_query" -> 4.0)
+        collection.getGauges() mustEqual Map("results_per_query" -> 0.0)
+        collection.incr("results", 10)
+        collection.incr("queries", 5)
+        collection.getGauges() mustEqual Map("results_per_query" -> 2.0)
+        collection.getGauges() mustEqual Map("results_per_query" -> 0.0)
       }
-      */
     }
 
 /*
