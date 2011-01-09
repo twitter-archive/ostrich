@@ -39,6 +39,7 @@ class Metric {
     maximum = Int.MinValue
     minimum = Int.MaxValue
     count = 0
+    mean = 0.0
     histogram.clear()
   }
 
