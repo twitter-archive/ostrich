@@ -187,33 +187,6 @@ object StatsCollectionSpec extends Specification {
         collection.getGauges() mustEqual Map("stew" -> 102.0)
         collection.getGauges() mustEqual Map("stew" -> 103.0)
       }
-
-      "derivative" in {
-        collection.incr("results", 100)
-        collection.incr("queries", 25)
-        collection.addDerivativeGauge("results_per_query", collection.getCounter("results"),
-                                      collection.getCounter("queries"))
-        collection.getGauges() mustEqual Map("results_per_query" -> 4.0)
-        collection.getGauges() mustEqual Map("results_per_query" -> 0.0)
-        collection.incr("results", 10)
-        collection.incr("queries", 5)
-        collection.getGauges() mustEqual Map("results_per_query" -> 2.0)
-        collection.getGauges() mustEqual Map("results_per_query" -> 0.0)
-      }
-
-      "derivative" in {
-        val reporter = new StatsReporter(collection)
-        collection.incr("results", 100)
-        collection.incr("queries", 25)
-        collection.addDerivativeGauge("results_per_query", reporter.getCounter("results"),
-                                      reporter.getCounter("queries"))
-        collection.getGauges() mustEqual Map("results_per_query" -> 4.0)
-        collection.getGauges() mustEqual Map("results_per_query" -> 0.0)
-        collection.incr("results", 10)
-        collection.incr("queries", 5)
-        collection.getGauges() mustEqual Map("results_per_query" -> 2.0)
-        collection.getGauges() mustEqual Map("results_per_query" -> 0.0)
-      }
     }
   }
 }
