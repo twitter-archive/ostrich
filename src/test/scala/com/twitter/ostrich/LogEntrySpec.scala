@@ -16,6 +16,7 @@
 
 package com.twitter.ostrich
 
+import com.twitter.ostrich.w3c.W3CLogFormat
 import net.lag.extensions._
 import net.lag.logging.{Formatter, Level, Logger, StringHandler}
 import org.specs._
@@ -24,9 +25,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 
-object W3CEntrySpec extends Specification {
-  "w3c entries" should {
-    val logger = Logger.get("w3c")
+object LogEntrySpec extends Specification {
+  "log entries" should {
+    val logger = Logger.get("testlog")
     logger.setLevel(Level.INFO)
     val formatter = new Formatter {
       override def lineTerminator = ""
@@ -38,66 +39,69 @@ object W3CEntrySpec extends Specification {
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
-    val w3c = new W3CEntry(logger, Array("backend-response-time", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
-
+    // TODO(benjy): For historical reasons we test against the W3C format, but we should probably use a
+    // test-specific format, for isolation.
+    val entry = new LogEntry(logger, new W3CLogFormat(false),
+                             Array("backend-response-time", "backend-response-method", "request-uri",
+                                   "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
     doBefore {
       Stats.clearAll()
       handler.clear()
     }
 
     "starts life with an empty map" in {
-      w3c.map.size mustEqual 0
+      entry.map.size mustEqual 0
     }
 
     "log and check a single timing" in {
-      w3c.addTiming("backend-response-time", 57)
-      w3c.flush
+      entry.addTiming("backend-response-time", 57)
+      entry.flush
       handler.toString() must beMatching("57")
       handler.clear()
     }
 
     "flushing ensures that the entry is gone" in {
-      w3c.addTiming("backend-response-time", 57)
-      w3c.flush
+      entry.addTiming("backend-response-time", 57)
+      entry.flush
       handler.clear()
 
-      w3c.flush
+      entry.flush
       handler.toString() mustNot beMatching("57")
     }
 
     "incr works with positive and negative numbers" in {
-      w3c.incr("wodgets", 1)
-      w3c.incr("wodgets")
+      entry.incr("wodgets", 1)
+      entry.incr("wodgets")
 
-      w3c.incr("widgets", 1)
-      w3c.incr("widgets", -1)
-      w3c.flush
+      entry.incr("widgets", 1)
+      entry.incr("widgets", -1)
+      entry.flush
 
       handler.toString() must endWith("0 2")
     }
 
     "works with Strings" in {
-      w3c.log("backend-response-time", "57")
-      w3c.flush
+      entry.log("backend-response-time", "57")
+      entry.flush
       handler.toString must beMatching("57")
     }
 
     "rejects a column that isn't registered" in {
-      w3c.incr("whatwhatlol", 100)
+      entry.incr("whatwhatlol", 100)
       handler.toString() mustNot beMatching("100")
     }
 
     "start and end Timing" in {
       "flushing before ending a timing means it doesn't get logged" in {
-        w3c.startTiming("backend-response-time")
-        w3c.flush
+        entry.startTiming("backend-response-time")
+        entry.flush
         handler.toString() must startWith("- ")
       }
 
       "end" in {
-        w3c.startTiming("backend-response-time")
-        w3c.endTiming("backend-response-time")
-        w3c.flush
+        entry.startTiming("backend-response-time")
+        entry.endTiming("backend-response-time")
+        entry.flush
         handler.toString() mustNot startWith("- ")
       }
     }

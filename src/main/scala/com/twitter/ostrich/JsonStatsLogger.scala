@@ -24,6 +24,7 @@ import com.twitter.xrayspecs.TimeConversions._
 import net.lag.configgy.RuntimeEnvironment
 import net.lag.logging.Logger
 
+// TODO(benjy): Reimplement this with a StatsLogger, since they are quite similar.
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.

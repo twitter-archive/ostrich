@@ -17,6 +17,7 @@
 package com.twitter.ostrich
 
 import scala.collection.immutable
+import com.twitter.ostrich.w3c.W3CLogFormat
 import com.twitter.xrayspecs.Time
 import com.twitter.xrayspecs.TimeConversions._
 import net.lag.extensions._
@@ -24,16 +25,16 @@ import net.lag.logging.{GenericFormatter, Level, Logger, StringHandler}
 import org.specs._
 
 
-object W3CStatsLoggerSpec extends Specification {
-  "W3CStatsLogger" should {
-    val logger = Logger.get("w3c")
+object StatsLoggerSpec extends Specification {
+  "StatsLogger" should {
+    val logger = Logger.get("testlog")
     logger.setLevel(Level.INFO)
 
     val handler = new StringHandler(new GenericFormatter(""))
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
-    var statsLogger: W3CStatsLogger = null
+    var statsLogger: StatsLogger = null
 
     def getLines() = {
       handler.toString.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
@@ -42,7 +43,9 @@ object W3CStatsLoggerSpec extends Specification {
     doBefore {
       Stats.clearAll()
       handler.clear()
-      statsLogger = new W3CStatsLogger(logger, 1, false)
+      // TODO(benjy): For historical reasons we test against the W3C format, but we should probably use a
+      // test-specific format, for isolation.
+      statsLogger = new StatsLogger(new LogReporter(logger, new W3CLogFormat(false)), 1, false)
     }
 
     "log basic stats" in {

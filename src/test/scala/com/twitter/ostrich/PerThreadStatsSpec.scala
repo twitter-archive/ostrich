@@ -16,6 +16,7 @@
 
 package com.twitter.ostrich
 
+import com.twitter.ostrich.w3c.W3CLogFormat
 import net.lag.extensions._
 import net.lag.logging.{Formatter, Level, Logger, StringHandler}
 import org.specs._
@@ -24,8 +25,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 
-object W3CStatsSpec extends Specification {
-  "w3c Stats" should {
+object PerThreadStatsSpec extends Specification {
+  "PerTheadStats" should {
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
     val formatter = new Formatter {
@@ -37,7 +38,12 @@ object W3CStatsSpec extends Specification {
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
-    val w3c = new W3CStats(logger, Array("backend-response-time", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
+    // TODO(benjy): For historical reasons we test against the W3C format, but we should probably use a
+    // test-specific format, for isolation.
+    val perThreadStats = new PerThreadStats(logger, new W3CLogFormat(false),
+                                            Array("backend-response-time", "backend-response-method",
+                                                  "request-uri", "backend-response-time_ns",
+                                                  "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
 
     doBefore {
       Stats.clearAll()
@@ -45,21 +51,21 @@ object W3CStatsSpec extends Specification {
     }
 
     "log and check some timings" in {
-      val response: Int = w3c.time[Int]("backend-response-time") {
-        w3c.log("backend-response-method", "GET")
-        w3c.log("request-uri", "/home")
+      val response: Int = perThreadStats.time[Int]("backend-response-time") {
+        perThreadStats.log("backend-response-method", "GET")
+        perThreadStats.log("request-uri", "/home")
         1 + 1
       }
       response mustEqual 2
 
-      w3c.log("finish_timestamp", new Date(0))
+      perThreadStats.log("finish_timestamp", new Date(0))
 
-      val response2: Int = w3c.timeNanos[Int]("backend-response-time_ns") {
+      val response2: Int = perThreadStats.timeNanos[Int]("backend-response-time_ns") {
         1 + 2
       }
       response2 mustEqual 3
 
-      val logline = w3c.log_entry
+      val logline = perThreadStats.log_entry
       logline mustNot beNull
 
       val entries: Array[String] = logline.split(" ")
@@ -72,39 +78,39 @@ object W3CStatsSpec extends Specification {
     }
 
     "map when cleared returns the empty string" in {
-      w3c.log("request-uri", "foo")
-      w3c.clearAll()
-      val logline = w3c.log_entry
+      perThreadStats.log("request-uri", "foo")
+      perThreadStats.clearAll()
+      val logline = perThreadStats.log_entry
       // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
       logline.replaceAll("-", "").trim() mustEqual ""
     }
 
     "logging a field not tracked in the fields member shouldn't show up in the logfile" in {
-      w3c.log("jibberish_nonsense", "foo")
-      w3c.log_entry must notInclude("foo")
+      perThreadStats.log("jibberish_nonsense", "foo")
+      perThreadStats.log_entry must notInclude("foo")
     }
 
     "handle a transaction" in {
-      w3c.log("request-uri", "foo")
-      w3c.transaction {
-        w3c.log("widgets", 8)
-        w3c.log("wodgets", 3)
+      perThreadStats.log("request-uri", "foo")
+      perThreadStats.transaction {
+        perThreadStats.log("widgets", 8)
+        perThreadStats.log("wodgets", 3)
       }
       handler.toString.replaceAll(" -", "") mustEqual "w3c: 8 3"
     }
 
     "sum multiple counts within a transaction" in {
-      w3c.transaction {
-        w3c.log("widgets", 8)
-        w3c.log("widgets", 8)
+      perThreadStats.transaction {
+        perThreadStats.log("widgets", 8)
+        perThreadStats.log("widgets", 8)
       }
       handler.toString.replaceAll(" -", "") mustEqual "w3c: 16"
     }
 
     "concat multiple string values within a transaction" in {
-      w3c.transaction {
-        w3c.log("widgets", "hello")
-        w3c.log("widgets", "kitty")
+      perThreadStats.transaction {
+        perThreadStats.log("widgets", "hello")
+        perThreadStats.log("widgets", "kitty")
       }
       handler.toString.replaceAll(" -", "") mustEqual "w3c: hello,kitty"
     }
