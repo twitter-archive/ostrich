@@ -4,6 +4,7 @@ import com.twitter.sbt._
 class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher with InlineDependencies {
   inline("com.twitter" % "json_2.8.0" % "2.1.4")
   inline("com.twitter" % "configgy" % "3.0.0-SNAPSHOT")
+  val util = "com.twitter" % "util" % "1.4.4-SNAPSHOT"
   val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"

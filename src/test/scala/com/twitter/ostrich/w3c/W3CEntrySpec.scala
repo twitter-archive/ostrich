@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -22,6 +23,7 @@ import scala.collection.immutable
 import com.twitter.conversions.string._
 import com.twitter.logging.{Formatter, Level, Logger, StringHandler}
 import org.specs.Specification
+import stats._
 
 object W3CEntrySpec extends Specification {
   "W3CEntry" should {
@@ -37,7 +39,7 @@ object W3CEntrySpec extends Specification {
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
-    val w3c = new W3CEntry(logger, Array("backend-response-time", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
+    val w3c = new W3CEntry(logger, Array("backend-response-time_msec", "backend-response-method", "request-uri", "backend-response-time_ns", "unsupplied-field", "finish_timestamp", "widgets", "wodgets"))
 
     doBefore {
       Logger.get("").setLevel(Level.OFF)
@@ -50,14 +52,14 @@ object W3CEntrySpec extends Specification {
     }
 
     "log and check a single timing" in {
-      w3c.addTiming("backend-response-time", 57)
+      w3c.addMetric("backend-response-time_msec", 57)
       w3c.flush
       handler.get must beMatching("57")
       handler.clear()
     }
 
     "flushing ensures that the entry is gone" in {
-      w3c.addTiming("backend-response-time", 57)
+      w3c.addMetric("backend-response-time", 57)
       w3c.flush
       handler.clear()
 
@@ -77,7 +79,7 @@ object W3CEntrySpec extends Specification {
     }
 
     "works with Strings" in {
-      w3c.log("backend-response-time", "57")
+      w3c.log("backend-response-time_msec", "57")
       w3c.flush
       handler.get must beMatching("57")
     }

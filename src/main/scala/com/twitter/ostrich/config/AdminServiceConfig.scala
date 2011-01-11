@@ -18,6 +18,9 @@ package com.twitter.ostrich
 package config
 
 import com.twitter.config.Config
+import com.twitter.conversions.time._
+import com.twitter.logging.Logger
+import com.twitter.util.Duration
 
 class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] {
   /**
@@ -25,6 +28,9 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] 
    */
   var httpPort: Option[Int] = None
 
+  /**
+   * Listen backlog for the HTTP port.
+   */
   var httpBacklog: Int = 20
 
   /**
@@ -32,6 +38,13 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] 
    * (This is only meaningful if the HTTP port is active.)
    */
   var collectTimeSeries = true
+
+  /**
+   * (optional) Start up a JsonStatsLogger that uses a named log node.
+   */
+  var jsonStatsLogger: Option[String] = None
+  var jsonStatsLoggerPeriod: Duration = 1.minute
+  var jsonStatsServiceName: Option[String] = None
 
   def apply() = { (runtime: RuntimeEnvironment) =>
     val adminHttpService = httpPort.map { port =>
@@ -43,6 +56,11 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] 
         collector.start()
       }
 
+      jsonStatsLogger.map { name =>
+        val statsLogger = new JsonStatsLogger(Logger.get(name), jsonStatsLoggerPeriod, jsonStatsServiceName)
+        ServiceTracker.register(statsLogger)
+        statsLogger.start()
+      }
       service
     }
 

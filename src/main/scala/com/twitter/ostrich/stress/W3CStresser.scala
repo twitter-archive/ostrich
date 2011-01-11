@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.stress
+package com.twitter.ostrich
+package stress
 
 import com.twitter.logging.{Formatter, Level, Logger, StringHandler}
-import com.twitter.ostrich.W3CStats
 import java.text.SimpleDateFormat
 import java.util.Date
+import w3c._
 
 object W3CStresser {
   /**
@@ -47,7 +48,7 @@ object W3CStresser {
     hundredThousand.foreach { i =>
       if (i % 10000 == 0) { println("%s finished our %d'th run".format(new Date(), i)) }
       w3c.transaction {
-        thousandInts.foreach { j => w3c.addTiming(j.toString, j) }
+        thousandInts.foreach { j => w3c.addMetric(j.toString, j) }
       }
       handler.clear() // based on our testing, this does not add substantial CPU pressure but reduces memory needs for the test.
     }

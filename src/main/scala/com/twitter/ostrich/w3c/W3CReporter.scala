@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat

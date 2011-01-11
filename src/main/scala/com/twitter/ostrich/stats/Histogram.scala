@@ -1,5 +1,23 @@
-package com.twitter.ostrich
+/*
+ * Copyright 2010 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
+package com.twitter.ostrich
+package stats
+
+import scala.annotation.tailrec
 
 object Histogram {
   // (0..53).map { |n| (1.3 ** n).to_i + 1 }.uniq
@@ -10,6 +28,7 @@ object Histogram {
           174339, 226641, 294633, 383023, 497930, 647308, 841501, 1093951)
   val bucketOffsetSize = BUCKET_OFFSETS.size
 
+  @tailrec
   private def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
     if (low > high) {
       low
@@ -86,10 +105,9 @@ class Histogram {
     total += other.total
   }
 
-  override def clone() : Histogram = {
+  override def clone(): Histogram = {
     val histogram = new Histogram
     histogram.merge(this)
     histogram
   }
-
 }

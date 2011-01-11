@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package w3c
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat
@@ -22,6 +23,7 @@ import java.util.{Date, HashSet}
 import java.util.zip.CRC32
 import scala.collection.mutable
 import com.twitter.logging.Logger
+import stats._
 
 /**
  * Implements a W3C Extended Log and contains convenience methods for timing blocks and
@@ -48,12 +50,12 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   /**
    * Returns the current map containing this thread's w3c logging stats.
    */
-  def get(): mutable.Map[String, Any] = tl.get()
+  def getStats(): mutable.Map[String, Any] = tl.get()
 
   /**
    * Resets this thread's w3c stats knowledge.
    */
-  def clearAll(): Unit = get().clear()
+  def clearAll(): Unit = getStats().clear()
 
   /**
    * Private method to ensure that fields being inserted are actually being tracked, logging an error otherwise.
@@ -62,21 +64,21 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
     if (complainAboutUnregisteredFields && !fieldNames.contains(name)) {
       log.error("trying to log unregistered field: %s".format(name))
     }
-    get += (name -> value)
+    getStats() += (name -> value)
   }
 
   /**
    * Adds the current name, value pair to the stats map.
    */
   def log(name: String, value: String) {
-    log_safe(name, get.get(name).map(_ + "," + value).getOrElse(value))
+    log_safe(name, getStats().get(name).map(_ + "," + value).getOrElse(value))
   }
 
   /**
    * Adds the current name, timing pair to the stats map.
    */
   def log(name: String, timing: Long) {
-    log_safe(name, get.getOrElse(name, 0L).asInstanceOf[Long] + timing)
+    log_safe(name, getStats().getOrElse(name, 0L).asInstanceOf[Long] + timing)
   }
 
   def log(name: String, date: Date) {
@@ -90,25 +92,31 @@ class W3CStats(val logger: Logger, val fields: Array[String]) extends StatsProvi
   /**
    * Returns a w3c logline containing all known fields.
    */
-  def log_entry: String = reporter.generateLine(fields, get())
+  def log_entry: String = reporter.generateLine(fields, getStats())
 
-  def addTiming(name: String, duration: Int): Long = {
-    log(name, duration)
-    Stats.addTiming(name, duration)
+  override def addMetric(name: String, value: Int) {
+    log(name, value)
+    Stats.addMetric(name, value)
   }
 
-  def addTiming(name: String, timingStat: TimingStat): Long = {
+  override def addMetric(name: String, distribution: Distribution) {
     // can't really w3c these.
-    Stats.addTiming(name, timingStat)
+    Stats.addMetric(name, distribution)
   }
 
-  def incr(name: String, count: Int) = {
-    log_safe(name, get.getOrElse(name, 0L).asInstanceOf[Long] + count)
+  override def incr(name: String, count: Int) = {
+    log_safe(name, getStats().getOrElse(name, 0L).asInstanceOf[Long] + count)
     Stats.incr(name, count)
   }
 
-  def getCounterStats(reset: Boolean) = Stats.getCounterStats(reset)
-  def getTimingStats(reset: Boolean) = Stats.getTimingStats(reset)
+  def getCounter(name: String) = Stats.getCounter(name)
+  def getMetric(name: String) = Stats.getMetric(name)
+  def getGauge(name: String) = Stats.getGauge(name)
+  def getCounters() = Stats.getCounters()
+  def getMetrics() = Stats.getMetrics()
+  def getGauges() = Stats.getGauges()
+  def addGauge(name: String)(gauge: => Double) = Stats.addGauge(name)(gauge)
+  def clearGauge(name: String) = Stats.clearGauge(name)
 
   /**
    * Coalesce all w3c events (counters, timings, etc.) that happen in this thread within this

@@ -112,7 +112,7 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
  * The `periodic()` method implements the periodic event.
  */
 abstract class PeriodicBackgroundProcess(name: String, private val period: Duration)
-         extends BackgroundProcess(name) {
+extends BackgroundProcess(name) {
   def nextRun: Duration = {
     val t = Time.now + period
     // truncate to nearest round multiple of the desired repeat in seconds.
