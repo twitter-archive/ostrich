@@ -52,7 +52,7 @@ class TimeSeriesCollector {
 
   val hourly = new mutable.HashMap[String, TimeSeries[Double]]()
   val hourlyTimings = new mutable.HashMap[String, TimeSeries[List[Long]]]()
-  var lastCollection: Time = Time(0.seconds)
+  var lastCollection: Time = Time.epoch
 
   val collector = new PeriodicBackgroundProcess("TimeSeriesCollector", 1.minute) {
     val reporter = new StatsReporter(Stats)

@@ -117,7 +117,7 @@ extends BackgroundProcess(name) {
     val t = Time.now + period
     // truncate to nearest round multiple of the desired repeat in seconds.
     if (period >= 1.second) {
-      Time((t.inSeconds / period.inSeconds) * period.inSeconds) - Time.now
+      Time.fromSeconds((t.inSeconds / period.inSeconds) * period.inSeconds) - Time.now
     } else {
       t - Time.now
     }
