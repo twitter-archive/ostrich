@@ -23,7 +23,7 @@ import com.twitter.util.Duration
  *
  * https://github.com/mariusaeriksen/heapster
  */
-class Heapster(klass: Class[_]) {
+class Heapster(klass: Class[_]) extends Service {
   private val startM = klass.getDeclaredMethod("start")
   private val stopM  = klass.getDeclaredMethod("stop")
   private val dumpProfileM =
@@ -33,7 +33,8 @@ class Heapster(klass: Class[_]) {
     klass.getDeclaredMethod("setSamplingPeriod", classOf[java.lang.Integer])
 
   def start() { startM.invoke(null) }
-  def stop() { stopM.invoke(null) }
+  def shutdown() { stopM.invoke(null) }
+  def quiesce() { shutdown() }
   def setSamplingPeriod(period: java.lang.Integer) { setSamplingPeriodM.invoke(null, period) }
   def clearProfile() { clearProfileM.invoke(null) }
   def dumpProfile(forceGC: java.lang.Boolean): Array[Byte] =
@@ -45,7 +46,7 @@ class Heapster(klass: Class[_]) {
 
     start()
     Thread.sleep(howlong.inMilliseconds)
-    stop()
+    shutdown()
     dumpProfile(forceGC)
   }
 }
