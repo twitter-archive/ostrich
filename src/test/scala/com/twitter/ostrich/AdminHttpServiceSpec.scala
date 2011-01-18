@@ -37,6 +37,7 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
   "AdminHttpService" should {
     doBefore {
+      Logger.reset()
       Logger.get("").setLevel(Level.OFF)
       service = spy(new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass)))
       service.start()

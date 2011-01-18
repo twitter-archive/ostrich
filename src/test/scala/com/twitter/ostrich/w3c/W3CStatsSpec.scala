@@ -27,6 +27,8 @@ import stats._
 
 object W3CStatsSpec extends Specification {
   "w3c Stats" should {
+    Logger.reset()
+
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
     val formatter = new Formatter {

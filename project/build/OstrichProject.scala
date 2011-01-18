@@ -1,10 +1,10 @@
 import sbt._
 import com.twitter.sbt._
 
-class OstrichProject(info: ProjectInfo) extends StandardProject(info) with SubversionPublisher with InlineDependencies {
-  inline("com.twitter" % "json_2.8.0" % "2.1.4")
-  inline("com.twitter" % "configgy" % "3.0.0-SNAPSHOT")
-  val util = "com.twitter" % "util" % "1.4.9-SNAPSHOT"
+class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info) with SubversionPublisher with DefaultRepos {
+  val util = "com.twitter" % "util" % "1.4.12-SNAPSHOT"
+  val json = "com.twitter" % "json_2.8.0" % "2.1.4"
+  val scalaCompiler = "org.scala-lang" % "scala-compiler" % "2.8.1" % "compile"
   val netty = "org.jboss.netty" % "netty" % "3.1.5.GA"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
