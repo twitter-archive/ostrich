@@ -19,6 +19,7 @@ package logging
 
 import java.io.{File, InputStream}
 import java.util.{Calendar, logging => javalog}
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map}
 import scala.collection.mutable
 import scala.io.Source
@@ -155,7 +156,7 @@ object Logger extends Iterable[Logger] {
   // A cache of scala Logger objects by name.
   // Using a low concurrencyLevel (2), with the assumption that we aren't ever creating too
   // many loggers at the same time.
-  private val loggersCache = new java.util.concurrent.ConcurrentHashMap[String, Logger](128, 0.75f, 2)
+  private val loggersCache = new ConcurrentHashMap[String, Logger](128, 0.75f, 2)
 
   private val root: Logger = get("")
 
