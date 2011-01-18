@@ -74,11 +74,13 @@ object Stats extends StatsProvider {
     stats
   }
 
+  def getCollection(): StatsCollection = collection
+
   // FIXME: should ditch this API.
   def getCounter(name: String): Counter = {
     new Counter {
       final override def incr() = incr(1)
-      final override def incr(n: Int) = Stats.incr(name)
+      final override def incr(n: Int) = Stats.incr(name, n)
       final override def apply(reset: Boolean) = collection.getCounter(name).apply(reset)
       final override def update(n: Long) = {
         collection.getCounter(name).update(n)
