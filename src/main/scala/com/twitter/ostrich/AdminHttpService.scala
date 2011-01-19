@@ -98,6 +98,8 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
       "text/javascript"
     } else if (relativePath.endsWith(".html")) {
       "text/html"
+    } else if (relativePath.endsWith(".css")) {
+      "text/css"
     } else {
       "application/unknown"
     }
