@@ -83,7 +83,7 @@ class LoggerSpec extends Specification with TempFolder {
     }
 
     "log a message, with timestamp" in {
-      Logger.clearHandlers
+      Logger.clearHandlers()
       myHandler = timeFrozenHandler
       log.addHandler(timeFrozenHandler)
       log.error("error!")
@@ -128,6 +128,10 @@ class LoggerSpec extends Specification with TempFolder {
     }
 
     "configure logging" in {
+      doBefore {
+        Logger.clearHandlers()
+      }
+
       "file handler" in {
         withTempFolder {
           val log = new LoggerConfig {

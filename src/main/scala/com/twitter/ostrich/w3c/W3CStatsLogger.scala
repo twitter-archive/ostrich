@@ -17,36 +17,14 @@
 package com.twitter.ostrich
 package w3c
 
-import scala.collection.mutable
-import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.util.{Duration, Time}
+import com.twitter.util.Duration
 import stats._
 
 /**
- * Log all collected stats as "w3c-style" lines to a java logger at a regular interval.
+ * Deprecated. Instantiate a StatsLogger directly instead.
  */
-class W3CStatsLogger(val logger: Logger, val frequency: Duration, collection: StatsCollection)
-extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
+class W3CStatsLogger(logger: Logger, frequency: Duration, collection: StatsCollection)
+extends StatsLogger(new W3CReporter(logger), frequency, collection) {
   def this(logger: Logger, frequency: Duration) = this(logger, frequency, Stats)
-
-  val reporter = new W3CReporter(logger)
-  val statsReporter = new StatsReporter(collection)
-
-  def periodic() {
-    val report = new mutable.HashMap[String, Any]
-    val summary = statsReporter.get()
-
-    summary.counters foreach { case (key, value) => report(key) = value }
-    summary.gauges foreach { case (key, value) => report(key) = value }
-
-    summary.metrics foreach { case (key, distribution) =>
-      report(key + "_count") = distribution.count
-      report(key + "_min") = distribution.minimum
-      report(key + "_max") = distribution.maximum
-      report(key + "_avg") = distribution.average.toLong
-    }
-
-    reporter.report(report)
-  }
 }

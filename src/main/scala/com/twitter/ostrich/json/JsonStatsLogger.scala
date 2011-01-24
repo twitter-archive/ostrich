@@ -15,6 +15,7 @@
  */
 
 package com.twitter.ostrich
+package json
 
 import java.net.InetAddress
 import scala.collection.immutable
@@ -23,6 +24,8 @@ import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 import stats._
+
+// TODO(benjy): Reimplement this with a StatsLogger, since they are quite similar.
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.

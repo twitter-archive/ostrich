@@ -40,7 +40,7 @@ object DistributionSpec extends Specification {
 
     "toJson" in {
       Distribution(2, 20, 10, None, 15.0).toJson mustEqual
-        "{\"count\":2,\"maximum\":20,\"minimum\":10,\"average\":15}"
+        "{\"average\":15,\"count\":2,\"maximum\":20,\"minimum\":10}"
     }
   }
 }

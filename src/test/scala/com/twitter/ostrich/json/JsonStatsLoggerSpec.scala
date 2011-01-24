@@ -15,7 +15,7 @@
  */
 
 package com.twitter.ostrich
-package stats
+package json
 
 import scala.collection.immutable
 import com.twitter.conversions.string._
@@ -23,6 +23,7 @@ import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import com.twitter.util.Time
 import org.specs._
+import stats._
 
 object JsonStatsLoggerSpec extends Specification {
   "JsonStatsLogger" should {

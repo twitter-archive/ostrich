@@ -21,6 +21,7 @@ import com.twitter.config.Config
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.Duration
+import json.JsonStatsLogger
 
 class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] {
   /**
