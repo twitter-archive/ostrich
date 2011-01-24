@@ -146,6 +146,22 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
   def ifDebug(thrown: Throwable, message: => AnyRef) = logLazy(Level.DEBUG, thrown, message)
   def ifTrace(message: => AnyRef) = logLazy(Level.TRACE, message)
   def ifTrace(thrown: Throwable, message: => AnyRef) = logLazy(Level.TRACE, thrown, message)
+
+  /**
+   * Remove all existing log handlers.
+   */
+  def clearHandlers() = {
+    // some custom Logger implementations may return null from getHandlers
+    val handlers = getHandlers()
+    if (handlers ne null) {
+      for (handler <- handlers) {
+        try {
+          handler.close()
+        } catch { case _ => () }
+        removeHandler(handler)
+      }
+    }
+  }
 }
 
 
@@ -237,16 +253,7 @@ object Logger extends Iterable[Logger] {
    */
   def clearHandlers() = {
     foreach { logger =>
-      // some custom Logger implementations may return null from getHandlers
-      val handlers = logger.getHandlers()
-      if (handlers ne null) {
-        for (handler <- logger.getHandlers) {
-          try {
-            handler.close()
-          } catch { case _ => () }
-          logger.removeHandler(handler)
-        }
-      }
+      logger.clearHandlers()
       logger.setLevel(null)
     }
   }
@@ -261,6 +268,8 @@ object Logger extends Iterable[Logger] {
         logger
       case null =>
         val logger = new Logger(name, javalog.Logger.getLogger(name))
+        logger.clearHandlers()
+        logger.setLevel(null)
         logger.setUseParentHandlers(true)
 
         val oldLogger = loggersCache.putIfAbsent(name, logger)
