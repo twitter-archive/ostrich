@@ -54,11 +54,22 @@ object W3CStatsSpec extends Specification {
     }
 
     def getLine() = {
-      handler.get.split("\n").filter { line => !(line startsWith "#") }.head
+      val rv = handler.get.split("\n").filter { line => !(line startsWith "#") }.head
+      handler.clear()
+      rv
     }
 
-    "log and check some timings" in {
-      w3c.transaction { stats =>
+    "can be called manually" in {
+      val counters = Map("widgets" -> 3L)
+      val gauges = Map("wodgets" -> 3.5)
+      val metrics = Map("backend-response-time_msec" -> new Distribution(1, 10, 10, 10))
+      val labels = Map("request-uri" -> "/home")
+      w3c.write(StatsSummary(counters, metrics, gauges, labels))
+      getLine() mustEqual "10 - /home - - - 3 3.5"
+    }
+
+    "can be called transactionally" in {
+      w3c { stats =>
         val response: Int = stats.time[Int]("backend-response-time") {
           stats.setLabel("backend-response-method", "GET")
           stats.setLabel("request-uri", "/home")
@@ -75,7 +86,6 @@ object W3CStatsSpec extends Specification {
       }
 
       val entries: Array[String] = getLine().split(" ")
-      println(entries.toList)
       entries(0).toInt must be_>=(0)
       entries(1) mustEqual "GET"
       entries(2) mustEqual "/home"
@@ -85,24 +95,36 @@ object W3CStatsSpec extends Specification {
     }
 
     "empty stats returns the empty string" in {
-      w3c.transaction { stats => () }
+      w3c { stats => () }
       // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
       getLine().replaceAll("-", "").trim() mustEqual ""
     }
 
     "logging a field not tracked in the fields member shouldn't show up in the logfile" in {
-      w3c.transaction { stats =>
+      w3c { stats =>
         stats.setLabel("jibberish_nonsense", "foo")
       }
       getLine() must notInclude("foo")
     }
 
-    "sum multiple counts within a transaction" in {
-      w3c.transaction { stats =>
+    "sum counts within a transaction" in {
+      w3c { stats =>
         stats.incr("widgets", 8)
         stats.incr("widgets", 8)
       }
       getLine() mustEqual "- - - - - - 16 -"
+    }
+
+    "logs metrics only once" in {
+      w3c { stats =>
+        stats.addMetric("backend-response-time_msec", 9)
+        stats.addMetric("backend-response-time_msec", 13)
+      }
+      getLine() mustEqual "11 - - - - - - -"
+      w3c { stats =>
+        stats.addMetric("backend-response-time_msec", 9)
+      }
+      getLine() mustEqual "9 - - - - - - -"
     }
   }
 }

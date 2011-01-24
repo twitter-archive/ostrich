@@ -29,8 +29,12 @@ import stats._
 
 /**
  * Dump "w3c" style stats to a logger.
+ *
+ * This may be used as a periodic dump (by calling `write` directly) or to dump stats within a
+ * work unit, using the `TransactionalStatsCollection` API.
  */
-class W3CStats(logger: Logger, fields: Array[String], val printCrc: Boolean) {
+class W3CStats(logger: Logger, fields: Array[String], val printCrc: Boolean)
+extends TransactionalStatsCollection {
   private val crcGenerator = new CRC32()
   private val formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss")
   formatter.setTimeZone(TimeZone.getTimeZone("GMT+0000"))
@@ -43,22 +47,7 @@ class W3CStats(logger: Logger, fields: Array[String], val printCrc: Boolean) {
   private val headerRepeatFrequency = 5.minutes
   private var nextHeaderDumpAt = Time.now
 
-  /**
-   * Coalesce all events (counters, timings, etc.) that happen in this thread within this
-   * transaction, and log them as a single line at the end. This is useful for logging everything
-   * that happens within an HTTP request/response cycle, or similar.
-   */
-  def transaction[T](f: StatsProvider => T): T = {
-    val collection = ThreadLocalStatsCollection()
-    collection.clearAll()
-    try {
-      f(collection)
-    } finally {
-      writeLog(collection.get())
-    }
-  }
-
-  def writeLog(summary: StatsSummary) {
+  def write(summary: StatsSummary) {
     val fieldsHeader = fields.mkString("#Fields: ", " ", "")
     headerCrc = crc32(fieldsHeader)
     if (headerCrc != previousHeaderCrc || Time.now >= nextHeaderDumpAt) {

@@ -182,3 +182,21 @@ object ThreadLocalStatsCollection {
 
   def apply(): StatsCollection = tl.get()
 }
+
+/**
+ * Coalesce all events (counters, timings, etc.) that happen in this thread within this
+ * transaction, and log them as a single unit at the end. This is useful for logging everything
+ * that happens within an HTTP request/response cycle, or similar.
+ */
+abstract class TransactionalStatsCollection {
+  def apply[T](f: StatsProvider => T): T = {
+    val collection = new StatsCollection()
+    try {
+      f(collection)
+    } finally {
+      write(collection.get())
+    }
+  }
+
+  def write(summary: StatsSummary)
+}

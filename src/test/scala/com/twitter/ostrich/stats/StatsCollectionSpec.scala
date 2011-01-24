@@ -41,10 +41,18 @@ object StatsCollectionSpec extends Specification {
     }
 
     "counters" in {
-      collection.incr("widgets", 1)
-      collection.incr("wodgets", 12)
-      collection.incr("wodgets")
-      collection.getCounters() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
+      "basic" in {
+        collection.incr("widgets", 1)
+        collection.incr("wodgets", 12)
+        collection.incr("wodgets")
+        collection.getCounters() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
+      }
+
+      "negative" in {
+        collection.incr("widgets", 3)
+        collection.incr("widgets", -1)
+        collection.getCounters() mustEqual Map("widgets" -> 2)
+      }
     }
 
     "metrics" in {
