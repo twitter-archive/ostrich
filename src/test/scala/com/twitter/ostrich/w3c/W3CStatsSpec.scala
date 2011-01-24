@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import scala.collection.immutable
 import com.twitter.conversions.string._
-import com.twitter.logging.{Formatter, Level, Logger, StringHandler}
+import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import org.specs.Specification
 import stats._
 
@@ -31,26 +31,21 @@ object W3CStatsSpec extends Specification {
 
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
-    val formatter = new Formatter {
-      override def lineTerminator = ""
-      override def dateFormat = new SimpleDateFormat("yyyyMMdd-HH:mm:ss.SSS")
-      override def formatPrefix(level: java.util.logging.Level, date: String, name: String) = name + ": "
-    }
-    val handler = new StringHandler(formatter, None)
+    val handler = new StringHandler(BareFormatter, None)
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
     val fields = Array(
-      "backend-response-time_msec",
+      "backend-response-time_msec_average",
       "backend-response-method",
       "request-uri",
-      "backend-response-time_nsec",
+      "backend-response-time_nsec_average",
       "unsupplied-field",
       "finish_timestamp",
       "widgets",
       "wodgets"
     )
-    val w3c = new W3CStats(logger, fields)
+    val w3c = new W3CStats(logger, fields, false)
 
     doBefore {
       Logger.get("").setLevel(Level.OFF)
@@ -58,69 +53,56 @@ object W3CStatsSpec extends Specification {
       handler.clear()
     }
 
+    def getLine() = {
+      handler.get.split("\n").filter { line => !(line startsWith "#") }.head
+    }
+
     "log and check some timings" in {
-      val response: Int = w3c.time[Int]("backend-response-time") {
-        w3c.log("backend-response-method", "GET")
-        w3c.log("request-uri", "/home")
-        1 + 1
+      w3c.transaction { stats =>
+        val response: Int = stats.time[Int]("backend-response-time") {
+          stats.setLabel("backend-response-method", "GET")
+          stats.setLabel("request-uri", "/home")
+          1 + 1
+        }
+        response mustEqual 2
+
+        val response2: Int = stats.timeNanos[Int]("backend-response-time") {
+          1 + 2
+        }
+        response2 mustEqual 3
+
+        stats.setGauge("wodgets", 3.5)
       }
-      response mustEqual 2
 
-      w3c.log("finish_timestamp", new Date(0))
-
-      val response2: Int = w3c.timeNanos[Int]("backend-response-time") {
-        1 + 2
-      }
-      response2 mustEqual 3
-
-      val logline = w3c.log_entry
-      logline mustNot beNull
-
-      val entries: Array[String] = logline.split(" ")
+      val entries: Array[String] = getLine().split(" ")
+      println(entries.toList)
       entries(0).toInt must be_>=(0)
       entries(1) mustEqual "GET"
       entries(2) mustEqual "/home"
       entries(3).toInt must be_>=(10)  //must take at least 10 ns!
       entries(4) mustEqual "-"
-      entries(5) mustEqual "01-Jan-1970_00:00:00"
+      entries(7) mustEqual "3.5"
     }
 
-    "map when cleared returns the empty string" in {
-      w3c.log("request-uri", "foo")
-      w3c.clearAll()
-      val logline = w3c.log_entry
+    "empty stats returns the empty string" in {
+      w3c.transaction { stats => () }
       // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
-      logline.replaceAll("-", "").trim() mustEqual ""
+      getLine().replaceAll("-", "").trim() mustEqual ""
     }
 
     "logging a field not tracked in the fields member shouldn't show up in the logfile" in {
-      w3c.log("jibberish_nonsense", "foo")
-      w3c.log_entry must notInclude("foo")
-    }
-
-    "handle a transaction" in {
-      w3c.log("request-uri", "foo")
-      w3c.transaction {
-        w3c.log("widgets", 8)
-        w3c.log("wodgets", 3)
+      w3c.transaction { stats =>
+        stats.setLabel("jibberish_nonsense", "foo")
       }
-      handler.get.replaceAll(" -", "") mustEqual "w3c: 8 3"
+      getLine() must notInclude("foo")
     }
 
     "sum multiple counts within a transaction" in {
-      w3c.transaction {
-        w3c.log("widgets", 8)
-        w3c.log("widgets", 8)
+      w3c.transaction { stats =>
+        stats.incr("widgets", 8)
+        stats.incr("widgets", 8)
       }
-      handler.get.replaceAll(" -", "") mustEqual "w3c: 16"
-    }
-
-    "concat multiple string values within a transaction" in {
-      w3c.transaction {
-        w3c.log("widgets", "hello")
-        w3c.log("widgets", "kitty")
-      }
-      handler.get.replaceAll(" -", "") mustEqual "w3c: hello,kitty"
+      getLine() mustEqual "- - - - - - 16 -"
     }
   }
 }
