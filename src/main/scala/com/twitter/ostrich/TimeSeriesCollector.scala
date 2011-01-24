@@ -28,9 +28,11 @@ import stats._
  * Collect stats over a rolling window of the last hour and report them to a web handler,
  * for generating ad-hoc realtime graphs.
  */
-class TimeSeriesCollector {
+class TimeSeriesCollector(collection: StatsCollection) {
   val PERCENTILES = List(0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999, 0.9999)
   val EMPTY_TIMINGS = List.fill(PERCENTILES.size)(0L)
+
+  def this() = this(Stats)
 
   class TimeSeries[T](val size: Int, empty: => T) {
     val data = new mutable.ArrayBuffer[T]()
@@ -55,10 +57,10 @@ class TimeSeriesCollector {
   var lastCollection: Time = Time.epoch
 
   val collector = new PeriodicBackgroundProcess("TimeSeriesCollector", 1.minute) {
-    val reporter = new StatsReporter(Stats)
+    val listener = new StatsListener(collection)
 
     def periodic() {
-      val stats = reporter.get()
+      val stats = listener.get()
       stats.gauges.foreach { case (k, v) =>
         hourly.getOrElseUpdate("gauge:" + k, new TimeSeries[Double](60, 0)).add(v)
       }

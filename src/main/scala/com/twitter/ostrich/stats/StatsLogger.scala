@@ -34,11 +34,11 @@ class StatsLogger(val reporter: LogReporter, val frequency: Duration, collection
 extends PeriodicBackgroundProcess("StatsLogger", frequency) {
   def this(reporter: LogReporter, frequency: Duration) = this(reporter, frequency, Stats)
 
-  val statsReporter = new StatsReporter(collection)
+  val listener = new StatsListener(collection)
 
   def periodic() {
     val report = new mutable.HashMap[String, Any]
-    val summary = statsReporter.get()
+    val summary = listener.get()
 
     summary.counters foreach { case (key, value) => report(key) = value }
     summary.gauges foreach { case (key, value) => report(key) = value }

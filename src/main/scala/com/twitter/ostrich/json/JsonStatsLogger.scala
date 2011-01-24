@@ -34,11 +34,11 @@ class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName:
 extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
   def this(logger: Logger, period: Duration) = this(logger, period, None)
 
-  val reporter = new StatsReporter(Stats)
+  val listener = new StatsListener(Stats)
   val hostname = InetAddress.getLocalHost().getCanonicalHostName()
 
   def periodic() {
-    val stats = reporter.get()
+    val stats = listener.get()
     val statMap =
       stats.counters ++
       stats.gauges ++

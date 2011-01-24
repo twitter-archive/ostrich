@@ -21,11 +21,16 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.json.{Json, JsonSerializable}
 
-class StatsReporter(collection: StatsCollection) {
+/**
+ * Attaches to a StatsCollection and reports on all the counters, metrics, gauges, and labels.
+ * Each report resets state, so counters are reported as deltas, and metrics distributions are
+ * only tracked since the last report.
+ */
+class StatsListener(collection: StatsCollection) {
   private val metricMap = new ConcurrentHashMap[String, Metric]()
   private val lastCounterMap = new mutable.HashMap[String, Long]()
 
-  collection.addReporter(this)
+  collection.addListener(this)
   collection.getCounters.foreach { case (key, value) =>
     lastCounterMap(key) = value
   }
@@ -57,6 +62,6 @@ class StatsReporter(collection: StatsCollection) {
   }
 
   def get(): StatsSummary = {
-    StatsSummary(getCounters(), getMetrics(), collection.getGauges())
+    StatsSummary(getCounters(), getMetrics(), collection.getGauges(), collection.getLabels())
   }
 }

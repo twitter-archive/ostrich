@@ -62,11 +62,18 @@ extends StatsProvider {
   def getCounter(name: String) = collection.getCounter(name)
   def getMetric(name: String) = collection.getMetric(name)
   def getGauge(name: String) = collection.getGauge(name)
+  def addGauge(name: String)(gauge: => Double) = collection.addGauge(name)(gauge)
+  def clearGauge(name: String) = collection.clearGauge(name)
+  def getLabel(name: String) = collection.getLabel(name)
   def getCounters() = collection.getCounters()
   def getMetrics() = collection.getMetrics()
   def getGauges() = collection.getGauges()
-  def addGauge(name: String)(gauge: => Double) = collection.addGauge(name)(gauge)
-  def clearGauge(name: String) = collection.clearGauge(name)
+  def getLabels() = collection.getLabels()
+
+  override def incr(name: String, count: Int) = {
+    log_safe(name, map.getOrElse(name, 0L).asInstanceOf[Long] + count)
+    collection.incr(name, count)
+  }
 
   override def addMetric(name: String, value: Int) {
     log(name, value)
@@ -79,6 +86,16 @@ extends StatsProvider {
   override def addMetric(name: String, distribution: Distribution) {
     // FIXME: can't really log these. TODO(benjy): Revisit this?
     collection.addMetric(name, distribution)
+  }
+
+  def setLabel(name: String, value: String) {
+    collection.setLabel(name, value)
+    log_safe(name, value)
+  }
+
+  def clearLabel(name: String) {
+    collection.clearLabel(name)
+    map -= name
   }
 
   /**
@@ -108,11 +125,6 @@ extends StatsProvider {
 
   def log(name: String, ip: InetAddress) {
     log_safe(name, ip)
-  }
-
-  override def incr(name: String, count: Int) = {
-    log_safe(name, map.getOrElse(name, 0L).asInstanceOf[Long] + count)
-    collection.incr(name, count)
   }
 
   /**

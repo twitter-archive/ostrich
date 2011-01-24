@@ -21,25 +21,25 @@ import com.twitter.conversions.time._
 import com.twitter.util.Time
 import org.specs.Specification
 
-object StatsReporterSpec extends Specification {
-  "StatsReporter" should {
+object StatsListenerSpec extends Specification {
+  "StatsListener" should {
     var collection: StatsCollection = null
-    var reporter: StatsReporter = null
-    var reporter2: StatsReporter = null
+    var listener: StatsListener = null
+    var listener2: StatsListener = null
 
     doBefore {
       collection = new StatsCollection()
-      reporter = new StatsReporter(collection)
-      reporter2 = new StatsReporter(collection)
+      listener = new StatsListener(collection)
+      listener2 = new StatsListener(collection)
     }
 
     "reports basic stats" in {
       "counters" in {
         collection.incr("a", 3)
         collection.incr("b", 4)
-        reporter.getCounters() mustEqual Map("a" -> 3, "b" -> 4)
+        listener.getCounters() mustEqual Map("a" -> 3, "b" -> 4)
         collection.incr("a", 2)
-        reporter.getCounters() mustEqual Map("a" -> 2, "b" -> 0)
+        listener.getCounters() mustEqual Map("a" -> 2, "b" -> 0)
       }
 
       "metrics" in {
@@ -52,24 +52,24 @@ object StatsReporterSpec extends Specification {
 
     "independently tracks deltas" in {
       collection.incr("a", 3)
-      reporter.getCounters() mustEqual Map("a" -> 3)
+      listener.getCounters() mustEqual Map("a" -> 3)
       collection.incr("a", 5)
-      reporter2.getCounters() mustEqual Map("a" -> 8)
+      listener2.getCounters() mustEqual Map("a" -> 8)
       collection.incr("a", 1)
-      reporter.getCounters() mustEqual Map("a" -> 6)
+      listener.getCounters() mustEqual Map("a" -> 6)
     }
 
-    "tracks stats only from the point a reporter was attached, but report all keys" in {
+    "tracks stats only from the point a listener was attached, but report all keys" in {
       collection.incr("a", 5)
       collection.incr("b", 5)
       collection.addMetric("beans", 5)
       collection.addMetric("rice", 5)
-      val reporter3 = new StatsReporter(collection)
+      val listener3 = new StatsListener(collection)
       collection.incr("a", 70)
       collection.incr("a", 300)
       collection.addMetric("beans", 3)
-      reporter3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
-      reporter3.getMetrics() mustEqual
+      listener3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
+      listener3.getMetrics() mustEqual
         Map("beans" -> new Distribution(1, 3, 3, None, 3.0),
             "rice" -> new Distribution(0, 0, 0, None, 0.0))
     }

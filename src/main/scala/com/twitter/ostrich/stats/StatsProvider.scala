@@ -23,7 +23,8 @@ import com.twitter.util.Duration
 case class StatsSummary(
   counters: Map[String, Long],
   metrics: Map[String, Distribution],
-  gauges: Map[String, Double]
+  gauges: Map[String, Double],
+  labels: Map[String, String]
 )
 
 /**
@@ -76,6 +77,16 @@ trait StatsProvider {
   def clearGauge(name: String)
 
   /**
+   * Set a label to a string.
+   */
+  def setLabel(name: String, value: String)
+
+  /**
+   * Clear an existing label.
+   */
+  def clearLabel(name: String)
+
+  /**
    * Get the Counter object representing a named counter.
    */
   def getCounter(name: String): Counter
@@ -89,6 +100,11 @@ trait StatsProvider {
    * Get the current value of a named gauge.
    */
   def getGauge(name: String): Option[Double]
+
+  /**
+   * Get the current value of a named label, if it exists.
+   */
+  def getLabel(name: String): Option[String]
 
   /**
    * Summarize all the counters in this collection.
@@ -106,9 +122,14 @@ trait StatsProvider {
   def getGauges(): Map[String, Double]
 
   /**
-   * Summarize all the counters, metrics, and gauges in this collection.
+   * Summarize all the labels in this collection.
    */
-  def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges())
+  def getLabels(): Map[String, String]
+
+  /**
+   * Summarize all the counters, metrics, gauges, and labels in this collection.
+   */
+  def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges(), getLabels())
 
   /**
    * Reset all collected stats and erase the history.
@@ -150,11 +171,15 @@ trait StatsProvider {
 object DevNullStats extends StatsProvider {
   def addGauge(name: String)(gauge: => Double) = ()
   def clearGauge(name: String) = ()
+  def setLabel(name: String, value: String) = ()
+  def clearLabel(name: String) = ()
   def getCounter(name: String) = new Counter()
   def getMetric(name: String) = new Metric()
   def getGauge(name: String) = None
+  def getLabel(name: String) = None
   def getCounters() = Map.empty
   def getMetrics() = Map.empty
   def getGauges() = Map.empty
+  def getLabels() = Map.empty
   def clearAll() = ()
 }

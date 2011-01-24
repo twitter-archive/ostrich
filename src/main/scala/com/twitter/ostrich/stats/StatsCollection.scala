@@ -29,8 +29,9 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   private val counterMap = new ConcurrentHashMap[String, Counter]()
   private val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
   private val gaugeMap = new ConcurrentHashMap[String, () => Double]()
+  private val labelMap = new ConcurrentHashMap[String, String]()
 
-  private val reporters = new mutable.ListBuffer[StatsReporter]
+  private val listeners = new mutable.ListBuffer[StatsListener]
 
   /** Set this to true to have the collection fill in a set of automatic gauges from the JVM. */
   var includeJvmStats = false
@@ -63,11 +64,11 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     out
   }
 
-  def addReporter(reporter: StatsReporter) {
+  def addListener(listener: StatsListener) {
     synchronized {
-      reporters += reporter
+      listeners += listener
       for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
-        metric.addFanout(reporter.getMetric(key))
+        metric.addFanout(listener.getMetric(key))
       }
     }
   }
@@ -78,6 +79,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def clearGauge(name: String) {
     gaugeMap.remove(name)
+  }
+
+  def setLabel(name: String, value: String) {
+    labelMap.put(name, value)
+  }
+
+  def clearLabel(name: String) {
+    labelMap.remove(name)
   }
 
   def getCounter(name: String) = {
@@ -94,12 +103,17 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     if (metric == null) {
       metric = new FanoutMetric()
       synchronized {
-        reporters.foreach { reporter => metric.addFanout(reporter.getMetric(name)) }
+        listeners.foreach { listener => metric.addFanout(listener.getMetric(name)) }
       }
       metricMap.putIfAbsent(name, metric)
       metric = metricMap.get(name)
     }
     metric
+  }
+
+  def getLabel(name: String) = {
+    val value = labelMap.get(name)
+    if (value == null) None else Some(value)
   }
 
   def getGauge(name: String) = {
@@ -132,22 +146,39 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     gauges
   }
 
+  def getLabels() = {
+    new mutable.HashMap[String, String] ++ JavaConversions.asScalaMap(labelMap)
+  }
+
   def clearAll() {
     counterMap.clear()
     metricMap.clear()
     gaugeMap.clear()
-    reporters.clear()
+    labelMap.clear()
+    listeners.clear()
   }
 
   def toMap: Map[String, Any] = {
     Map(
       "counters" -> getCounters(),
       "metrics" -> getMetrics(),
-      "gauges" -> getGauges()
+      "gauges" -> getGauges(),
+      "labels" -> getLabels()
     )
   }
 
   def toJson = {
     Json.build(toMap).toString
   }
+}
+
+/**
+ * Get a StatsCollection specific to this thread.
+ */
+object ThreadLocalStatsCollection {
+  private val tl = new ThreadLocal[StatsCollection]() {
+    override def initialValue() = new StatsCollection()
+  }
+
+  def apply(): StatsCollection = tl.get()
 }

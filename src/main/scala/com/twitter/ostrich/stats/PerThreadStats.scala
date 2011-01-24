@@ -118,6 +118,11 @@ class PerThreadStats(val logger: Logger, val logFormat: LogFormat, val fields: A
   def addGauge(name: String)(gauge: => Double) = Stats.addGauge(name)(gauge)
   def clearGauge(name: String) = Stats.clearGauge(name)
 
+  def setLabel(name: String, value: String) {  }
+  def clearLabel(name: String) {  }
+  def getLabel(name: String) = None
+  def getLabels() = null
+
   /**
    * Coalesce all events (counters, timings, etc.) that happen in this thread within this
    * transaction, and log them as a single line at the end. This is useful for logging everything
