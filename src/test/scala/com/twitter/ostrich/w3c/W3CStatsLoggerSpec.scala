@@ -59,7 +59,7 @@ object W3CStatsLoggerSpec extends Specification {
         collection.time("zzz") { time advance 10.milliseconds }
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
-        getLines() mustEqual "#Fields: zzz_msec_avg zzz_msec_count zzz_msec_max zzz_msec_min" :: "15 2 20 10" :: Nil
+        getLines() mustEqual "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum" :: "15 2 20 10" :: Nil
       }
     }
 
@@ -72,7 +72,7 @@ object W3CStatsLoggerSpec extends Specification {
         collection.incr("cats")
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
-        getLines() mustEqual "#Fields: cats dogs zzz_msec_avg zzz_msec_count zzz_msec_max zzz_msec_min" ::
+        getLines() mustEqual "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum" ::
           "1 3 10 1 10 10" :: "1 0 20 1 20 20" :: Nil
       }
     }

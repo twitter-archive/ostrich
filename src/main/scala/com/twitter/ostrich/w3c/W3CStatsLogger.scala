@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2011 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -22,9 +22,16 @@ import com.twitter.util.Duration
 import stats._
 
 /**
- * Deprecated. Instantiate a StatsLogger directly instead.
+ * Log all collected w3c stats at a regular interval.
  */
 class W3CStatsLogger(logger: Logger, frequency: Duration, collection: StatsCollection)
-extends StatsLogger(new W3CReporter(logger), frequency, collection) {
+extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
   def this(logger: Logger, frequency: Duration) = this(logger, frequency, Stats)
+
+  val w3cStats = new W3CStats(logger, Array(), false)
+  val listener = new StatsListener(collection)
+
+  def periodic() {
+    w3cStats.write(listener.get())
+  }
 }

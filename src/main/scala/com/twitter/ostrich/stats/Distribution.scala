@@ -53,7 +53,7 @@ extends JsonSerializable {
     out.keys.toSeq.sorted.map { key => "%s=%d".format(key, out(key)) }.mkString("(", ", ", ")")
   }
 
-  private def toMapWithoutHistogram = {
+  def toMapWithoutHistogram = {
     Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
                       "average" -> average.toLong)
   }

@@ -188,7 +188,7 @@ object ThreadLocalStatsCollection {
  * transaction, and log them as a single unit at the end. This is useful for logging everything
  * that happens within an HTTP request/response cycle, or similar.
  */
-abstract class TransactionalStatsCollection {
+trait TransactionalStatsCollection {
   def apply[T](f: StatsProvider => T): T = {
     val collection = new StatsCollection()
     try {

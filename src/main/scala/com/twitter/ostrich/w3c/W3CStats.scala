@@ -21,6 +21,7 @@ import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 import java.util.zip.CRC32
+import scala.collection.Map
 import scala.collection.mutable
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
@@ -48,13 +49,15 @@ extends TransactionalStatsCollection {
   private var nextHeaderDumpAt = Time.now
 
   def write(summary: StatsSummary) {
-    val fieldsHeader = fields.mkString("#Fields: ", " ", "")
+    val flatmap = flatten(summary)
+    val fieldList: Seq[String] = if (fields.size > 0) fields.toSeq else flatmap.keys.toSeq.sorted
+    val fieldsHeader = fieldList.mkString("#Fields: ", " ", "")
     headerCrc = crc32(fieldsHeader)
     if (headerCrc != previousHeaderCrc || Time.now >= nextHeaderDumpAt) {
       logger.info(generateHeader(fieldsHeader))
       nextHeaderDumpAt += headerRepeatFrequency
     }
-    logger.info(generateLine(summary))
+    logger.info(generateLine(fieldList, flatmap))
   }
 
   private def crc32(header: String): Long = {
@@ -65,7 +68,6 @@ extends TransactionalStatsCollection {
 
   def generateHeader(fieldsHeader: String) = {
     previousHeaderCrc = headerCrc
-    val fieldsHeader = fields.mkString("#Fields: ", " ", "")
     headerCrc = crc32(fieldsHeader)
     Array("#Version: 1.0", "\n",
           "#Date: ", formatter.format(Time.now.toDate), "\n",
@@ -73,16 +75,21 @@ extends TransactionalStatsCollection {
           fieldsHeader).mkString("")
   }
 
-  private def generateLine(summary: StatsSummary): String = {
+  private def flatten(summary: StatsSummary): Map[String, Any] = {
     val flatmap = new mutable.HashMap[String, Any]
     flatmap ++= summary.counters
     summary.metrics.foreach { case (k1, d) =>
-      d.toMap.foreach { case (k2, v) => flatmap(k1 + "_" + k2) = v }
+      // w3c logs don't want histograms (for now?)
+      d.toMapWithoutHistogram.foreach { case (k2, v) => flatmap(k1 + "_" + k2) = v }
     }
     flatmap ++= summary.gauges
     flatmap ++= summary.labels
-    val rv = fields.map { key => flatmap.get(key).map { stringify(_) }.getOrElse("-") }.mkString(" ")
-    if (printCrc) headerCrc + " " + rv else rv
+    flatmap
+  }
+
+  private def generateLine(fieldList: Seq[String], flatmap: Map[String, Any]): String = {
+    val rv = fieldList.map { key => flatmap.get(key).map { stringify(_) }.getOrElse("-") }.mkString(" ")
+    if (printCrc) (headerCrc + " " + rv) else rv
   }
 
   private def stringify(value: Any): String = value match {
