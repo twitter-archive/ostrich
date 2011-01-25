@@ -46,7 +46,6 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
       }
       val service = config()(runtime)
       new Socket("localhost", port) must notBeNull
-      println(ServiceTracker.peek)
       ServiceTracker.shutdown()
       new Socket("localhost", port) must throwA[SocketException]
     }
