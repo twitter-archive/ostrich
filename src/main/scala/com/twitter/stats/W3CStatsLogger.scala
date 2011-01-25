@@ -23,7 +23,7 @@ import com.twitter.util.Duration
 /**
  * Log all collected w3c stats at a regular interval.
  */
-class W3CStatsLogger(logger: Logger, frequency: Duration, collection: StatsCollection)
+class W3CStatsLogger(val logger: Logger, frequency: Duration, collection: StatsCollection)
 extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
   def this(logger: Logger, frequency: Duration) = this(logger, frequency, Stats)
 

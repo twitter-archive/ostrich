@@ -21,7 +21,12 @@ package com.twitter.admin
  */
 trait Service {
   /**
-   * Shutdown this server.
+   * Start this service.
+   */
+  def start()
+
+  /**
+   * Shutdown this service.
    */
   def shutdown(): Unit
 
@@ -34,7 +39,7 @@ trait Service {
   def quiesce(): Unit
 
   /**
-   * Reload configuration, if supported by the server.
+   * Reload configuration, if supported by the service.
    */
   def reload() {
     // default is to do nothing.

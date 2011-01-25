@@ -28,6 +28,8 @@ object ServiceTracker {
   private val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]
   private var adminHttpService: Option[AdminHttpService] = None
 
+  def peek = services.toList
+
   def register(service: Service) {
     synchronized {
       services += service
