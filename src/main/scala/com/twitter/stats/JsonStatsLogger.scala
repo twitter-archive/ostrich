@@ -39,7 +39,9 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
     val stats = listener.get()
     val statMap =
       stats.counters ++
-      stats.gauges ++
+      stats.gauges.map { case (key, d) =>
+        if (d.longValue == d) { (key, d.longValue) } else { (key, d) }
+      } ++
       stats.metrics.flatMap { case (key, distribution) =>
         distribution.toMap.map { case (subkey, value) =>
           (key + "_" + subkey, value)

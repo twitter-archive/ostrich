@@ -47,6 +47,8 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         a.flatMap { build(_) }.toList
       case s: Seq[_] =>
         s.flatMap { build(_) }.toList
+      case d: Double =>
+        if (d.longValue == d) List(d.longValue.toString) else List(d.toString)
       case x =>
         List(x.toString)
     }

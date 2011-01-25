@@ -32,6 +32,7 @@ object JsonStatsLoggerSpec extends Specification {
     logger.addHandler(handler)
     logger.setUseParentHandlers(false)
 
+    var collection: StatsCollection = null
     var statsLogger: JsonStatsLogger = null
 
     def getLines() = {
@@ -39,14 +40,14 @@ object JsonStatsLoggerSpec extends Specification {
     }
 
     doBefore {
-      Stats.clearAll()
       handler.clear()
-      statsLogger = new JsonStatsLogger(logger, 1.second)
+      collection = new StatsCollection()
+      statsLogger = new JsonStatsLogger(logger, 1.second, None, collection)
     }
 
     "log basic stats" in {
-      Stats.incr("cats")
-      Stats.incr("dogs", 3)
+      collection.incr("cats")
+      collection.incr("dogs", 3)
       statsLogger.periodic()
       val line = getLines()(0)
       line mustMatch "\"cats\":1"
@@ -55,14 +56,23 @@ object JsonStatsLoggerSpec extends Specification {
 
     "log timings" in {
       Time.withCurrentTimeFrozen { time =>
-        Stats.time("zzz") { time advance 10.milliseconds }
-        Stats.time("zzz") { time advance 20.milliseconds }
+        collection.time("zzz") { time advance 10.milliseconds }
+        collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
         val line = getLines()(0)
         line mustMatch "\"zzz_msec_count\":2"
         line mustMatch "\"zzz_msec_average\":15"
         line mustMatch "\"zzz_msec_p50\":10"
       }
+    }
+
+    "log gauges as ints when appropriate" in {
+      collection.setGauge("horse", 3.5)
+      collection.setGauge("cow", 1234567890.0)
+      statsLogger.periodic()
+      val line = getLines()(0)
+      line mustMatch "\"horse\":3.5"
+      line mustMatch "\"cow\":1234567890"
     }
   }
 }
