@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package w3c
+package com.twitter.stats
 
 import scala.collection.immutable
 import com.twitter.conversions.string._
@@ -23,7 +22,6 @@ import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import com.twitter.util.Time
 import org.specs.Specification
-import stats._
 
 object W3CStatsLoggerSpec extends Specification {
   "W3CStatsLogger" should {

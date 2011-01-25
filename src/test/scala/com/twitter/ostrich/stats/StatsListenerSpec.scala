@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package stats
+package com.twitter.stats
 
 import com.twitter.conversions.time._
 import com.twitter.util.Time

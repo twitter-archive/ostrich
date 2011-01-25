@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package w3c
+package com.twitter.stats
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,7 +22,6 @@ import scala.collection.immutable
 import com.twitter.conversions.string._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import org.specs.Specification
-import stats._
 
 object W3CStatsSpec extends Specification {
   "w3c Stats" should {

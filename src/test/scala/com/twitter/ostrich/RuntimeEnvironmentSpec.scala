@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 
+import com.twitter.stats.Histogram
 import org.specs.Specification
-import stats._
 
 class RuntimeEnvironmentSpec extends Specification {
   "RuntimeEnvironment" should {

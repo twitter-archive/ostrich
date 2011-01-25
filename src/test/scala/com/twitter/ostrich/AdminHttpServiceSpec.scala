@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
+import com.twitter.stats.Stats
 import org.specs.Specification
 import org.specs.mock.Mockito
-import stats._
 
 object AdminHttpServiceSpec extends Specification with Mockito {
   val PORT = 9996

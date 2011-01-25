@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package json
+package com.twitter.stats
 
 import scala.collection.immutable
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import com.twitter.util.Time
-import org.specs._
-import stats._
+import org.specs.Specification
 
 object JsonStatsLoggerSpec extends Specification {
   "JsonStatsLogger" should {
