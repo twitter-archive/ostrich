@@ -158,10 +158,13 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   }
 
   def toMap: Map[String, Any] = {
+    val gauges = Map[String, Any]() ++ getGauges().map { case (k, v) =>
+      if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
+    }
     Map(
       "counters" -> getCounters(),
       "metrics" -> getMetrics(),
-      "gauges" -> getGauges(),
+      "gauges" -> gauges,
       "labels" -> getLabels()
     )
   }
