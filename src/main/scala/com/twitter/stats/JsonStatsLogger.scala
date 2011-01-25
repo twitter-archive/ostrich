@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package json
+package com.twitter.stats
 
 import java.net.InetAddress
 import scala.collection.immutable
 import com.twitter.conversions.time._
+import com.twitter.admin.PeriodicBackgroundProcess
 import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
-import stats._
-
-// TODO(benjy): Reimplement this with a StatsLogger, since they are quite similar.
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.

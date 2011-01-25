@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 
 import java.util.concurrent.CountDownLatch
 import com.twitter.conversions.time._

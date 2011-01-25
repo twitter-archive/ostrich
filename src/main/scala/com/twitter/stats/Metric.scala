@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package stats
+package com.twitter.stats
 
 import scala.collection.mutable
 import com.twitter.logging.Logger

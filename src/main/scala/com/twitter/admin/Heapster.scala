@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 
 import com.twitter.util.Duration
 

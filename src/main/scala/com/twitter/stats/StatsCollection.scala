@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package stats
+package com.twitter.stats
 
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap

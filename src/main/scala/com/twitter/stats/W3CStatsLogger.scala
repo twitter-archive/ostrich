@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package w3c
+package com.twitter.stats
 
 import com.twitter.logging.Logger
+import com.twitter.admin.PeriodicBackgroundProcess
 import com.twitter.util.Duration
-import stats._
 
 /**
  * Log all collected w3c stats at a regular interval.

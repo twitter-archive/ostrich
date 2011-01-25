@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package w3c
+package com.twitter.stats
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat
@@ -26,7 +25,6 @@ import scala.collection.mutable
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.Time
-import stats._
 
 /**
  * Dump "w3c" style stats to a logger.

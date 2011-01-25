@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 
 import scala.collection.{immutable, mutable}
 import com.sun.net.httpserver.HttpExchange
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.Logger
+import com.twitter.stats._
 import com.twitter.util.{Duration, Time}
-import stats._
 
 /**
  * Collect stats over a rolling window of the last hour and report them to a web handler,
  * for generating ad-hoc realtime graphs.
  */
-class TimeSeriesCollector(collection: StatsCollection) {
+class TimeSeriesCollector(collection: StatsCollection) extends Service {
   val PERCENTILES = List(0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999, 0.9999)
   val EMPTY_TIMINGS = List.fill(PERCENTILES.size)(0L)
 
@@ -120,4 +120,6 @@ class TimeSeriesCollector(collection: StatsCollection) {
   def shutdown() {
     collector.shutdown()
   }
+
+  def quiesce() = shutdown()
 }

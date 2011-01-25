@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 
+/**
+ * A service is any task that can be shutdown or reloaded by the admin server.
+ */
 trait Service {
   /**
    * Shutdown this server.

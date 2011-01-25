@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
+package com.twitter.admin
 package config
 
 import com.twitter.config.Config
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
+import com.twitter.stats.JsonStatsLogger
 import com.twitter.util.Duration
-import json.JsonStatsLogger
 
 class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] {
   /**
