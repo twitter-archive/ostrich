@@ -16,6 +16,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info) wit
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
   val mockito = "org.mockito" % "mockito-core" % "1.8.4" % "test"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
+  val jmock = "org.jmock" % "jmock" % "2.4.0" % "test"
 
   override def pomExtra =
     <licenses>
