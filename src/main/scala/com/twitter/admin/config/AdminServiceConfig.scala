@@ -20,7 +20,7 @@ package config
 import com.twitter.config.Config
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.stats.JsonStatsLogger
+import com.twitter.stats.{JsonStatsLogger, Stats}
 import com.twitter.util.Duration
 
 class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] {
@@ -58,7 +58,7 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] 
       }
 
       jsonStatsLogger.map { name =>
-        val statsLogger = new JsonStatsLogger(Logger.get(name), jsonStatsLoggerPeriod, jsonStatsServiceName)
+        val statsLogger = new JsonStatsLogger(Logger.get(name), jsonStatsLoggerPeriod, jsonStatsServiceName, Stats)
         ServiceTracker.register(statsLogger)
         statsLogger.start()
       }

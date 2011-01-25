@@ -27,11 +27,12 @@ import com.twitter.util.{Duration, Time}
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.
  */
-class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName: Option[String])
+class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName: Option[String],
+                      collection: StatsCollection)
 extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
-  def this(logger: Logger, period: Duration) = this(logger, period, None)
+  def this(logger: Logger, period: Duration) = this(logger, period, None, Stats)
 
-  val listener = new StatsListener(Stats)
+  val listener = new StatsListener(collection)
   val hostname = InetAddress.getLocalHost().getCanonicalHostName()
 
   def periodic() {
