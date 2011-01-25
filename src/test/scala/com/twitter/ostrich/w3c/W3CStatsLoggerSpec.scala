@@ -38,7 +38,9 @@ object W3CStatsLoggerSpec extends Specification {
     var statsLogger: W3CStatsLogger = null
 
     def getLines() = {
-      handler.get.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
+      val rv = handler.get.split("\n").toList.filter { s => s.startsWith("#Fields") || !s.startsWith("#") }
+      handler.clear()
+      rv
     }
 
     doBefore {
@@ -51,7 +53,7 @@ object W3CStatsLoggerSpec extends Specification {
       collection.incr("cats")
       collection.incr("dogs", 3)
       statsLogger.periodic()
-      getLines() mustEqual "#Fields: cats dogs" :: "1 3" :: Nil
+      getLines() mustEqual "#Fields: cats dogs" :: "948200938 1 3" :: Nil
     }
 
     "log timings" in {
@@ -59,7 +61,10 @@ object W3CStatsLoggerSpec extends Specification {
         collection.time("zzz") { time advance 10.milliseconds }
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
-        getLines() mustEqual "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum" :: "15 2 20 10" :: Nil
+        getLines() mustEqual List(
+          "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum",
+          "2255650878 15 2 20 10"
+        )
       }
     }
 
@@ -72,9 +77,40 @@ object W3CStatsLoggerSpec extends Specification {
         collection.incr("cats")
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
-        getLines() mustEqual "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum" ::
-          "1 3 10 1 10 10" :: "1 0 20 1 20 20" :: Nil
+        getLines() mustEqual List(
+          "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum",
+          "3683459327 1 3 10 1 10 10",
+          "3683459327 1 0 20 1 20 20"
+        )
       }
+    }
+
+    "not repeat the header too often" in {
+      Time.withCurrentTimeFrozen { time =>
+        collection.incr("cats")
+        statsLogger.periodic()
+        getLines() mustEqual "#Fields: cats" :: "2001103910 1" :: Nil
+        collection.incr("cats")
+        statsLogger.periodic()
+        getLines() mustEqual "2001103910 1" :: Nil
+        time advance 10.minutes
+        collection.incr("cats")
+        statsLogger.periodic()
+        getLines() mustEqual "#Fields: cats" :: "2001103910 1" :: Nil
+      }
+    }
+
+    "repeat the header when the fields change" in {
+      collection.incr("cats")
+      statsLogger.periodic()
+      getLines() mustEqual "#Fields: cats" :: "2001103910 1" :: Nil
+      collection.incr("cats")
+      statsLogger.periodic()
+      getLines() mustEqual "2001103910 1" :: Nil
+      collection.incr("cats")
+      collection.incr("dogs")
+      statsLogger.periodic()
+      getLines() mustEqual "#Fields: cats dogs" :: "948200938 1 1" :: Nil
     }
   }
 }

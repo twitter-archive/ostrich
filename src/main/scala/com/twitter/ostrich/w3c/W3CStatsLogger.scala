@@ -28,7 +28,7 @@ class W3CStatsLogger(logger: Logger, frequency: Duration, collection: StatsColle
 extends PeriodicBackgroundProcess("W3CStatsLogger", frequency) {
   def this(logger: Logger, frequency: Duration) = this(logger, frequency, Stats)
 
-  val w3cStats = new W3CStats(logger, Array(), false)
+  val w3cStats = new W3CStats(logger, Array(), true)
   val listener = new StatsListener(collection)
 
   def periodic() {
