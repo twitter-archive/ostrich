@@ -34,7 +34,6 @@ class Heapster(klass: Class[_]) extends Service {
 
   def start() { startM.invoke(null) }
   def shutdown() { stopM.invoke(null) }
-  def quiesce() { shutdown() }
   def setSamplingPeriod(period: java.lang.Integer) { setSamplingPeriodM.invoke(null, period) }
   def clearProfile() { clearProfileM.invoke(null) }
   def dumpProfile(forceGC: java.lang.Boolean): Array[Byte] =

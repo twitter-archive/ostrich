@@ -28,7 +28,7 @@ trait Service {
   /**
    * Shutdown this service.
    */
-  def shutdown(): Unit
+  def shutdown()
 
   /**
    * Stop answering new requests, and close all listening sockets, but only shutdown after the last
@@ -36,7 +36,9 @@ trait Service {
    * while and service those connections, while letting another server start up and begin handling
    * new connections.
    */
-  def quiesce(): Unit
+  def quiesce() {
+    shutdown()
+  }
 
   /**
    * Reload configuration, if supported by the service.

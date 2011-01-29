@@ -120,6 +120,4 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
   def shutdown() {
     collector.shutdown()
   }
-
-  def quiesce() = shutdown()
 }

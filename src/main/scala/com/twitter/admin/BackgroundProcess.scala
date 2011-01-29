@@ -72,7 +72,6 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
       running = true
       super.start()
       startLatch.await()
-      log.info("Started %s", name)
     }
   }
 
@@ -103,10 +102,6 @@ abstract class BackgroundProcess(name: String) extends Thread(name) with Service
       case e: Throwable =>
         log.error(e, "Failed to shutdown background process %s", name)
     }
-  }
-
-  def quiesce() {
-    shutdown()
   }
 }
 
