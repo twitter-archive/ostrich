@@ -20,6 +20,7 @@ import java.io.File
 import java.util.Properties
 import scala.collection.mutable
 import com.twitter.conversions.string._
+import com.twitter.util.Eval
 
 object RuntimeEnvironment {
   /**
@@ -103,9 +104,12 @@ class RuntimeEnvironment(obj: AnyRef) {
         configPath = new File(filename)
         parseArgs(xs)
       case "--help" :: xs =>
-        help
+        help()
       case "--version" :: xs =>
         println("%s %s %s %s".format(jarName, jarVersion, jarBuild, jarBuildRevision))
+        System.exit(0)
+      case "--validate" :: xs =>
+        validate()
       case Nil =>
       case unknown :: _ =>
         println("Unknown command-line option: " + unknown)
@@ -113,7 +117,7 @@ class RuntimeEnvironment(obj: AnyRef) {
     }
   }
 
-  private def help = {
+  private def help() {
     println
     println("%s %s (%s)".format(jarName, jarVersion, jarBuild))
     println("options:")
@@ -121,7 +125,22 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("        path of config files (default: %s)".format(configPath))
     println("    --version")
     println("        show version information")
+    println("    --validate")
+    println("        validate that the config file will compile")
     println
     System.exit(0)
+  }
+
+  private def validate() {
+    try {
+      Eval[Any](configFile)
+      println("Config file %s compiles. :)".format(configFile))
+      System.exit(0)
+    } catch {
+      case e: Eval.CompilerException =>
+        println("Error in config file %s:".format(configFile))
+        println(e.messages.flatten.mkString("\n"))
+        System.exit(1)
+    }
   }
 }
