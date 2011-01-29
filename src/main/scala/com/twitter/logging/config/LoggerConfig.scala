@@ -49,6 +49,7 @@ class LoggerConfig extends Config[Logger] {
     val logger = Logger.get(node)
     level.foreach { x => logger.setLevel(x) }
     handlers.foreach { h => logger.addHandler(h()) }
+    logger.setUseParentHandlers(useParents)
     logger
   }
 }
