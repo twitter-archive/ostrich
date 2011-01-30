@@ -19,7 +19,9 @@ package com.twitter.admin
 import java.io.File
 import java.util.Properties
 import scala.collection.mutable
+import com.twitter.config.Config
 import com.twitter.conversions.string._
+import com.twitter.logging.Logger
 import com.twitter.util.Eval
 
 object RuntimeEnvironment {
@@ -141,6 +143,18 @@ class RuntimeEnvironment(obj: AnyRef) {
         println("Error in config file %s:".format(configFile))
         println(e.messages.flatten.mkString("\n"))
         System.exit(1)
+    }
+  }
+
+  def loadConfig[T](): T = {
+    try {
+      Eval[Config[T]](configFile)()
+    } catch {
+      case e: Eval.CompilerException =>
+        Logger.get("").fatal(e, "Error in config file: %s", configFile)
+        Logger.get("").fatal(e.messages.flatten.mkString("\n"))
+        System.exit(1)
+        throw new Exception("which will never execute because of the System.exit above me.")
     }
   }
 }
