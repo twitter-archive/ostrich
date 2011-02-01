@@ -157,4 +157,8 @@ class RuntimeEnvironment(obj: AnyRef) {
         throw new Exception("which will never execute because of the System.exit above me.")
     }
   }
+
+  def loadRuntimeConfig[T](): T = {
+    loadConfig[RuntimeEnvironment => T]()(this)
+  }
 }
