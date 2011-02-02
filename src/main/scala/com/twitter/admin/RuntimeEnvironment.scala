@@ -84,17 +84,13 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   /**
-   * Config path, as determined from this jar's runtime path, possibly
+   * Config file, as determined from this jar's runtime path, possibly
    * overridden by a command-line option.
    */
-  var configPath: File = jarPath match {
-    case Some(path) => new File(path + "/config/" + stageName)
-    case None => new File("/etc/" + jarName)
+  var configFile: File = jarPath match {
+    case Some(path) => new File(path + "/config/" + stageName + ".scala")
+    case None => new File("/etc/" + jarName + ".conf")
   }
-
-  def loggingConfigFile: File = new File(configPath, "logging.scala")
-
-  def configFile: File = new File(configPath, jarName + ".scala")
 
   /**
    * Perform baseline command-line argument parsing. Responds to `--help`,
@@ -103,7 +99,7 @@ class RuntimeEnvironment(obj: AnyRef) {
   def parseArgs(args: List[String]): Unit = {
     args match {
       case "-f" :: filename :: xs =>
-        configPath = new File(filename)
+        configFile = new File(filename)
         parseArgs(xs)
       case "--help" :: xs =>
         help()
@@ -124,7 +120,7 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("%s %s (%s)".format(jarName, jarVersion, jarBuild))
     println("options:")
     println("    -f <path>")
-    println("        path of config files (default: %s)".format(configPath))
+    println("        path of config files (default: %s)".format(configFile))
     println("    --version")
     println("        show version information")
     println("    --validate")
