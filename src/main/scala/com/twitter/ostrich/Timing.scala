@@ -46,24 +46,30 @@ class Timing {
   /**
    * Adds a duration to our current Timing.
    */
-  def add(n: Int): Long = synchronized {
+  def add(n: Int): Long = {
     if (n > -1) {
-      maximum = n max maximum
-      minimum = n min minimum
-      count += 1
-      histogram.add(n)
-      if (count == 1) {
-        mean = n
-        partialVariance = 0.0
-      } else {
-        val newMean = mean + (n - mean) / count
-        partialVariance += (n - mean) * (n - newMean)
-        mean = newMean
+      val histogramBucketIndex = Histogram.bucketIndex(n)
+      var lcount = 0
+      synchronized {
+        maximum = n max maximum
+        minimum = n min minimum
+        count += 1
+        lcount = count
+        histogram.addToBucket(histogramBucketIndex)
+        if (lcount == 1) {
+          mean = n
+          partialVariance = 0.0
+        } else {
+          val newMean = mean + (n - mean) / lcount
+          partialVariance += (n - mean) * (n - newMean)
+          mean = newMean
+        }
       }
+      return lcount
     } else {
       log.warning("Tried to add a negative timing duration. Was the clock adjusted?")
+      return count
     }
-    count
   }
 
   /**
