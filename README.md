@@ -1,13 +1,14 @@
 # Ostrich
 
-Ostrich is a small library for collecting and reporting runtime statistics and debugging info from a
-scala server. It can collect counters, gauges, and timings, and it can report them via log files or
-a simple web interface that includes graphs. A server can also be asked to shutdown or reload its
-config files using these interfaces. The idea is that it should be simple and straightforward,
-allowing you to plug it in and get started quickly.
+Ostrich is a small library for collecting and reporting runtime statistics and
+debugging info from a scala server. It can collect counters, gauges, and
+timings, and it can report them via log files or a simple web interface that
+includes graphs. A server can also be asked to shutdown or reload its config
+files using these interfaces. The idea is that it should be simple and
+straightforward, allowing you to plug it in and get started quickly.
 
-This library is released under the Apache Software License, version 2, which should be included with
-the source in a file named `LICENSE`.
+This library is released under the Apache Software License, version 2, which
+should be included with the source in a file named `LICENSE`.
 
 
 ## Building
@@ -25,9 +26,10 @@ There are four kinds of statistics that ostrich captures:
 
 - counters
 
-  A counter is a value that never decreases. Examples might be "`widgets_sold`" or "`births`". You
-  just increment the counter each time a countable event happens, and graphing utilities usually
-  graph the deltas over time. To increment a counter, use:
+  A counter is a value that never decreases. Examples might be
+  "`widgets_sold`" or "`births`". You just increment the counter each time a
+  countable event happens, and graphing utilities usually graph the deltas
+  over time. To increment a counter, use:
 
         stats.incr("births")
 
@@ -37,50 +39,125 @@ There are four kinds of statistics that ostrich captures:
 
 - gauges
 
-  A gauge is a value that has a discrete value at any given moment, like "`heap_used`" or
-  "`current_temperature`". It's usually a measurement that you only need to take when someone asks.
-  To define a gauge, stick this code somewhere in the server initialization:
+  A gauge is a value that has a discrete value at any given moment, like
+  "`heap_used`" or "`current_temperature`". It's usually a measurement that
+  you only need to take when someone asks. To define a gauge, stick this code
+  somewhere in the server initialization:
 
-        stats.addGauge("current_temperature") { myThermometer.getTemperatureInCelcius() }
+        stats.addGauge("current_temperature") { myThermometer.temperature }
 
   A gauge method must always return a double.
 
 - metrics
 
-  A metric is tracked via distribution, and is usually used for timings, like so:
+  A metric is tracked via distribution, and is usually used for timings, like
+  so:
 
         stats.time("translation") {
           document.translate("de", "en")
         }
 
-  Metrics are collected by tracking the count, min, max, mean (average), and a simple bucket-based
-  histogram of the distribution. This distribution can be used to determine median, 90th percentile,
-  etc.
+  But you can also add metrics directly:
+
+        stats.addMetric("query_results", results.size)
+
+  Metrics are collected by tracking the count, min, max, mean (average), and a
+  simple bucket-based histogram of the distribution. This distribution can be
+  used to determine median, 90th percentile, etc.
 
 - labels
 
-  A label is just a key/value pair of strings, usually used to report a subsystem's state, like
-  "boiler=offline". They're set with:
-  
-        stats.setLabel("boiler", "online")
-  
-  They have no real statistical value, but can be used to raise flags in logging and monitoring.
+  A label is just a key/value pair of strings, usually used to report a
+  subsystem's state, like "boiler=offline". They're set with:
 
+        stats.setLabel("boiler", "online")
+
+  They have no real statistical value, but can be used to raise flags in
+  logging and monitoring.
+
+
+### Logging
+
+To access logging, you can usually just use:
+
+    import com.twitter.logging.Logger
+    private val log = Logger.get(getClass)
+
+This creates a `Logger` object that uses the current class or object's
+package name as the logging node, so class "com.example.foo.Lamp" will log to
+node "com.example.foo" (generally showing "foo" as the name in the logfile).
+You can also get a logger explicitly by name:
+
+    private val log = Logger.get("com.example.foo")
+
+Logger objects wrap everything useful from "java.util.logging.Logger", as well
+as adding some convenience methods:
+
+    // log a string with sprintf conversion:
+    log.info("Starting compaction on level %d...", level)
+
+    try {
+      ...
+    } catch {
+      // log an exception backtrace with the message:
+      case e: IOException => log.error(e, "I/O exception: %s", e.getMessage)
+    }
+
+Each of the log levels (from "fatal" to "trace") has these two convenience
+methods. You may also use `log` directly:
+
+    log(Logger.DEBUG, "Logging %s at debug level.", name)
+
+An advantage to using sprintf ("%s", etc) conversion, as opposed to:
+
+    log(Logger.DEBUG, "Logging " + name + " at debug level.")
+
+is that java & scala perform string concatenation at runtime, even if nothing
+will be logged because the logfile isn't writing debug messages right now.
+With sprintf parameters, the arguments are just bundled up and passed directly
+to the logging level before formatting. If no log message would be written to
+any file or device, then no formatting is done and the arguments are thrown
+away. That makes it very inexpensive to include excessive debug logging which
+can be turned off without recompiling and re-deploying.
+
+If you prefer, there are also variants that take lazy-evaluated parameters,
+and only evaluate them if logging is active at that level:
+
+    log.ifDebug("Login from " + name + " at " + date + ".")
+
+The logging classes are done as an extension to the `java.util.logging` API,
+and so you can use the java interface directly, if you want to. Each of the
+java classes (Logger, Handler, Formatter) is just wrapped by a scala class
+with a cleaner interface.
+
+
+## Quick Start
+
+...
 
 ## Stats API
 
-The base trait of the stats API is `StatsProvider`, which defines methods for setting and getting
-each type of collected stat. The concrete implementation is `StatsCollection`, which stores them all
-in java concurrent hash maps.
+The base trait of the stats API is `StatsProvider`, which defines methods for
+setting and getting each type of collected stat. The concrete implementation
+is `StatsCollection`, which stores them all in java concurrent hash maps.
 
-To log or report stats, attach a `StatsReporter` to a `StatsCollection`. A `StatsReporter` keeps its
-own state, and resets that state each time it reports. You can attach multiple `StatsReporter`s to
-track independent state without affecting the `StatsCollection`.
+To log or report stats, attach a `StatsReporter` to a `StatsCollection`. A
+`StatsReporter` keeps its own state, and resets that state each time it
+reports. You can attach multiple `StatsReporter`s to track independent state
+without affecting the `StatsCollection`.
 
 
 
 --- everything below here needs work.
-
+## Web/socket commands
+## Web graphs
+## Admin API
+## Config keys
+## Profiling
+## Credits
+## Basic Use ### Logging
+## Advanced Features ### Logging
+## Advanced Features ### Logging with scribe
 
 
 
@@ -94,13 +171,8 @@ which can be performed using 'curl' or 'wget':
 
     $ curl http://localhost:9990/shutdown
 
-while over the plain-text socket, commands are simply typed as-is, followed by a linefeed:
-
-    <command>[/<type>] <parameters...>
-
-The result body may be json or plain-text, depending on <type>. Over the web interface, the default
-is json, but over the socket interface, the default is plain-text. You can override these defaults
-like so:
+The result body may be json or plain-text, depending on <type>. The default is
+json, but you can ask for text like so:
 
     $ curl http://localhost:9990/stats/reset.txt
 
@@ -503,58 +575,4 @@ The following options can be set for scribe logging:
   this (default: 15000 msec, or 15 sec)
 
 
-
-### Logging
-
-To access a logger from within a class or object, you can usually just use:
-
-    import net.lag.logging.Logger
-    private val log = Logger.get
-
-This creates a `Logger` object that uses the current class or object's
-package name as the logging node, so class "com.example.foo.Lamp" will log to
-node "com.example.foo" (generally showing "foo" as the name in the logfile).
-You can also get a logger explicitly by name:
-
-    private val log = Logger.get("com.example.foo")
-
-Logger objects wrap everything useful from "java.util.logging.Logger", as well
-as adding some convenience methods:
-
-    // log a string with sprintf conversion:
-    log.info("Starting compaction on level %d...", level)
-    
-    try {
-      ...
-    } catch {
-      // log an exception backtrace with the message:
-      case x: IOException => log.info(x, "I/O exception: %s", x.getMessage)
-    }
-
-Each of the log levels (from "fatal" to "trace") has these two convenience
-methods. You may also use `log` directly:
-
-    log(Logger.DEBUG, "Logging %s at debug level.", name)
-
-An advantage to using sprintf ("%s", etc) conversion, as opposed to:
-
-    log(Logger.DEBUG, "Logging " + name + " at debug level.")
-
-is that java & scala perform string concatenation at runtime, even if nothing
-will be logged because the logfile isn't writing debug messages right now.
-With sprintf parameters, the arguments are just bundled up and passed directly
-to the logging level before formatting. If no log message would be written to
-any file or device, then no formatting is done and the arguments are thrown
-away. That makes it very inexpensive to include excessive debug logging which
-can be turned off without recompiling and re-deploying.
-
-If you prefer, there are also variants that take lazy-evaluated parameters,
-and only evaluate them if logging is active at that level:
-
-    log.ifDebug("Login from " + name + " at " + date + ".")
-
-The logging classes are done as an extension to the `java.util.logging` API,
-and so if you want to use the java interface directly, you can. Each of the
-java classes (Logger, Handler, Formatter) is just wrapped by a scala class
-with a cleaner interface.
 
