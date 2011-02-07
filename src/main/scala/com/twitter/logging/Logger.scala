@@ -72,13 +72,14 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
   /**
    * Log a message, with sprintf formatting, at the desired level.
    */
-  def log(level: Level, msg: String, items: Any*): Unit = log(level, null: Throwable, msg, items: _*)
+  final def log(level: Level, message: String, items: Any*): Unit =
+    log(level, null: Throwable, message, items: _*)
 
   /**
    * Log a message, with sprintf formatting, at the desired level, and
    * attach an exception and stack trace.
    */
-  def log(level: Level, thrown: Throwable, message: String, items: Any*): Unit = {
+  final def log(level: Level, thrown: Throwable, message: String, items: Any*) {
     val myLevel = getLevel
     if ((myLevel eq null) || (level.intValue >= myLevel.intValue)) {
       val record = new javalog.LogRecord(level, message)
@@ -92,6 +93,10 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
       wrapped.log(record)
     }
   }
+
+  final def apply(level: Level, message: String, items: Any*) = log(level, message, items)
+
+  final def apply(level: Level, thrown: Throwable, message: String, items: Any*) = log(level, thrown, message, items)
 
   // convenience methods:
   def fatal(msg: String, items: Any*) = log(Level.FATAL, msg, items: _*)
