@@ -100,7 +100,8 @@ as adding some convenience methods:
       ...
     } catch {
       // log an exception backtrace with the message:
-      case e: IOException => log.error(e, "I/O exception: %s", e.getMessage)
+      case e: IOException =>
+        log.error(e, "I/O exception: %s", e.getMessage)
     }
 
 Each of the log levels (from "fatal" to "trace") has these two convenience
