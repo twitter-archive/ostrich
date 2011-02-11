@@ -27,6 +27,8 @@ object Histogram {
           174339, 226641, 294633, 383023, 497930, 647308, 841501, 1093951)
   val bucketOffsetSize = BUCKET_OFFSETS.size
 
+  def bucketIndex(key: Int): Int = binarySearch(key)
+
   @tailrec
   private def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
     if (low > high) {
@@ -60,10 +62,21 @@ class Histogram {
   val buckets = new Array[Int](numBuckets)
   var total = 0
 
-  def add(n: Int) {
-    val index = Histogram.binarySearch(n)
+  /**
+   * Adds a value directly to a bucket in a histogram. Can be used for
+   * performance reasons when modifying the histogram object from within a
+   * synchronized block.
+   *
+   * @param index the index of the bucket. Should be obtained from a value by
+   * calling Histogram.bucketIndex(n) on the value.
+   */
+  def addToBucket(index: Int) {
     buckets(index) += 1
     total += 1
+  }
+
+  def add(n: Int) {
+    addToBucket(Histogram.bucketIndex(n))
   }
 
   def clear() {

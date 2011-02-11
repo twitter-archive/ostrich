@@ -45,21 +45,27 @@ class Metric {
   /**
    * Adds a data point.
    */
-  def add(n: Int): Long = synchronized {
+  def add(n: Int): Long = {
+    val histogramBucketIndex = Histogram.bucketIndex(n)
+    var rv = 0
     if (n > -1) {
-      maximum = n max maximum
-      minimum = n min minimum
-      count += 1
-      histogram.add(n)
-      if (count == 1) {
-        mean = n
-      } else {
-        mean += (n.toDouble - mean) / count
+      synchronized {
+        maximum = n max maximum
+        minimum = n min minimum
+        count += 1
+        rv = count
+        histogram.addToBucket(histogramBucketIndex)
+        if (rv == 1) {
+          mean = n
+        } else {
+          mean += (n.toDouble - mean) / count
+        }
       }
+      rv
     } else {
       log.warning("Tried to add a negative data point.")
+      count
     }
-    count
   }
 
   /**
