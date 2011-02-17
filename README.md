@@ -134,7 +134,75 @@ with a cleaner interface.
 
 ## Quick Start
 
-...
+A good example server is created by the scala-build project here:
+<http://github.com/twitter/scala-build>
+
+Define a server config class:
+
+    class MyServerConfig extends Config[RuntimeEnvironment => MyServer] {
+      var loggers: List[LoggerConfig] = Nil
+      var admin = new AdminServiceConfig()
+    
+      var serverPort: Int = 9999
+    
+      def apply() = { (runtime: RuntimeEnvironment) =>
+        Logger.configure(loggers)
+        admin()(runtime)
+        val server = new MyServer(serverPort)
+        ServiceTracker.register(server)
+        server
+      }
+    }
+
+A config class contains things you want to configure on your server, as vars,
+and an `apply` method that returns a method turning a RuntimeEnvironment into
+your server. The first two lines of the `apply` method configure logging and
+set up the optional admin HTTP server if it was configured. Your server object
+is created, then registered with the `ServiceTracker` so that it will be
+shutdown when the admin port receives a shutdown command.
+
+Next, make a simple config file for development:
+
+    import com.twitter.admin.config._
+    import com.twitter.conversions.time._
+    import com.twitter.logging.config._
+    import com.example.config._
+    
+    new MyServerConfig {
+      serverPort = 9999
+      admin.httpPort = 9900
+    
+      loggers = new LoggerConfig {
+        level = Level.INFO
+        handlers = new ConsoleHandlerConfig()
+      }
+    }
+
+The config file will be evaluated at runtime by this code in your Main class:
+
+    object Main {
+      val log = Logger.get(getClass.getName)
+    
+      def main(args: Array[String]) {
+        val runtime = RuntimeEnvironment(this, args)
+        val server = runtime.loadRuntimeConfig[MyServer]()
+        log.info("Starting my server!")
+        try {
+          server.start()
+        } catch {
+          case e: Exception =>
+            e.printStackTrace()
+            log.error(e, "Unexpected exception: %s", e.getMessage)
+            System.exit(0)
+        }
+      }
+    }
+
+Your `MyServer` class should implement the `Service` interface so it can be
+started and shutdown. The runtime environment will find your config file and
+evaluate it, returning the `MyServer` object to you so you can start it. And
+you're set!
+
 
 ## Stats API
 
