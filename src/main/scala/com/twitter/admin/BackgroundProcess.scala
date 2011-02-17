@@ -34,7 +34,7 @@ object BackgroundProcess {
           f
         } catch {
           case e: Throwable =>
-            log.error(e, "Spawned thread %s died with a terminal exception", Thread.currentThread)
+            log.error(e, "Spawned thread %s (%s) died with a terminal exception", threadName, Thread.currentThread)
         }
       }
     }
