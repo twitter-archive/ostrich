@@ -76,7 +76,7 @@ There are four kinds of statistics that ostrich captures:
   logging and monitoring.
 
 
-### Logging
+## Logging
 
 To access logging, you can usually just use:
 
