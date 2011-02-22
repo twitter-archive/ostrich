@@ -116,7 +116,7 @@ can implement `quiesce` as a call to `shutdown` if the distinction makes no sens
 
 An example:
 
-    import com.twitter.ostrich.{Server, ServerInterface}
+    import com.twitter.ostrich.{Service, ServiceTracker}
     import net.lag.configgy.{Configgy, RuntimeEnvironment}
 
     object Main extends Service {
