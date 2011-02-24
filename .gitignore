@@ -1,3 +1,4 @@
+out
 target
 dist
 #*#
@@ -8,9 +9,13 @@ dist
 *.ipr
 *.iws
 *.swp
+.idea
+*.iml
 lib_managed
 project/boot
 .DS_Store
 src_managed
+.ensime
 project/plugins/project
 ostrich.tmproj
+.ivyjars
