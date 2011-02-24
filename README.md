@@ -139,26 +139,18 @@ A good example server is created by the scala-build project here:
 
 Define a server config class:
 
-    class MyServerConfig extends Config[RuntimeEnvironment => MyServer] {
-      var loggers: List[LoggerConfig] = Nil
-      var admin = new AdminServiceConfig()
-    
+    class MyServerConfig extends ServerConfig[MyServer] {
       var serverPort: Int = 9999
     
-      def apply() = { (runtime: RuntimeEnvironment) =>
-        Logger.configure(loggers)
-        admin()(runtime)
-        val server = new MyServer(serverPort)
-        ServiceTracker.register(server)
-        server
+      def apply(runtime: RuntimeEnvironment) = {
+        new MyServer(serverPort)
       }
     }
 
-A config class contains things you want to configure on your server, as vars,
-and an `apply` method that returns a method turning a RuntimeEnvironment into
-your server. The first two lines of the `apply` method configure logging and
-set up the optional admin HTTP server if it was configured. Your server object
-is created, then registered with the `ServiceTracker` so that it will be
+A `ServiceConfig` class contains things you want to configure on your server, as vars,
+and an `apply` method that turns a RuntimeEnvironment into
+your server. `ServiceConfig` is actually a helper for `Config` that adds logging configuration,
+sets up the optional admin HTTP server if it was configured, and registers your service with the `ServiceTracker` so that it will be
 shutdown when the admin port receives a shutdown command.
 
 Next, make a simple config file for development:

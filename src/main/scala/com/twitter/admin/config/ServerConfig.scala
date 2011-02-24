@@ -21,7 +21,7 @@ import com.twitter.config.Config
 import com.twitter.logging.Logger
 import com.twitter.logging.config.LoggerConfig
 
-abstract class ServiceConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
+abstract class ServerConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
   var loggers: List[LoggerConfig] = Nil
   var admin = new AdminServiceConfig()
 
