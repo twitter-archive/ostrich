@@ -154,8 +154,8 @@ class HeapResourceHandler extends CgiRequestHandler {
     }
     val heapster = Heapster.instance.get
 
-    val params = 
-      parameters.foldLeft(Params(10.seconds, 10<<19, true)) {
+    val params =
+      parameters.foldLeft(Params(10.seconds, 10 << 19, true)) {
         case (params, "pause" :: pauseVal :: _) =>
           params.copy(pause = pauseVal.toInt.seconds)
         case (params, "sample_period" :: sampleVal :: _) =>
