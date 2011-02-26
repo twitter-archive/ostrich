@@ -14,7 +14,6 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info) wit
   val cglib = "cglib" % "cglib" % "2.1_3" % "test"
   val asm = "asm" % "asm" % "1.5.3" % "test"
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
-  val mockito = "org.mockito" % "mockito-core" % "1.8.4" % "test"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
   val jmock = "org.jmock" % "jmock" % "2.4.0" % "test"
 
