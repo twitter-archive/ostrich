@@ -45,13 +45,13 @@ object ServiceTrackerSpec extends Specification with JMocker {
     "quiesce" in {
       ServiceTracker.register(service)
       expect { one(service).quiesce() }
-      ServiceTracker.shutdown()
+      ServiceTracker.quiesce()
     }
 
     "reload" in {
       ServiceTracker.register(service)
       expect { one(service).reload() }
-      ServiceTracker.shutdown()
+      ServiceTracker.reload()
     }
   }
 }
