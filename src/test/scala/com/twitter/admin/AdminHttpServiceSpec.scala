@@ -22,9 +22,8 @@ import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import com.twitter.stats.Stats
 import org.specs.Specification
-import org.specs.mock.Mockito
 
-object AdminHttpServiceSpec extends Specification with Mockito {
+object AdminHttpServiceSpec extends Specification {
   val PORT = 9996
   val BACKLOG = 20
 
@@ -39,7 +38,7 @@ object AdminHttpServiceSpec extends Specification with Mockito {
     doBefore {
       Logger.reset()
       Logger.get("").setLevel(Level.OFF)
-      service = spy(new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass)))
+      service = new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass))
       service.start()
     }
 
@@ -102,19 +101,16 @@ object AdminHttpServiceSpec extends Specification with Mockito {
 
       service.shutdown()
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      there was atLeastOne(service).shutdown()
     }
 
     "shutdown" in {
       get("/shutdown.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      there was atLeastOne(service).shutdown()
     }
 
     "quiesce" in {
       get("/quiesce.json")
       new Socket("localhost", PORT) must eventually(throwA[SocketException])
-      there was atLeastOne(service).quiesce()
     }
 
     "get a proper web page back for the report URL" in {
