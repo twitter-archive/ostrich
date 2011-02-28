@@ -25,7 +25,7 @@ abstract class ServerConfig[T <: Service] extends Config[RuntimeEnvironment => T
   var loggers: List[LoggerConfig] = Nil
   var admin = new AdminServiceConfig()
 
-  protected var httpServer: AdminHttpService = null
+  protected var httpServer: Option[AdminHttpService] = None
 
   def apply() = { (runtime: RuntimeEnvironment) =>
     Logger.configure(loggers)

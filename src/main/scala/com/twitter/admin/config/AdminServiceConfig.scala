@@ -67,7 +67,7 @@ class StatsConfig extends Config[AdminHttpService => StatsCollection] {
   }
 }
 
-class AdminServiceConfig extends Config[RuntimeEnvironment => AdminHttpService] {
+class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpService]] {
   /**
    * (optional) HTTP port.
    */
