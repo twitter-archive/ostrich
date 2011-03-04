@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter
+package com.twitter.ostrich
 package logging
 
 import java.io.{File, InputStream}
@@ -168,7 +168,6 @@ class Logger private(val name: String, private val wrapped: javalog.Logger) {
     }
   }
 }
-
 
 object Logger extends Iterable[Logger] {
   private[logging] val levelNamesMap = new mutable.HashMap[String, Level]

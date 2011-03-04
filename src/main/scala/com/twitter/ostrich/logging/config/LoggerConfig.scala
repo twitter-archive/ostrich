@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.logging
+package com.twitter.ostrich.logging
 package config
 
 import java.net.InetAddress

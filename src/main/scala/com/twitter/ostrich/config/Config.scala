@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.config
+package com.twitter.ostrich.config
 
 /**
  * A config object contains vars for configuring an object of type T, and an apply() method

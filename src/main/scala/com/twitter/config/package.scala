@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Twitter, Inc.
+ * Copyright 2011 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package logging
+package com.twitter
 
 package object config {
-  type Level = logging.Level
-  val Level = logging.Level
-  type Policy = logging.Policy
-  val Policy = logging.Policy
+  type Config[T] = com.twitter.ostrich.config.Config[T]
 }
