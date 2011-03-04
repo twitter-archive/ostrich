@@ -147,15 +147,9 @@ class ScribeHandler(hostname: String, port: Int, category: String, bufferTime: D
     socket = None
   }
 
-  def publish(record: javalog.LogRecord): Unit = synchronized {
+  def publish(record: javalog.LogRecord): Unit = {
     if (record.getLoggerName == "scribe") return
-    queue += getFormatter.format(record).getBytes("UTF-8")
-    while (queue.size > maxMessagesToBuffer) {
-      queue.trimStart(1)
-    }
-    if (Time.now - lastTransmission >= bufferTime) {
-      flush()
-    }
+    publish(getFormatter.format(record).getBytes("UTF-8"))
   }
 
   def publish(record: Array[Byte]): Unit = synchronized {
