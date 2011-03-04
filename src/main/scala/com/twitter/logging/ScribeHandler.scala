@@ -43,7 +43,7 @@ class ScribeHandler(hostname: String, port: Int, category: String, bufferTime: D
   var lastConnectAttempt = Time.epoch
 
   var socket: Option[Socket] = None
-  val queue = new mutable.ArrayBuffer[String]
+  val queue = new mutable.ArrayBuffer[Array[Byte]]
 
   var archaicServer = false
 
@@ -107,7 +107,7 @@ class ScribeHandler(hostname: String, port: Int, category: String, bufferTime: D
   }
 
   def makeBuffer(count: Int): ByteBuffer = {
-    val texts = for (i <- 0 until count) yield queue(i).getBytes("UTF-8")
+    val texts = for (i <- 0 until count) yield queue(i)
 
     val recordHeader = ByteBuffer.wrap(new Array[Byte](10 + category.length))
     recordHeader.order(ByteOrder.BIG_ENDIAN)
@@ -149,7 +149,17 @@ class ScribeHandler(hostname: String, port: Int, category: String, bufferTime: D
 
   def publish(record: javalog.LogRecord): Unit = synchronized {
     if (record.getLoggerName == "scribe") return
-    queue += getFormatter.format(record)
+    queue += getFormatter.format(record).getBytes("UTF-8")
+    while (queue.size > maxMessagesToBuffer) {
+      queue.trimStart(1)
+    }
+    if (Time.now - lastTransmission >= bufferTime) {
+      flush()
+    }
+  }
+
+  def publish(record: Array[Byte]): Unit = synchronized {
+    queue += record
     while (queue.size > maxMessagesToBuffer) {
       queue.trimStart(1)
     }
