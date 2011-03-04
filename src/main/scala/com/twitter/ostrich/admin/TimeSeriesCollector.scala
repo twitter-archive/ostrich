@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.admin
+package com.twitter.ostrich.admin
 
 import scala.collection.{immutable, mutable}
 import com.sun.net.httpserver.HttpExchange
