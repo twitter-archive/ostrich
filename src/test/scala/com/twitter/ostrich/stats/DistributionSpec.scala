@@ -33,8 +33,8 @@ object DistributionSpec extends Specification {
         Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15)
       Distribution(2, 20, 10, Some(histogram), 15.0).toMap mustEqual
         Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15,
-            "p25" -> 10, "p50" -> 10, "p75" -> 23, "p90" -> 23, "p99" -> 23,
-            "p999" -> 23, "p9999" -> 23)
+            "p25" -> 10, "p50" -> 10, "p75" -> 20, "p90" -> 20, "p99" -> 20,
+            "p999" -> 20, "p9999" -> 20)
     }
 
     "toJson" in {
