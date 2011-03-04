@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.stats
+package com.twitter.ostrich.stats
 
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.util.Duration

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.stats
+package com.twitter.ostrich.stats
 
 import com.twitter.logging.Logger
 import com.twitter.admin.PeriodicBackgroundProcess
