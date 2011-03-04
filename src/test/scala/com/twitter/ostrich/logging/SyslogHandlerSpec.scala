@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter
+package com.twitter.ostrich
 package logging
 
 import java.net.{DatagramPacket, DatagramSocket, InetSocketAddress}

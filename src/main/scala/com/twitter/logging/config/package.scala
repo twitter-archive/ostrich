@@ -28,4 +28,9 @@ package object config {
   type FileHandlerConfig = com.twitter.ostrich.logging.config.FileHandlerConfig
   type SyslogHandlerConfig = com.twitter.ostrich.logging.config.SyslogHandlerConfig
   type ScribeHandlerConfig = com.twitter.ostrich.logging.config.ScribeHandlerConfig
+
+  type Level = com.twitter.ostrich.logging.Level
+  val Level = com.twitter.ostrich.logging.Level
+  type Policy = com.twitter.ostrich.logging.Policy
+  val Policy = com.twitter.ostrich.logging.Policy
 }

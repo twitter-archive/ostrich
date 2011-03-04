@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.logging
+package com.twitter.ostrich.logging
 
 import com.twitter.util.{TempFolder, Time}
 import com.twitter.conversions.time._

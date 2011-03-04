@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter.logging
+package com.twitter.ostrich.logging
 
 import java.net.InetSocketAddress
 import java.util.concurrent.{Callable, CountDownLatch, Executors, Future, TimeUnit}
@@ -79,7 +79,7 @@ class LoggerSpec extends Specification with TempFolder {
 
     "figure out package names" in {
       val log1 = Logger(getClass)
-      log1.name mustEqual "com.twitter.logging.LoggerSpec"
+      log1.name mustEqual "com.twitter.ostrich.logging.LoggerSpec"
     }
 
     "log a message, with timestamp" in {

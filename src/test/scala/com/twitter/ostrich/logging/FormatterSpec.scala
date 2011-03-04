@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.twitter
+package com.twitter.ostrich
 package logging
 
 import java.util.{logging => javalog}
@@ -142,11 +142,11 @@ class FormatterSpec extends Specification {
           case t: Throwable => t
         }
         Formatter.formatStackTrace(exception, 5).map { scrub(_) } mustEqual List(
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
           "    (...more...)")
       }
 
@@ -158,12 +158,12 @@ class FormatterSpec extends Specification {
           case t: Throwable => t
         }
         Formatter.formatStackTrace(exception, 2).map { scrub(_) } mustEqual List(
-          "    at com.twitter.logging.FormatterSpec$$.cycle2(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.apply(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle2(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.apply(FormatterSpec.scala:NNN)",
           "    (...more...)",
           "Caused by java.lang.Exception: Aie!",
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
+          "    at com.twitter.ostrich.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
           "    (...more...)")
       }
     }
