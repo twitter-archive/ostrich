@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 package config
 
-import com.twitter.config.Config
 import com.twitter.logging.Logger
 import com.twitter.logging.config.LoggerConfig
+import com.twitter.util.Config
 
 abstract class ServerConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
   var loggers: List[LoggerConfig] = Nil

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.stats
+package com.twitter.ostrich
+package stats
 
 import java.net.InetAddress
 import java.text.SimpleDateFormat

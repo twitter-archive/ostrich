@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import com.twitter.stats.Stats
 import org.specs.Specification
+import stats.Stats
 
 object AdminHttpServiceSpec extends Specification {
   val PORT = 9996

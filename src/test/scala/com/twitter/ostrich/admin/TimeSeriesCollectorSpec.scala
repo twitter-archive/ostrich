@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 
 import java.net.URL
 import scala.collection.immutable
@@ -22,9 +23,9 @@ import scala.io.Source
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.json.Json
-import com.twitter.stats.Stats
 import com.twitter.util.Time
 import org.specs.Specification
+import stats.Stats
 
 object TimeSeriesCollectorSpec extends Specification {
   "TimeSeriesCollector" should {

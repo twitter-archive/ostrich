@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 
 import scala.collection.{immutable, mutable}
 import com.sun.net.httpserver.HttpExchange
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.Logger
-import com.twitter.stats._
 import com.twitter.util.{Duration, Time}
+import stats._
 
 /**
  * Collect stats over a rolling window of the last hour and report them to a web handler,

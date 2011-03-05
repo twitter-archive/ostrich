@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket}

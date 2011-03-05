@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 package config
 
 import java.net.{Socket, SocketException, URL}
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
-import com.twitter.stats.{JsonStatsLogger, Stats, W3CStatsLogger}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
+import stats.{JsonStatsLogger, Stats, W3CStatsLogger}
 
 class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker {
   val port = 9990

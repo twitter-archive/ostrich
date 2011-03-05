@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 
 import java.io._
 import java.lang.management.ManagementFactory
@@ -22,7 +23,7 @@ import java.util.Date
 import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
 import com.twitter.json.Json
-import com.twitter.stats.Stats
+import stats.Stats
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 

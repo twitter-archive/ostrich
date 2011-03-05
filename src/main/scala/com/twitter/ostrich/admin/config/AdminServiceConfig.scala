@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.admin
+package com.twitter.ostrich
+package admin
 package config
 
-import com.twitter.config.Config
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.stats._
-import com.twitter.util.Duration
+import com.twitter.util.{Config, Duration}
+import stats._
 
 abstract class StatsReporterConfig extends Config[(StatsCollection, AdminHttpService) => Service]
 
