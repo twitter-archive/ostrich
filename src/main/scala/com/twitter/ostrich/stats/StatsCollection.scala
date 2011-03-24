@@ -20,7 +20,6 @@ import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.json.{Json, JsonSerializable}
-
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
@@ -48,6 +47,24 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     out += ("jvm_nonheap_max" -> nonheap.getMax())
     out += ("jvm_nonheap_used" -> nonheap.getUsed())
 
+    val gcs = JavaConversions.asScalaIterable(
+      ManagementFactory.getGarbageCollectorMXBeans())
+    var gcCount = 0L
+    var gcTimes = 0L
+    for (gc <- gcs) {
+      val prefix = "jvm_gc_" + gc.getName()
+      out += (prefix + "_count" -> gc.getCollectionCount().toLong)
+      out += (prefix + "_time" -> gc.getCollectionTime().toLong)
+      out += (prefix + "_time_avg" ->
+              (gc.getCollectionTime() / (gc.getCollectionCount() + 1)).toLong)
+
+      gcCount += gc.getCollectionCount().toLong
+      gcTimes += gc.getCollectionTime().toLong
+    }
+    out += ("jvm_gc_all_count" -> gcCount)
+    out += ("jvm_gc_all_time" -> gcTimes)
+    out += ("jvm_gc_all_time_avg" -> (gcCount / (gcTimes + 1)))
+
     val threads = ManagementFactory.getThreadMXBean()
     out += ("jvm_thread_daemon_count" -> threads.getDaemonThreadCount().toLong)
     out += ("jvm_thread_count" -> threads.getThreadCount().toLong)
@@ -59,6 +76,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
     val os = ManagementFactory.getOperatingSystemMXBean()
     out += ("jvm_num_cpus" -> os.getAvailableProcessors().toLong)
+    out += ("jvm_load_avg" -> os.getAvailableProcessors().toLong)
 
     out
   }

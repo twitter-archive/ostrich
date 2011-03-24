@@ -35,9 +35,31 @@ object StatsCollectionSpec extends Specification {
     "fillInJvmGauges" in {
       val map = new mutable.HashMap[String, Double]
       collection.fillInJvmGauges(map)
-      map.keys.toList must contain("jvm_num_cpus")
-      map.keys.toList must contain("jvm_heap_used")
-      map.keys.toList must contain("jvm_start_time")
+      val keys = map.keys.toList
+
+      keys must contain("jvm_heap_committed")
+      keys must contain("jvm_heap_max")
+      keys must contain("jvm_heap_used")
+
+      keys must contain("jvm_nonheap_committed")
+      keys must contain("jvm_nonheap_max")
+      keys must contain("jvm_nonheap_used")
+
+      keys must contain("jvm_gc_all_count")
+      keys must contain("jvm_gc_all_time")
+      keys must contain("jvm_gc_all_time_avg")
+
+      keys must contain("jvm_thread_daemon_count")
+      keys must contain("jvm_thread_count")
+      keys must contain("jvm_thread_peak_count")
+
+      keys must contain("jvm_start_time")
+      keys must contain("jvm_uptime")
+
+      keys must contain("jvm_num_cpus")
+      keys must contain("jvm_load_avg")
+
+      println(keys.mkString("\n"))
     }
 
     "counters" in {
