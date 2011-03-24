@@ -36,6 +36,8 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def fillInJvmGauges(out: mutable.Map[String, Double]) {
     val mem = ManagementFactory.getMemoryMXBean()
+    val gcs = JavaConversions.asScalaIterable(
+      ManagementFactory.getGarbageCollectorMXBeans())
 
     val heap = mem.getHeapMemoryUsage()
     out += ("jvm_heap_committed" -> heap.getCommitted())
@@ -47,8 +49,6 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     out += ("jvm_nonheap_max" -> nonheap.getMax())
     out += ("jvm_nonheap_used" -> nonheap.getUsed())
 
-    val gcs = JavaConversions.asScalaIterable(
-      ManagementFactory.getGarbageCollectorMXBeans())
     var gcCount = 0L
     var gcTimes = 0L
     for (gc <- gcs) {
@@ -56,14 +56,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
       out += (prefix + "_count" -> gc.getCollectionCount().toLong)
       out += (prefix + "_time" -> gc.getCollectionTime().toLong)
       out += (prefix + "_time_avg" ->
-              (gc.getCollectionTime() / (gc.getCollectionCount() + 1)).toLong)
+              (gc.getCollectionTime() / math.max(gc.getCollectionCount(), 1)).toLong)
 
       gcCount += gc.getCollectionCount().toLong
       gcTimes += gc.getCollectionTime().toLong
     }
     out += ("jvm_gc_all_count" -> gcCount)
     out += ("jvm_gc_all_time" -> gcTimes)
-    out += ("jvm_gc_all_time_avg" -> (gcCount / (gcTimes + 1)))
+    out += ("jvm_gc_all_time_avg" -> (gcCount / math.max(gcTimes, 1)).toLong)
 
     val threads = ManagementFactory.getThreadMXBean()
     out += ("jvm_thread_daemon_count" -> threads.getDaemonThreadCount().toLong)
