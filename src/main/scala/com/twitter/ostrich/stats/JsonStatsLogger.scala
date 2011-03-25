@@ -19,8 +19,8 @@ package stats
 
 import java.net.InetAddress
 import scala.collection.immutable
+import com.codahale.jerkson.Json.generate
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 import admin.PeriodicBackgroundProcess
@@ -55,6 +55,6 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
       )
     val cleanedKeysStatMap = statMap.map { case (key, value) => (key.replaceAll(":", "_"), value) }
 
-    logger.info(Json.build(Map(cleanedKeysStatMap.toSeq: _*)).toString)
+    logger.info(generate(Map(cleanedKeysStatMap.toSeq: _*)).toString)
   }
 }

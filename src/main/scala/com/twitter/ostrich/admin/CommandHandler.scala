@@ -22,7 +22,7 @@ import java.lang.management.ManagementFactory
 import java.util.Date
 import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
-import com.twitter.json.Json
+import com.codahale.jerkson.Json.generate
 import stats.Stats
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
@@ -64,10 +64,11 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         flatten(rv)
       case Format.Json =>
         // force it into a map because some json clients expect the top-level object to be a map.
-        Json.build(rv match {
-          case x: Map[_, _] => x
-          case _ => immutable.Map("response" -> rv)
-        }).toString + "\n"
+        rv match {
+          case x: Map[_, _] =>
+            generate(x.asInstanceOf[Map[String, Map[String, Any]]])
+          case _ => generate(immutable.Map("response" -> rv))
+        }
     }
   }
 

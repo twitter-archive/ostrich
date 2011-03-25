@@ -16,18 +16,17 @@
 
 package com.twitter.ostrich.stats
 
+import com.codahale.jerkson.Json.generate
 import scala.collection.Map
 import scala.collection.immutable
 import scala.util.Sorting
-import com.twitter.json.{Json, JsonSerializable}
 
 /**
  * A set of data points summarized into a histogram, mean, min, and max.
  * Distributions are immutable.
  */
 case class Distribution(count: Int, maximum: Int, minimum: Int, histogram: Option[Histogram],
-                        mean: Double)
-extends JsonSerializable {
+                        mean: Double) {
   def average = mean
 
   def this(count: Int, maximum: Int, minimum: Int, mean: Double) =
@@ -38,7 +37,7 @@ extends JsonSerializable {
       case None => immutable.Map.empty[String, Any]
       case Some(h) => immutable.Map[String, Any]("histogram" -> h.get(false))
     })
-    Json.build(out).toString
+    generate(out).toString
   }
 
   override def equals(other: Any) = other match {

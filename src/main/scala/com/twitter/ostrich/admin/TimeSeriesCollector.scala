@@ -18,9 +18,9 @@ package com.twitter.ostrich
 package admin
 
 import scala.collection.{immutable, mutable}
+import com.codahale.jerkson.Json.generate
 import com.sun.net.httpserver.HttpExchange
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 import stats._
@@ -82,7 +82,7 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
     val times = (for (i <- 0 until 60) yield (lastCollection + (i - 59).minutes).inSeconds).toList
     if (hourly.keySet contains name) {
       val data = times.zip(hourly(name).toList).map { case (a, b) => List(a, b) }
-      Json.build(immutable.Map(name -> data)).toString + "\n"
+      generate(immutable.Map(name -> data)).toString + "\n"
     } else {
       val timings = hourlyTimings(name).toList
       val data = times.zip(timings).map { case (a, b) => List(a) ++ b }
@@ -91,7 +91,7 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
           selection.isEmpty || index == 0 || (selection contains index - 1)
         }.map { case (row, index) => row }
       }
-      Json.build(immutable.Map(name -> filteredData)).toString + "\n"
+      generate(immutable.Map(name -> filteredData)).toString + "\n"
     }
   }
 
@@ -102,7 +102,7 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
     service.addContext("/graph_data", new CgiRequestHandler {
       def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
         if (path.size == 1) {
-          render(Json.build(Map("keys" -> keys.toList)).toString + "\n", exchange)
+          render(generate(Map("keys" -> keys.toList)).toString + "\n", exchange)
         } else {
           val keep = parameters.filter { _(0) == "p" }.headOption.map {
             _(1).split(",").map { _.toInt }

@@ -20,9 +20,9 @@ package admin
 import java.net.URL
 import scala.collection.immutable
 import scala.io.Source
+import com.codahale.jerkson.Json._
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.util.Time
 import org.specs.Specification
 import stats.Stats
@@ -40,9 +40,9 @@ object TimeSeriesCollectorSpec extends Specification {
       collector.shutdown()
     }
 
-    def getJson(port: Int, path: String) = {
+    def getJson[A](port: Int, path: String)(implicit mf: Manifest[A]) = {
       val url = new URL("http://localhost:%d%s".format(port, path))
-      Json.parse(Source.fromURL(url).getLines.mkString("\n"))
+      parse[A](Source.fromURL(url).getLines.mkString("\n"))
     }
 
     "Stats.incr" in {
@@ -55,7 +55,7 @@ object TimeSeriesCollectorSpec extends Specification {
         collector.collector.periodic()
 
         val json = collector.get("counter:dogs", Nil)
-        val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        val data = parse[Map[String, List[List[Int]]]](json)
         data("counter:dogs")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
         data("counter:dogs")(58) mustEqual List(1.minute.ago.inSeconds, 3)
         data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 60000)
@@ -71,7 +71,7 @@ object TimeSeriesCollectorSpec extends Specification {
         collector.collector.periodic()
 
         val json = collector.get("counter:whales.tps", Nil)
-        val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        val data = parse[Map[String, List[List[Int]]]](json)
         data("counter:whales.tps")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
         data("counter:whales.tps")(58) mustEqual List(1.minute.ago.inSeconds, 10)
         data("counter:whales.tps")(59) mustEqual List(Time.now.inSeconds, 5)
@@ -88,7 +88,7 @@ object TimeSeriesCollectorSpec extends Specification {
         collector.collector.periodic()
 
         val json = collector.get("counter:whales.tps", Nil)
-        val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        val data = parse[Map[String, List[List[Int]]]](json)
         data("counter:whales.tps")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
         data("counter:whales.tps")(58) mustEqual List(1.minute.ago.inSeconds, 10)
         data("counter:whales.tps")(59) mustEqual List(Time.now.inSeconds, 5)
@@ -109,10 +109,10 @@ object TimeSeriesCollectorSpec extends Specification {
         service.start()
         val port = service.address.getPort
         try {
-          val keys = getJson(port, "/graph_data").asInstanceOf[Map[String, Seq[String]]]
+          val keys = getJson[Map[String, List[String]]](port, "/graph_data")
           keys("keys") mustContain "counter:dogs"
           keys("keys") mustContain "counter:cats"
-          val data = getJson(port, "/graph_data/counter:dogs").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+          val data = getJson[Map[String, List[List[Int]]]](port, "/graph_data/counter:dogs")
           data("counter:dogs")(57) mustEqual List(2.minutes.ago.inSeconds, 0)
           data("counter:dogs")(58) mustEqual List(1.minute.ago.inSeconds, 3)
           data("counter:dogs")(59) mustEqual List(Time.now.inSeconds, 1)
@@ -135,11 +135,11 @@ object TimeSeriesCollectorSpec extends Specification {
         service.start()
         val port = service.address.getPort
         try {
-          var data = getJson(port, "/graph_data/metric:run").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+          var data = getJson[Map[String, List[List[Int]]]](port, "/graph_data/metric:run")
           data("metric:run")(59) mustEqual List(Time.now.inSeconds, 6, 10, 17, 23, 23, 23, 23, 23)
-          data = getJson(port, "/graph_data/metric:run?p=0,2").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+          data = getJson[Map[String, List[List[Int]]]](port, "/graph_data/metric:run?p=0,2")
           data("metric:run")(59) mustEqual List(Time.now.inSeconds, 6, 17)
-          data = getJson(port, "/graph_data/metric:run?p=1,7").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+          data = getJson[Map[String, List[List[Int]]]](port, "/graph_data/metric:run?p=1,7")
           data("metric:run")(59) mustEqual List(Time.now.inSeconds, 10, 23)
         } finally {
           service.shutdown()

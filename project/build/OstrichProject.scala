@@ -5,8 +5,8 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info) wit
   val util = "com.twitter" % "util-core" % "1.8.5"
   val eval = "com.twitter" % "util-eval" % "1.8.5"
   val logging = "com.twitter" % "util-logging" % "1.8.1"
-  val json = "com.twitter" % "json_2.8.1" % "2.1.6"
   val scalaCompiler = "org.scala-lang" % "scala-compiler" % "2.8.1" % "compile"
+  val jerkson = "com.codahale" % "jerkson_2.8.1" % "0.1.1" withSources()
   val netty = "org.jboss.netty" % "netty" % "3.2.3.Final"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
@@ -18,6 +18,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info) wit
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
   val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
   val jmock = "org.jmock" % "jmock" % "2.4.0" % "test"
+  val codaRepo = "Coda Hale's Repository" at "http://repo.codahale.com/"
 
   override def pomExtra =
     <licenses>

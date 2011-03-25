@@ -17,12 +17,15 @@
 package com.twitter.ostrich
 package admin
 
+import java.util.{Map => JMap}
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
-import com.twitter.json.Json
+import com.codahale.jerkson.Json._
 import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 import stats.Stats
+import scala.collection.JavaConversions
+import scala.collection.JavaConversions._
 
 object AdminHttpServiceSpec extends Specification {
   val PORT = 9996
@@ -31,6 +34,13 @@ object AdminHttpServiceSpec extends Specification {
   def get(path: String): String = {
     val url = new URL("http://localhost:%s%s".format(PORT, path))
     Source.fromURL(url).getLines.mkString("\n")
+  }
+
+  def parseJson(json: String): Map[String, Map[String, AnyRef]] = {
+    val statsJava = parse[Map[String, AnyRef]](json)
+    statsJava.map { case (k, v) =>
+      (k, JavaConversions.asScalaMap(v.asInstanceOf[java.util.Map[String, AnyRef]]).toMap)
+    }
   }
 
   var service: AdminHttpService = null
@@ -150,13 +160,14 @@ object AdminHttpServiceSpec extends Specification {
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
-        val stats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats = parseJson(get("/stats.json"))
+
         stats("gauges") must haveKey("jvm_uptime")
         stats("gauges") must haveKey("jvm_heap_used")
         stats("counters") must haveKey("kangaroos")
         stats("metrics") must haveKey("kangaroo_time_msec")
 
-        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
+        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[JMap[String, Int]]
         timing("count") mustEqual 1
         timing("average") mustEqual timing("minimum")
         timing("average") mustEqual timing("maximum")
@@ -167,12 +178,12 @@ object AdminHttpServiceSpec extends Specification {
         Stats.clearAll()
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
-        val stats = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
+        val stats = parseJson(get("/stats.json?reset=true"))
+        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[JMap[String, Int]]
         timing("count") mustEqual 1
 
-        val stats2 = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing2 = stats2("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
+        val stats2 = parseJson(get("/stats.json?reset=true"))
+        val timing2 = stats2("metrics")("kangaroo_time_msec").asInstanceOf[JMap[String, Int]]
         timing2("count") mustEqual 0
       }
 
@@ -187,8 +198,8 @@ object AdminHttpServiceSpec extends Specification {
         Stats.addMetric("kangaroo_time", 6)
 
         val stats = get("/stats.json")
-        val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val json = parseJson(stats)
+        val timings = json("metrics")("kangaroo_time").asInstanceOf[JMap[String, Int]].toMap
 
         timings must haveKey("count")
         timings("count") mustEqual 6
@@ -227,8 +238,8 @@ object AdminHttpServiceSpec extends Specification {
 
 
         val stats = get("/stats.json?reset")
-        val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
+        val json = parseJson(stats)
+        val timings = json("metrics")("kangaroo_time").asInstanceOf[JMap[String, Int]].toMap
 
         timings must haveKey("count")
         timings("count") mustEqual 6

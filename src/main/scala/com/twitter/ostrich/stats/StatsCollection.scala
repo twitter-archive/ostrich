@@ -19,12 +19,12 @@ package com.twitter.ostrich.stats
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
-import com.twitter.json.{Json, JsonSerializable}
+import com.codahale.jerkson.Json.generate
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
-class StatsCollection extends StatsProvider with JsonSerializable {
+class StatsCollection extends StatsProvider {
   private val counterMap = new ConcurrentHashMap[String, Counter]()
   private val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
   private val gaugeMap = new ConcurrentHashMap[String, () => Double]()
@@ -125,7 +125,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     for ((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
       counters += (key -> counter())
     }
-    counters
+    counters.toMap
   }
 
   def getMetrics() = {
@@ -133,7 +133,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
       metrics += (key -> metric(true))
     }
-    metrics
+    metrics.toMap
   }
 
   def getGauges() = {
@@ -142,11 +142,11 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     for ((key, gauge) <- JavaConversions.asScalaMap(gaugeMap)) {
       gauges += (key -> gauge())
     }
-    gauges
+    gauges.toMap
   }
 
   def getLabels() = {
-    new mutable.HashMap[String, String] ++ JavaConversions.asScalaMap(labelMap)
+    (new mutable.HashMap[String, String] ++ JavaConversions.asScalaMap(labelMap)).toMap
   }
 
   def clearAll() {
@@ -157,20 +157,24 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     listeners.clear()
   }
 
-  def toMap: Map[String, Any] = {
+  def toMap: Map[String, Map[String, Any]] = {
     val gauges = Map[String, Any]() ++ getGauges().map { case (k, v) =>
       if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
     }
+
+    val metrics = Map[String, Any]() ++ getMetrics().map { case (k, v) =>
+      (k, v.toMap)
+    }
     Map(
       "counters" -> getCounters(),
-      "metrics" -> getMetrics(),
+      "metrics" -> metrics,
       "gauges" -> gauges,
       "labels" -> getLabels()
     )
   }
 
   def toJson = {
-    Json.build(toMap).toString
+    generate(toMap).toString
   }
 }
 
