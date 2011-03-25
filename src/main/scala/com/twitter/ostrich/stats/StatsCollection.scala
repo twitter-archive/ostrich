@@ -196,7 +196,7 @@ object ThreadLocalStatsCollection {
  */
 trait TransactionalStatsCollection {
   def apply[T](f: StatsProvider => T): T = {
-    val collection = new StatsCollection()
+    val collection = provideStatsCollection()
     try {
       f(collection)
     } finally {
@@ -205,4 +205,10 @@ trait TransactionalStatsCollection {
   }
 
   def write(summary: StatsSummary)
+
+  protected def provideStatsCollection() = { new StatsCollection() }
+}
+
+trait ThreadLocalTransactionalStatsCollection extends TransactionalStatsCollection {
+  override def provideStatsCollection() = { ThreadLocalStatsCollection() }
 }
