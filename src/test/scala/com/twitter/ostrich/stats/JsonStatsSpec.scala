@@ -29,6 +29,15 @@ object JsonStatsSpec extends Specification {
       handler.clear()
     }
 
+    "can be called manually" in {
+      val counters = Map("widgets" -> 3L)
+      val gauges = Map("wodgets" -> 3.5)
+      val metrics = Map("timing_msec" -> new Distribution(1, 10, 10, 10))
+      val labels = Map("this" -> "that")
+      json.write(StatsSummary(counters, metrics, gauges, labels))
+      getLine() mustEqual """{"timing_msec":10,"wodgets":3.5,"widgets":3,"this":"that"}"""
+    }
+
     "can be called transactionally" in {
       json { stats =>
         stats.setLabel("test", "blah")
@@ -46,6 +55,14 @@ object JsonStatsSpec extends Specification {
       map("test") mustEqual "blah"
       map("test2") mustEqual "crap"
       map("test-time_msec").asInstanceOf[Int] must be_>=(0)
+    }
+
+    "sum counts within a transaction" in {
+      json { stats =>
+        stats.incr("test", 8)
+        stats.incr("test", 8)
+      }
+      getLine() mustEqual """{"test":16}"""
     }
   }
 }
