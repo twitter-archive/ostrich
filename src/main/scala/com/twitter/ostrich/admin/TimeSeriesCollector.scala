@@ -114,7 +114,7 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
   }
 
   def start() {
-    collector.setDaemon(true)
+    collector.thread.setDaemon(true)
     collector.start()
   }
 

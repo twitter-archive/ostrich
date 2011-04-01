@@ -60,49 +60,53 @@ object BackgroundProcess {
  * call a method that can be interrupted (like sleep) or block for a low
  * timeout.
  */
-abstract class BackgroundProcess(name: String) extends Thread(name) with Service {
+abstract class BackgroundProcess(name: String) extends Service {
   private val log = Logger.get(getClass.getName)
 
   @volatile var running = false
   val startLatch = new CountDownLatch(1)
 
-  override def start() {
-    if (!running) {
-      log.info("Starting %s", name)
-      running = true
-      super.start()
-      startLatch.await()
-    }
-  }
-
-  override def run() {
-    startLatch.countDown()
-    while (running) {
-      try {
-        runLoop()
-      } catch {
-        case e: InterruptedException =>
-          log.info("%s exiting by request.", name)
-          running = false
-        case e: Throwable =>
-          log.error(e, "Background process %s died with unexpected exception: %s", name, e)
-          running = false
+  val runnable = new Runnable() {
+    def run() {
+      startLatch.countDown()
+      while (running) {
+        try {
+          runLoop()
+        } catch {
+          case e: InterruptedException =>
+            log.info("%s exiting by request.", name)
+            running = false
+          case e: Throwable =>
+            log.error(e, "Background process %s died with unexpected exception: %s", name, e)
+            running = false
+        }
       }
     }
   }
 
-  def runLoop()
+  val thread = new Thread(runnable, name)
+
+  def start() {
+    if (!running) {
+      log.info("Starting %s", name)
+      running = true
+      thread.start()
+      startLatch.await()
+    }
+  }
 
   def shutdown() {
     running = false
     try {
-      interrupt()
-      join()
+      thread.interrupt()
+      thread.join()
     } catch {
       case e: Throwable =>
         log.error(e, "Failed to shutdown background process %s", name)
     }
   }
+
+  def runLoop()
 }
 
 /**
