@@ -17,7 +17,7 @@
 package com.twitter.ostrich.stats
 
 import scala.collection.{Map, mutable, immutable}
-import com.twitter.util.Duration
+import com.twitter.util.{Duration, Future}
 
 case class StatsSummary(
   counters: Map[String, Long],
@@ -143,6 +143,17 @@ trait StatsProvider {
     val (rv, duration) = Duration.inMilliseconds(f)
     addMetric(name + "_msec", duration.inMilliseconds.toInt)
     rv
+  }
+
+  /**
+   * Records the wall-clock time until the future has a value (or failure), in milliseconds, with the given name.
+   */
+  def futureTime[T](name: String)(f: Future[T]): Future[T] = {
+    val startTime = System.currentTimeMillis
+    f.respond { _ =>
+      addMetric(name + "_msec", (System.currentTimeMillis - startTime).toInt)
+    }
+    f
   }
 
   /**
