@@ -34,10 +34,10 @@ class RuntimeEnvironmentSpec extends Specification {
         Some("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar")
     }
 
-	"parse custom args" in {
+    "parse custom args" in {
       val runtime = new RuntimeEnvironment(classOf[Object])
-	  runtime.parseArgs(List("-D", "foo", "bar"))
-	  runtime.arguments.get("foo") mustEqual Some("bar")
-	}
+      runtime.parseArgs(List("-D", "foo", "bar"))
+      runtime.arguments.get("foo") mustEqual Some("bar")
+    }
   }
 }

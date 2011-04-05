@@ -99,9 +99,9 @@ class RuntimeEnvironment(obj: AnyRef) {
    */
   def parseArgs(args: List[String]): Unit = {
     args match {
-	  case "-D" :: arg :: value :: xs =>
-		parseSetting(arg, value)
-		parseArgs(xs)
+      case "-D" :: arg :: value :: xs =>
+        parseSetting(arg, value)
+        parseArgs(xs)
       case "-f" :: filename :: xs =>
         configFile = new File(filename)
         parseArgs(xs)
@@ -120,7 +120,7 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   def parseSetting(arg: String, value: String) {
-	 arguments = arguments + (arg -> value)
+    arguments = arguments + (arg -> value)
   }
 
   private def help() {
