@@ -36,7 +36,7 @@ class RuntimeEnvironmentSpec extends Specification {
 
     "parse custom args" in {
       val runtime = new RuntimeEnvironment(classOf[Object])
-      runtime.parseArgs(List("-D", "foo", "bar"))
+      runtime.parseArgs(List("-D", "foo=bar"))
       runtime.arguments.get("foo") mustEqual Some("bar")
     }
   }
