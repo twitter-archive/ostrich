@@ -5,17 +5,18 @@ import org.specs.Specification
 
 class BoundedStatsSpec extends Specification {
   val jobClassName = "rooster.TestCapturer"
-  BoundedStats.startCapture(jobClassName)
-  Stats.clearAll()
 
-  "getMetric" should {
-    "return a metric" in {
+  "BoundedStats" should {
+    doBefore {
+      BoundedStats.startCapture(jobClassName)
+      Stats.clearAll()
+    }
+
+    "getMetric" in {
       BoundedStats.getMetric("whateva") mustEqual Stats.getMetric(jobClassName + ".whateva")
     }
-  }
 
-  "flush" should {
-    "send metrics to Stats" in {
+    "flush" in {
       BoundedStats.incr("tflock")
       BoundedStats.incr("tflock")
       BoundedStats.flush
