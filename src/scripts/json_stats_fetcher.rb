@@ -124,12 +124,14 @@ begin
     stats = JSON.parse(data)
 
     # Ostrich >3 puts these in the metrics
-    if !$ostrich3
+    begin
       report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
       report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
       report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
       report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
       report_metric("jvm_uptime", (stats["jvm"]["uptime"].to_i rescue 0), "items")
+    rescue NoMethodError
+      $ostrich3 = true
     end
 
     stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
