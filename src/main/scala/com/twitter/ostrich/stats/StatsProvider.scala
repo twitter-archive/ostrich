@@ -29,6 +29,16 @@ case class StatsSummary(
 /**
  * Trait for anything that collects counters, timings, and gauges, and can report them in
  * name/value maps.
+ *
+ * Many helper methods are provided, with default implementations that just call back into the
+ * abstract methods, so a concrete implementation only needs to fill in the abstract methods.
+ *
+ * To recap the README:
+ *
+ * - counter: a value that never decreases (like "exceptions" or "completed_transactions")
+ * - gauge: a discrete instantaneous value (like "heap_used" or "current_temperature")
+ * - metric: a distribution (min, max, median, 99th percentile, ...) like "event_timing"
+ * - label: an instantaneous informational string for debugging or status checking
  */
 trait StatsProvider {
   /**
@@ -50,7 +60,7 @@ trait StatsProvider {
    * Increments a counter, returning the new value.
    */
   def incr(name: String, count: Int): Long = {
-    getCounter(name).value.addAndGet(count)
+    getCounter(name).incr(count)
   }
 
   /**

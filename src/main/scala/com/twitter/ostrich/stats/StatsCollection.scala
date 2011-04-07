@@ -20,15 +20,16 @@ import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.json.{Json, JsonSerializable}
+import com.twitter.util.Local
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
 class StatsCollection extends StatsProvider with JsonSerializable {
-  private val counterMap = new ConcurrentHashMap[String, Counter]()
-  private val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
-  private val gaugeMap = new ConcurrentHashMap[String, () => Double]()
-  private val labelMap = new ConcurrentHashMap[String, String]()
+  protected val counterMap = new ConcurrentHashMap[String, Counter]()
+  protected val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
+  protected val gaugeMap = new ConcurrentHashMap[String, () => Double]()
+  protected val labelMap = new ConcurrentHashMap[String, String]()
 
   private val listeners = new mutable.ListBuffer[StatsListener]
 
@@ -91,21 +92,30 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getCounter(name: String) = {
     var counter = counterMap.get(name)
     while (counter == null) {
-      counter = counterMap.putIfAbsent(name, new Counter())
+      counter = counterMap.putIfAbsent(name, newCounter(name))
       counter = counterMap.get(name)
     }
     counter
+  }
+
+  protected def newCounter(name: String) = {
+    new Counter()
   }
 
   def getMetric(name: String) = {
     var metric = metricMap.get(name)
     if (metric == null) {
       metric = new FanoutMetric()
-      synchronized {
-        listeners.foreach { listener => metric.addFanout(listener.getMetric(name)) }
-      }
-      metricMap.putIfAbsent(name, metric)
+      metricMap.putIfAbsent(name, newMetric(name))
       metric = metricMap.get(name)
+    }
+    metric
+  }
+
+  protected def newMetric(name: String) = {
+    val metric = new FanoutMetric()
+    synchronized {
+      listeners.foreach { listener => metric.addFanout(listener.getMetric(name)) }
     }
     metric
   }
@@ -176,6 +186,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
 /**
  * Get a StatsCollection specific to this thread.
+ * @deprecated use LocalStatsCollection instead
  */
 object ThreadLocalStatsCollection {
   private val tl = new ThreadLocal[StatsCollection]() {
@@ -183,6 +194,73 @@ object ThreadLocalStatsCollection {
   }
 
   def apply(): StatsCollection = tl.get()
+}
+
+/**
+ * A StatsCollection that sends counter and metric updates to a set of other (fanout) collections.
+ */
+class FanoutStatsCollection(others: StatsCollection*) extends StatsCollection {
+  override def newCounter(name: String) = new FanoutCounter(others.map { _.getCounter(name) }: _*)
+  override def newMetric(name: String) = new FanoutMetric(others.map { _.getMetric(name) }: _*)
+}
+
+/**
+ * A StatsCollection that sends counter and metric updates to the global `Stats` object as they
+ * happen, and can be asked to flush its stats back into another StatsCollection with a prefix.
+ *
+ * For example, if the prefix is "transaction10", then updating a counter "exceptions" will update
+ * this collection and `Stats` simultaneously for "exceptions". When/if the collection is flushed
+ * into `Stats` at the end of the transaction, "transaction10.exceptions" will be updated with this
+ * collection's "exception" count.
+ */
+class LocalStatsCollection(collectionName: String) extends FanoutStatsCollection(Stats) {
+  /**
+   * Flush this collection's counters and metrics into another StatsCollection, with each counter
+   * and metric name prefixed by this collection's name.
+   */
+  def flushInto(collection: StatsProvider) {
+    JavaConversions.asScalaMap(counterMap).foreach { case (name, counter) =>
+      collection.getCounter(collectionName + "." + name).incr(counter().toInt)
+    }
+    JavaConversions.asScalaMap(metricMap).foreach { case (name, metric) =>
+      collection.getMetric(collectionName + "." + name).add(metric(true))
+    }
+    counterMap.clear()
+    metricMap.clear()
+  }
+
+  /**
+   * Flush this collection's counters and metrics into the global `Stats` object, with each counter
+   * and metric name prefixed by this collection's name.
+   */
+  def flush() {
+    flushInto(Stats)
+  }
+}
+
+/**
+ * Get the StatsCollection for your "local state".
+ * @see Future, Local (from twitter-util)
+ *
+ * A LocalStatsCollection is associated with a name, which will be used as the prefix when flushing
+ * the local counters and metrics back into the global `Stats`. Because it's stored in a `Local`,
+ * a collection can be looked up several times and return the same object, as long as it's in the
+ * same "flow of execution" (as defined by `Future`).
+ *
+ * Counters and metrics that are updated on a LocalStatsCollection are also updated on the global
+ * `Stats` object, using the same names. When flushed, these counters and metrics are saved into
+ * the global `Stats` with the collection's name as a prefix.
+ */
+object LocalStatsCollection {
+  private val local = new Local[mutable.Map[String, LocalStatsCollection]]()
+  local() = new mutable.HashMap[String, LocalStatsCollection]()
+
+  /**
+   * Get a named LocalStatsCollection, creating it if it doesn't already exist.
+   */
+  def apply(name: String): LocalStatsCollection = {
+    local().get.getOrElseUpdate(name, new LocalStatsCollection(name))
+  }
 }
 
 /**
