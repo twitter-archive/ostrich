@@ -19,6 +19,9 @@ package com.twitter.ostrich.stats
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.util.{Duration, Future}
 
+/**
+ * Immutable summary of counters, metrics, gauges, and labels.
+ */
 case class StatsSummary(
   counters: Map[String, Long],
   metrics: Map[String, Distribution],

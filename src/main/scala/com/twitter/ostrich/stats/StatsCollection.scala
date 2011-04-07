@@ -36,6 +36,9 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   /** Set this to true to have the collection fill in a set of automatic gauges from the JVM. */
   var includeJvmStats = false
 
+  /**
+   * Use JMX (shudder) to fill in stats about the JVM into a mutable map.
+   */
   def fillInJvmGauges(out: mutable.Map[String, Double]) {
     val mem = ManagementFactory.getMemoryMXBean()
 
@@ -64,6 +67,10 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     out
   }
 
+  /**
+   * Attach a new StatsListener to this collection. Additions to metrics will be passed along to
+   * each listener.
+   */
   def addListener(listener: StatsListener) {
     synchronized {
       listeners += listener
@@ -167,6 +174,9 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     listeners.clear()
   }
 
+  /**
+   * Dump a nested map of the stats in this collection, suitable for json output.
+   */
   def toMap: Map[String, Any] = {
     val gauges = Map[String, Any]() ++ getGauges().map { case (k, v) =>
       if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
@@ -179,6 +189,9 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     )
   }
 
+  /**
+   * Dump a json-encoded map of the stats in this collection.
+   */
   def toJson = {
     Json.build(toMap).toString
   }
