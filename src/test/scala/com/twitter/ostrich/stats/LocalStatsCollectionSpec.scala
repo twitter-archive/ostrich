@@ -3,7 +3,7 @@ package com.twitter.ostrich.stats
 import com.twitter.util.Future
 import org.specs.Specification
 
-class BoundedStatsSpec extends Specification {
+class LocalStatsCollectionSpec extends Specification {
   val jobClassName = "rooster.TestCapturer"
 
   "BoundedStats" should {
