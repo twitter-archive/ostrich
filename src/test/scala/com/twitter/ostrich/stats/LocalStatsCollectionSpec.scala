@@ -6,7 +6,7 @@ import org.specs.Specification
 class LocalStatsCollectionSpec extends Specification {
   val jobClassName = "rooster.TestCapturer"
 
-  "BoundedStats" should {
+  "LocalStatsCollection" should {
     val localStats = LocalStatsCollection(jobClassName)
 
     doAfter {
