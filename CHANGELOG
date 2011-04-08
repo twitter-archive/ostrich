@@ -1,1 +1,16 @@
+
 1.2.0 (August 3, 2010) - Added manual setGauge and clearGauge to Stats.
+
+... time passes ...
+
+4.1.0
+-----
+
+- BackgroundProcess is no longer a Thread. It now contains a field "thread" which is the actual
+  thread.
+
+- Added FanoutStatsCollection and LocalStatsCollection.
+
+- Added StatsProvider#timeFutureMillis for timing util-core Future operations.
+
+- Added -D option to RuntimeEnvironment arguments for custom arguments.
