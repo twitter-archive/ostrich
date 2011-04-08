@@ -161,7 +161,7 @@ trait StatsProvider {
   /**
    * Records the wall-clock time until the future has a value (or failure), in milliseconds, with the given name.
    */
-  def futureTime[T](name: String)(f: Future[T]): Future[T] = {
+  def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
     val startTime = System.currentTimeMillis
     f.respond { _ =>
       addMetric(name + "_msec", (System.currentTimeMillis - startTime).toInt)
