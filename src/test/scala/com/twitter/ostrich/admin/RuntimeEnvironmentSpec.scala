@@ -33,5 +33,11 @@ class RuntimeEnvironmentSpec extends Specification {
       runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"), "flockdb", "1.4.1-SNAPSHOT") mustEqual
         Some("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar")
     }
+
+    "parse custom args" in {
+      val runtime = new RuntimeEnvironment(classOf[Object])
+      runtime.parseArgs(List("-D", "foo=bar"))
+      runtime.arguments.get("foo") mustEqual Some("bar")
+    }
   }
 }
