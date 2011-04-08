@@ -21,7 +21,7 @@ import scala.collection.{immutable, mutable}
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
-import com.twitter.util.Time
+import com.twitter.util.{Time, Future}
 import org.specs.Specification
 
 object StatsCollectionSpec extends Specification {
@@ -80,6 +80,13 @@ object StatsCollectionSpec extends Specification {
         timings("hundred_msec").count mustEqual 1
         timings("hundred_msec").minimum mustEqual timings("hundred_msec").average
         timings("hundred_msec").maximum mustEqual timings("hundred_msec").average
+      }
+
+      "time future" in {
+        val stat = "latency"
+        val future = Future({ Thread.sleep(10); 100 })
+
+        collection.timeFutureMillis(stat)(future)() mustEqual 100
       }
 
       "average of 0" in {
