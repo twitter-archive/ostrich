@@ -31,11 +31,11 @@ There are four kinds of statistics that ostrich captures:
   countable event happens, and graphing utilities usually graph the deltas
   over time. To increment a counter, use:
 
-        stats.incr("births")
+        Stats.incr("births")
 
   or
 
-        stats.incr("widgets_sold", 5)
+        Stats.incr("widgets_sold", 5)
 
 - gauges
 
@@ -44,7 +44,7 @@ There are four kinds of statistics that ostrich captures:
   you only need to take when someone asks. To define a gauge, stick this code
   somewhere in the server initialization:
 
-        stats.addGauge("current_temperature") { myThermometer.temperature }
+        Stats.addGauge("current_temperature") { myThermometer.temperature }
 
   A gauge method must always return a double.
 
@@ -53,13 +53,13 @@ There are four kinds of statistics that ostrich captures:
   A metric is tracked via distribution, and is usually used for timings, like
   so:
 
-        stats.time("translation") {
+        Stats.time("translation") {
           document.translate("de", "en")
         }
 
   But you can also add metrics directly:
 
-        stats.addMetric("query_results", results.size)
+        Stats.addMetric("query_results", results.size)
 
   Metrics are collected by tracking the count, min, max, mean (average), and a
   simple bucket-based histogram of the distribution. This distribution can be
@@ -70,16 +70,39 @@ There are four kinds of statistics that ostrich captures:
   A label is just a key/value pair of strings, usually used to report a
   subsystem's state, like "boiler=offline". They're set with:
 
-        stats.setLabel("boiler", "online")
+        Stats.setLabel("boiler", "online")
 
   They have no real statistical value, but can be used to raise flags in
   logging and monitoring.
 
 
+## RuntimeEnvironment
+
+If you build with standard-project
+<http://github.com/twitter/standard-project>, `RuntimeEnvironment` can pull
+build and environment info out of the `build.properties` file that's tucked
+into your jar. Typical use is to pass your server object (or any object from
+your jar) and any command-line arguments you haven't already parsed:
+
+    val runtime = RuntimeEnvironment(this, args)
+
+The command-line argument parsing is optional, and supports only:
+
+- `--version` to print out the jar's build info (name, version, build)
+
+- `-f <filename>` to specify a config file manually
+
+- `--validate` to validate that your config file can be compiled
+
+Your server object is used as the home jar of the `build.properties` file.
+Then the classpath is scanned to find that jar's home, and the config files
+that are located nearby.
+
+
 ## Quick Start
 
-A good example server is created by the scala-build project here:
-<http://github.com/twitter/scala-build>
+A good example server is created by the scala-bootstrapper project here:
+<http://github.com/twitter/scala-bootstrapper>
 
 Define a server config class:
 
@@ -241,13 +264,14 @@ the current hourly graph for each stat. The graphs are generated in javascript u
 The easiest way to start the admin service is to construct an `AdminServiceConfig` with desired
 configuration, and call `apply` on it.
 
+FIXME
     val admin = new AdminServiceConfig {
       httpPort = 8888
       statsNodes = new StatsConfig {
         reporters = new TimeSeriesCollectorConfig
       }
     }
-    admin()
+    admin()(runtime)
 
 If `httpPort` isn't set, the admin server won't start.
 
