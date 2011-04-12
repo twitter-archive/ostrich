@@ -91,10 +91,11 @@ Define a server config class:
       }
     }
 
-A `ServiceConfig` class contains things you want to configure on your server, as vars,
-and an `apply` method that turns a RuntimeEnvironment into
-your server. `ServiceConfig` is actually a helper for `Config` that adds logging configuration,
-sets up the optional admin HTTP server if it was configured, and registers your service with the `ServiceTracker` so that it will be
+A `ServerConfig` class contains things you want to configure on your server,
+as vars, and an `apply` method that turns a RuntimeEnvironment into your
+server. `ServiceConfig` is actually a helper for `Config` that adds logging
+configuration, sets up the optional admin HTTP server if it was configured,
+and registers your service with the `ServiceTracker` so that it will be
 shutdown when the admin port receives a shutdown command.
 
 Next, make a simple config file for development:
