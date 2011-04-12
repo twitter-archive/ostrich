@@ -271,31 +271,32 @@ the current hourly graph for each stat. The graphs are generated in javascript u
 
 ## Admin API
 
-The easiest way to start the admin service is to construct an `AdminServiceConfig` with desired
-configuration, and call `apply` on it.
+The easiest way to start the admin service is to construct an
+`AdminServiceConfig` with desired configuration, and call `apply` on it.
 
-FIXME
-    val admin = new AdminServiceConfig {
+To reduce boilerplate in the common case of configuring a server with an
+admin port and logging, a helper trait called `ServerConfig` is defined with
+both:
+
+    var loggers: List[LoggerConfig] = Nil
+    var admin = new AdminServiceConfig()
+
+The `apply` method on `AdminServiceConfig` will create and start the admin
+server if a port is defined, and setup any configured logging.
+
+You can also build an admin server directly from its config:
+
+    val adminConfig = new AdminServiceConfig {
       httpPort = 8888
       statsNodes = new StatsConfig {
         reporters = new TimeSeriesCollectorConfig
       }
     }
-    admin()(runtime)
-
-If `httpPort` isn't set, the admin server won't start.
-
-A helper trait called `ServerConfig` contains an `AdminServiceConfig` and `LoggerConfig` to reduce
-boilerplate in the common case of configuring a server.
-
-To build the admin service manually, you can do what the config classes do:
-
     val runtime = RuntimeEnvironment(this, Nil)
-    val admin = new AdminHttpService(/* port */ 8888, /* http backlog */ 20, runtime)
-    val collector = new TimeSeriesCollector(Stats)
-    collector.registerWith(admin)
-    ServiceTracker.register(collector)
-    collector.start()
+    val admin = adminConfig()(runtime)
+
+If `httpPort` isn't set, the admin server won't start, and `admin` will be
+`None`. Otherwise it will be an `Option[AdminHttpService]`.
 
 
 ## Profiling
