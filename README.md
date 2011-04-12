@@ -1,11 +1,15 @@
 # Ostrich
 
-Ostrich is a small library for collecting and reporting runtime statistics and
-debugging info from a scala server. It can collect counters, gauges, and
-timings, and it can report them via log files or a simple web interface that
-includes graphs. A server can also be asked to shutdown or reload its config
-files using these interfaces. The idea is that it should be simple and
-straightforward, allowing you to plug it in and get started quickly.
+Ostrich is a library for scala servers that makes it easy to:
+
+- load & reload per-environment configuration
+- collect runtime statistics (counters, gauges, metrics, and labels)
+- report those statistics through a simple web interface (optionally with
+  graphs) or into log files
+- interact with the server over HTTP to check build versions or shut it down
+
+The idea is that it should be simple and straightforward, allowing you to
+plug it in and get started quickly.
 
 This library is released under the Apache Software License, version 2, which
 should be included with the source in a file named `LICENSE`.
@@ -95,7 +99,7 @@ The command-line argument parsing is optional, and supports only:
 - `--validate` to validate that your config file can be compiled
 
 Your server object is used as the home jar of the `build.properties` file.
-Then the classpath is scanned to find that jar's home, and the config files
+Then the classpath is scanned to find that jar's home and the config files
 that are located nearby.
 
 
@@ -116,16 +120,16 @@ Define a server config class:
 
 A `ServerConfig` class contains things you want to configure on your server,
 as vars, and an `apply` method that turns a RuntimeEnvironment into your
-server. `ServiceConfig` is actually a helper for `Config` that adds logging
+server. `ServerConfig` is actually a helper for `Config` that adds logging
 configuration, sets up the optional admin HTTP server if it was configured,
 and registers your service with the `ServiceTracker` so that it will be
 shutdown when the admin port receives a shutdown command.
 
 Next, make a simple config file for development:
 
-    import com.twitter.admin.config._
     import com.twitter.conversions.time._
     import com.twitter.logging.config._
+    import com.twitter.ostrich.admin.config._
     import com.example.config._
 
     new MyServerConfig {
@@ -193,6 +197,8 @@ activated it, through the "stats" command:
 
     curl localhost:PPPP/stats.txt
 
+(where `PPPP` is your configured admin port)
+
 
 ## ServiceTracker
 
@@ -252,15 +258,16 @@ Commands over the admin interface take the form of an HTTP "get" request:
 
 which can be performed using 'curl' or 'wget':
 
-    $ curl http://localhost:9990/shutdown
+    $ curl http://localhost:PPPP/shutdown
 
 The result body may be json or plain-text, depending on <type>. The default is
 json, but you can ask for text like so:
 
-    $ curl http://localhost:9990/stats.txt
+    $ curl http://localhost:PPPP/stats.txt
 
-For simple commands like `shutdown`, the response body may simply be the JSON encoding of the string
-"ok". For others like `stats`, it may be a nested structure.
+For simple commands like `shutdown`, the response body may simply be the JSON
+encoding of the string "ok". For others like `stats`, it may be a nested
+structure.
 
 The commands are:
 
