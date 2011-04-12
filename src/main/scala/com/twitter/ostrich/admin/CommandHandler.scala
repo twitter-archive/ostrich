@@ -22,7 +22,6 @@ import java.lang.management.ManagementFactory
 import java.util.Date
 import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
-import com.twitter.json.Json
 import stats.Stats
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
