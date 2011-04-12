@@ -185,8 +185,13 @@ The simplest (and most common) pattern is to use the global singleton named
       memcache.set(key, value)
     }
 
-Reporters can be attached by configuring them in `AdminServiceConfig` (see
-below).
+Stat names can be any string, though conventionally they contain only letters,
+digits, underline (_), and dash (-), to make it easier for reporting.
+
+You can immediately see any reported stats on the admin web server, if you've
+activated it, through the "stats" command:
+
+    curl localhost:PPPP/stats.txt
 
 
 ## ServiceTracker
@@ -203,6 +208,40 @@ whole is shutdown:
 Some helper classes like `BackgroundProcess` and `PeriodicBackgroundProcess`
 implement `Service`, so they can be used to build simple background tasks
 that will be automatically shutdown when the server exits.
+
+
+## Admin web service
+
+The easiest way to start the admin service is to construct an
+`AdminServiceConfig` with desired configuration, and call `apply` on it.
+
+To reduce boilerplate in the common case of configuring a server with an
+admin port and logging, a helper trait called `ServerConfig` is defined with
+both:
+
+    var loggers: List[LoggerConfig] = Nil
+    var admin = new AdminServiceConfig()
+
+The `apply` method on `ServerConfig` will create and start the admin service
+if a port is defined, and setup any configured logging.
+
+You can also build an admin service directly from its config:
+
+    val adminConfig = new AdminServiceConfig {
+      httpPort = 8888
+      statsNodes = new StatsConfig {
+        reporters = new TimeSeriesCollectorConfig
+      }
+    }
+    val runtime = RuntimeEnvironment(this, Nil)
+    val admin = adminConfig()(runtime)
+
+If `httpPort` isn't set, the admin service won't start, and `admin` will be
+`None`. Otherwise it will be an `Option[AdminHttpService]`.
+
+`statsNodes` can attach a list of reporters to named stats collections. In the
+above example, a time-series collector is added to the global `Stats` object.
+This is used to provide the web graphs described below under "Web graphs".
 
 
 ## Web/socket commands
@@ -261,48 +300,17 @@ The commands are:
 
 ## Web graphs
 
-The web interface also includes a small graph server that can be used to look at the last hour of
-data on collected stats. (See "Stats API" below for how to track stats.)
+If `TimeSeriesCollector` is attached to a stats collection, the web interface
+will include a small graph server that can be used to look at the last hour of
+data on collected stats.
 
 The url
 
     http://localhost:PPPP/graph/
 
-(where PPPP is your `admin_http_port`) will give a list of currently-collected stats, and links to
-the current hourly graph for each stat. The graphs are generated in javascript using flot.
-
-
-## Admin API
-
-The easiest way to start the admin service is to construct an
-`AdminServiceConfig` with desired configuration, and call `apply` on it.
-
-To reduce boilerplate in the common case of configuring a server with an
-admin port and logging, a helper trait called `ServerConfig` is defined with
-both:
-
-    var loggers: List[LoggerConfig] = Nil
-    var admin = new AdminServiceConfig()
-
-The `apply` method on `AdminServiceConfig` will create and start the admin
-server if a port is defined, and setup any configured logging.
-
-You can also build an admin server directly from its config:
-
-    val adminConfig = new AdminServiceConfig {
-      httpPort = 8888
-      statsNodes = new StatsConfig {
-        reporters = new TimeSeriesCollectorConfig
-      }
-    }
-    val runtime = RuntimeEnvironment(this, Nil)
-    val admin = adminConfig()(runtime)
-
-If `httpPort` isn't set, the admin server won't start, and `admin` will be
-`None`. Otherwise it will be an `Option[AdminHttpService]`.
-
-`statsNodes` can attach a list of reporters to named stats collections. In the
-above example, a time-series collector is added to the global `Stats` object.
+(where PPPP is your admin `httpPort`) will give a list of currently-collected
+stats, and links to the current hourly graph for each stat. The graphs are
+generated in javascript using flot.
 
 
 ## Profiling
