@@ -185,6 +185,9 @@ The simplest (and most common) pattern is to use the global singleton named
       memcache.set(key, value)
     }
 
+Reporters can be attached by configuring them in `AdminServiceConfig` (see
+below).
+
 
 ## ServiceTracker
 
@@ -297,6 +300,9 @@ You can also build an admin server directly from its config:
 
 If `httpPort` isn't set, the admin server won't start, and `admin` will be
 `None`. Otherwise it will be an `Option[AdminHttpService]`.
+
+`statsNodes` can attach a list of reporters to named stats collections. In the
+above example, a time-series collector is added to the global `Stats` object.
 
 
 ## Profiling
