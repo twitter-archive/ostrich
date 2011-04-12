@@ -175,6 +175,16 @@ To log or report stats, attach a `StatsReporter` to a `StatsCollection`. A
 reports. You can attach multiple `StatsReporter`s to track independent state
 without affecting the `StatsCollection`.
 
+The simplest (and most common) pattern is to use the global singleton named
+`Stats`, like so:
+
+    import com.twitter.ostrich.stats.Stats
+
+    Stats.incr("cache_misses")
+    Stats.time("memcache_timing") {
+      memcache.set(key, value)
+    }
+
 
 ## ServiceTracker
 
