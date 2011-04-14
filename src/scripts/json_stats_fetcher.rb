@@ -13,26 +13,15 @@ require 'json'
 require 'timeout'
 require 'open-uri'
 
-def valid_gmetric_name?(name)
-  # Determines if a gmetric name is valid.
-  #
+def report_metric(name, value, units)
   # Ganglia is very intolerant of metric named with non-standard characters,
   # where non-standard contains most everything other than letters, numbers and
-  # some common symbols.
-  #
-  # Returns true if the metric is a valid gmetric name, otherwise false.
-  if name =~ /^[A-Za-z0-9_\-\.]+$/
-    return true
-  else
-    $stderr.puts "Metric <#{name}> contains invalid characters."
-    return false
+  # some common symbols.  We will substitute underscores for invalid characters.
+  if name.length == 0
+    $stderr.puts "Metric was empty."
+    return 
   end
-end
-
-def report_metric(name, value, units)
-  if not valid_gmetric_name?(name)
-    return
-  end
+  name = name.sub(/[A-Za-z0-9_\-\.]/, "_")
 
   if $report_to_ganglia
     system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
