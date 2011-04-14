@@ -56,7 +56,6 @@ def usage(port)
   puts "usage: json_stats_fetcher.rb [options]"
   puts "options:"
   puts "    -n              say what I would report, but don't report it"
-  puts "    -o              use ostrich3-style metrics"
   puts "    -w              use web interface"
   puts "    -h <hostname>   connect to another host (default: localhost)"
   puts "    -i <pattern>    ignore all stats matching pattern (default: #{$pattern.inspect})"
@@ -70,7 +69,6 @@ opts = GetoptLong.new(
   [ '-n', GetoptLong::NO_ARGUMENT ],
   [ '-h', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-i', GetoptLong::REQUIRED_ARGUMENT ],
-  [ '-o', GetoptLong::NO_ARGUMENT ],
   [ '-p', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-P', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-w', GetoptLong::NO_ARGUMENT ]
@@ -83,8 +81,6 @@ opts.each do |opt, arg|
     exit 0
   when '-n'
     $report_to_ganglia = false
-  when '-o'
-    $ostrich3 = true
   when '-h'
     hostname = arg
   when '-i'
