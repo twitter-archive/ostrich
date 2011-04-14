@@ -21,7 +21,7 @@ def report_metric(name, value, units)
     $stderr.puts "Metric was empty."
     return 
   end
-  name = name.sub(/[^A-Za-z0-9_\-\.]/, "_")
+  name = name.gsub(/[^A-Za-z0-9_\-\.]/, "_")
 
   if $report_to_ganglia
     system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
