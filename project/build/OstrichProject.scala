@@ -6,6 +6,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with DefaultRepos
   with IdeaProject
   with PublishSourcesAndJavadocs
+  with PublishSite
 {
   val util = "com.twitter" % "util-core" % "1.8.5"
   val eval = "com.twitter" % "util-eval" % "1.8.5"

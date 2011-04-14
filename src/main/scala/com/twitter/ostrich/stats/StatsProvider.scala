@@ -17,8 +17,11 @@
 package com.twitter.ostrich.stats
 
 import scala.collection.{Map, mutable, immutable}
-import com.twitter.util.Duration
+import com.twitter.util.{Duration, Future}
 
+/**
+ * Immutable summary of counters, metrics, gauges, and labels.
+ */
 case class StatsSummary(
   counters: Map[String, Long],
   metrics: Map[String, Distribution],
@@ -29,6 +32,16 @@ case class StatsSummary(
 /**
  * Trait for anything that collects counters, timings, and gauges, and can report them in
  * name/value maps.
+ *
+ * Many helper methods are provided, with default implementations that just call back into the
+ * abstract methods, so a concrete implementation only needs to fill in the abstract methods.
+ *
+ * To recap the README:
+ *
+ * - counter: a value that never decreases (like "exceptions" or "completed_transactions")
+ * - gauge: a discrete instantaneous value (like "heap_used" or "current_temperature")
+ * - metric: a distribution (min, max, median, 99th percentile, ...) like "event_timing"
+ * - label: an instantaneous informational string for debugging or status checking
  */
 trait StatsProvider {
   /**
@@ -50,7 +63,7 @@ trait StatsProvider {
    * Increments a counter, returning the new value.
    */
   def incr(name: String, count: Int): Long = {
-    getCounter(name).value.addAndGet(count)
+    getCounter(name).incr(count)
   }
 
   /**
@@ -143,6 +156,17 @@ trait StatsProvider {
     val (rv, duration) = Duration.inMilliseconds(f)
     addMetric(name + "_msec", duration.inMilliseconds.toInt)
     rv
+  }
+
+  /**
+   * Records the wall-clock time until the future has a value (or failure), in milliseconds, with the given name.
+   */
+  def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
+    val startTime = System.currentTimeMillis
+    f.respond { _ =>
+      addMetric(name + "_msec", (System.currentTimeMillis - startTime).toInt)
+    }
+    f
   }
 
   /**

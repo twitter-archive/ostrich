@@ -95,8 +95,9 @@ class Metric {
   }
 }
 
-class FanoutMetric extends Metric {
+class FanoutMetric(others: Metric*) extends Metric {
   private val fanout = new mutable.HashSet[Metric]
+  others.foreach { metric => addFanout(metric) }
 
   def addFanout(metric: Metric) {
     fanout += metric

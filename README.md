@@ -152,20 +152,25 @@ reports. You can attach multiple `StatsReporter`s to track independent state
 without affecting the `StatsCollection`.
 
 
+## ServiceTracker
 
---- everything below here needs work.
+The global "shutdown" and "quiesce" commands work by talking to a global
+`ServiceTracker` object. This is just a set of running `Service` objects.
+
+Each `Service` knows how to start and shutdown, so registering a service with
+the global `ServiceTracker` will cause it to be shutdown when the server as a
+whole is shutdown:
+
+    ServiceTracker.register(this)
+
+Some helper classes like `BackgroundProcess` and `PeriodicBackgroundProcess`
+implement `Service`, so they can be used to build simple background tasks
+that will be automatically shutdown when the server exits.
+
+
 ## Web/socket commands
-## Web graphs
-## Admin API
-## Config keys
-## Profiling
-## Credits
 
-
-
-## Web/socket commands
-
-Commands over the web interface take the form of a "get" request:
+Commands over the admin interface take the form of an HTTP "get" request:
 
     GET /<command>[/<parameters...>][.<type>]
 
@@ -176,11 +181,7 @@ which can be performed using 'curl' or 'wget':
 The result body may be json or plain-text, depending on <type>. The default is
 json, but you can ask for text like so:
 
-    $ curl http://localhost:9990/stats/reset.txt
-
-or:
-
-    stats/json reset
+    $ curl http://localhost:9990/stats.txt
 
 For simple commands like `shutdown`, the response body may simply be the JSON encoding of the string
 "ok". For others like `stats`, it may be a nested structure.
@@ -204,10 +205,9 @@ The commands are:
   close any listening sockets, stop accepting new connections, and shutdown the server as soon as
   the last client connection is done
 
-- stats [reset]
+- stats
 
-  dump server statistics as 4 groups: JVM-specific, gauges, counters, and timings; if "reset" is
-  added, the counters and timings are atomically cleared as they are dumped
+  dump server statistics as 4 groups: counters, gauges, metrics, and labels
 
 - server_info
 
@@ -216,6 +216,10 @@ The commands are:
 - threads
 
   dump stack traces and stats about each currently running thread
+
+- gc
+
+  force a garbage collection cycle
 
 
 ## Web graphs
@@ -233,61 +237,30 @@ the current hourly graph for each stat. The graphs are generated in javascript u
 
 ## Admin API
 
-To startup the admin interfaces, call:
+The easiest way to start the admin service is to construct an `AdminServiceConfig` with desired
+configuration, and call `apply` on it.
 
-    ServiceTracker.startAdmin(config, runtimeEnvironment)
+    val admin = new AdminServiceConfig {
+      httpPort = 8888
+      statsNodes = new StatsConfig {
+        reporters = new TimeSeriesCollectorConfig
+      }
+    }
+    admin()
 
-`RuntimeEnvironment` comes from configgy, and is used to display the server info.
+If `httpPort` isn't set, the admin server won't start.
 
-`Config` is usually your root server config (but doesn't have to be) and is used to determine which
-admin interfaces to start up. If `admin_text_port` exists, the socket interface will start up there.
-If `admin_http_port` exists, the web interface will start up. If neither is set, no admin services
-will be started.
+A helper trait called `ServerConfig` contains an `AdminServiceConfig` and `LoggerConfig` to reduce
+boilerplate in the common case of configuring a server.
 
-In order to shutdown your server from the admin port, you must implement `Service` and register it:
+To build the admin service manually, you can do what the config classes do:
 
-    ServiceTracker.register(this)
-
-`Service` contains only the methods `shutdown` and `quiesce`, both of which are always called from
-dedicated temporary threads (so it's okay to do slow things, but be careful of thread safety). You
-can implement `quiesce` as a call to `shutdown` if the distinction makes no sense for your server.
-
-An example:
-
-    import com.twitter.ostrich.{Service, ServiceTracker}
-    import net.lag.configgy.{Configgy, RuntimeEnvironment}
-
-    object Main extends Service {
-      val runtime = new RuntimeEnvironment(getClass)
-      runtime.load(args)
-      val config = Configgy.config
-      ServiceTracker.register(this)
-      ServiceTracker.startAdmin(config, runtime)
-
-
-## Config keys
-
-- `admin_http_port`
-
-  port for the web server interface (default: no web interface)
-
-- `admin_text_port`
-
-  port for the interactive text interface (default: no text interface)
-
-- `admin_jmx_package`
-
-  package to use for reporting stats & config through JMX (default: no JMX)
-
-- `admin_timeseries`
-
-  true/false, whether to expose the hourly graphs through the web interface (default: true)
-
-
-
-
-
-
+    val runtime = RuntimeEnvironment(this, Nil)
+    val admin = new AdminHttpService(/* port */ 8888, /* http backlog */ 20, runtime)
+    val collector = new TimeSeriesCollector(Stats)
+    collector.registerWith(admin)
+    ServiceTracker.register(collector)
+    collector.start()
 
 
 ## Profiling
@@ -303,18 +276,18 @@ This will result in a file that you can be read with
 [pprof](http://goog-perftools.sourceforge.net/doc/cpu_profiler.html)
 
 
-
 ## Credits
 
 This started out as several smaller projects that began to overlap so much, we decided to merge
 them. Major contributers include, in alphabetical order:
 
 - Alex Payne
+- John Corwin
 - John Kalucki
+- Marius Eriksen
 - Nick Kallen
 - Pankaj Gupta
 - Robey Pointer
 - Steve Jenson
-- John Corwin
 
 If you make a significant change, please add your name to the list!
