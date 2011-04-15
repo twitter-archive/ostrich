@@ -50,6 +50,7 @@ object RuntimeEnvironment {
  */
 class RuntimeEnvironment(obj: AnyRef) {
   private val buildProperties = new Properties
+  var arguments: Map[String, String] = Map()
 
   try {
     buildProperties.load(obj.getClass.getResource("build.properties").openStream)
@@ -98,6 +99,10 @@ class RuntimeEnvironment(obj: AnyRef) {
    */
   def parseArgs(args: List[String]): Unit = {
     args match {
+      case "-D" :: arg :: xs =>
+        val split = arg.split("=")
+        parseSetting(split(0), split(1))
+        parseArgs(xs)
       case "-f" :: filename :: xs =>
         configFile = new File(filename)
         parseArgs(xs)
@@ -113,6 +118,10 @@ class RuntimeEnvironment(obj: AnyRef) {
         println("Unknown command-line option: " + unknown)
         help
     }
+  }
+
+  def parseSetting(arg: String, value: String) {
+    arguments = arguments + (arg -> value)
   }
 
   private def help() {
