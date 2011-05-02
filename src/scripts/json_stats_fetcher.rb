@@ -35,13 +35,14 @@ def report_metric(name, value, units)
   end
 
   if $report_to_ganglia
-    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
+    slope_arg = slope ? "-s #{slope}" : ""
+    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout} #{slope_arg}")
   else
-    puts "#{$ganglia_prefix}#{name}=#{value} #{units}"
+    puts "#{$ganglia_prefix}#{name}=#{value} #{units} #{slope}"
   end
 end
 
-$ostrich3 = false
+$ostrich3 = false # guessed ostrich version
 $report_to_ganglia = true
 $ganglia_prefix = ''
 $stat_timeout = 86400
@@ -110,6 +111,7 @@ File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 begin
   Timeout::timeout(60) do
     data = if use_web
+      # Note reset argument is ignored in Ostrich >3
       open("http://#{hostname}:#{port}/stats.json#{'?reset=1' if $report_to_ganglia}").read
     else
       socket = TCPSocket.new(hostname, port)
@@ -131,7 +133,9 @@ begin
     end
 
     stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      report_metric(name, (value.to_i rescue 0), "items")
+      # Ostrich >3 counters are monotonically increasing
+      slope = ($ostrich3) ? "positive" : nil
+      report_metric(name, (value.to_i rescue 0), "items", slope)
     end
 
     stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
