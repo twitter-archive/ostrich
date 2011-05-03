@@ -23,7 +23,7 @@ import java.util.Date
 import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
 import com.twitter.json.Json
-import stats.Stats
+import stats.{StatsListener, Stats}
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 
@@ -93,7 +93,11 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         }
         "ok"
       case "stats" =>
-        Stats.toMap
+        if (parameters.size == 0 || parameters(0) == "reset") {
+          Stats.get().toMap
+        } else {
+          StatsListener(parameters(0), Stats).get().toMap
+        }
       case "server_info" =>
         val mxRuntime = ManagementFactory.getRuntimeMXBean()
         immutable.Map("name" -> runtime.jarName,
