@@ -29,7 +29,7 @@ def valid_gmetric_name?(name)
   end
 end
 
-def report_metric(name, value, units)
+def report_metric(name, value, units, slope=nil)
   if not valid_gmetric_name?(name)
     return
   end
