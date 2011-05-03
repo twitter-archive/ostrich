@@ -17,6 +17,7 @@
 package com.twitter.ostrich.stats
 
 import scala.collection.{Map, mutable, immutable}
+import com.twitter.json.Json
 import com.twitter.util.{Duration, Future}
 
 /**
@@ -27,7 +28,29 @@ case class StatsSummary(
   metrics: Map[String, Distribution],
   gauges: Map[String, Double],
   labels: Map[String, String]
-)
+) {
+  /**
+   * Dump a nested map of the stats in this collection, suitable for json output.
+   */
+  def toMap: Map[String, Any] = {
+    val jsonGauges = Map[String, Any]() ++ gauges.map { case (k, v) =>
+      if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
+    }
+    Map(
+      "counters" -> counters,
+      "metrics" -> metrics,
+      "gauges" -> jsonGauges,
+      "labels" -> labels
+    )
+  }
+
+  /**
+   * Dump a json-encoded map of the stats in this collection.
+   */
+  def toJson = {
+    Json.build(toMap).toString
+  }
+}
 
 /**
  * Trait for anything that collects counters, timings, and gauges, and can report them in
