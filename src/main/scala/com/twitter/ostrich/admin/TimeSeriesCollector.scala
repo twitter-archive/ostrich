@@ -20,7 +20,6 @@ package admin
 import scala.collection.{immutable, mutable}
 import com.sun.net.httpserver.HttpExchange
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 import stats._

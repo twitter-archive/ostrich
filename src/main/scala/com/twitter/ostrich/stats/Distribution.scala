@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.stats
+package com.twitter.ostrich
+package stats
 
 import scala.collection.Map
 import scala.collection.immutable
-import scala.util.Sorting
-import com.twitter.json.{Json, JsonSerializable}
 
 /**
  * A set of data points summarized into a histogram, mean, min, and max.

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.stats
+package com.twitter.ostrich
+package stats
 
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
-import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Local
 
 /**

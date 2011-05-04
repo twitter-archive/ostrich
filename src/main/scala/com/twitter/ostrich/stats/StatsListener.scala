@@ -18,7 +18,6 @@ package com.twitter.ostrich.stats
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
-import com.twitter.json.{Json, JsonSerializable}
 
 /**
  * Attaches to a StatsCollection and reports on all the counters, metrics, gauges, and labels.
