@@ -53,8 +53,16 @@ extends JsonSerializable {
   }
 
   def toMapWithoutHistogram = {
-    Map[String, Long]("count" -> count, "maximum" -> maximum, "minimum" -> minimum,
-                      "average" -> average.toLong)
+    Map[String, Long]("count" -> count) ++ (
+      if (count > 0) {
+        Map[String, Long](
+          "maximum" -> maximum,
+          "minimum" -> minimum,
+          "average" -> average.toLong)
+      } else {
+        Map.empty[String, Long]
+      }
+    )
   }
 
   def percentile(percentile: Double) = {
@@ -63,14 +71,15 @@ extends JsonSerializable {
 
   def toMap: Map[String, Long] = {
     toMapWithoutHistogram ++ (histogram match {
-      case None => Map.empty[String, Long]
-      case Some(h) => Map[String, Long]("p25" -> percentile(0.25),
-                                        "p50" -> percentile(0.5),
-                                        "p75" -> percentile(0.75),
-                                        "p90" -> percentile(0.9),
-                                        "p99" -> percentile(0.99),
-                                        "p999" -> percentile(0.999),
-                                        "p9999" -> percentile(0.9999))
+      case Some(h) if (count > 0) => Map[String, Long](
+        "p25" -> percentile(0.25),
+        "p50" -> percentile(0.5),
+        "p75" -> percentile(0.75),
+        "p90" -> percentile(0.9),
+        "p99" -> percentile(0.99),
+        "p999" -> percentile(0.999),
+        "p9999" -> percentile(0.9999))
+      case _ => Map.empty[String, Long]
     })
   }
 }
