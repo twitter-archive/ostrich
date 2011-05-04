@@ -94,8 +94,7 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   /**
-   * Perform baseline command-line argument parsing. Responds to `--help`,
-   * `--version`, and `-f` (which overrides the config filename).
+   * Perform baseline command-line argument parsing.
    */
   def parseArgs(args: List[String]): Unit = {
     args match {
@@ -122,6 +121,7 @@ class RuntimeEnvironment(obj: AnyRef) {
 
   def parseSetting(arg: String, value: String) {
     arguments = arguments + (arg -> value)
+    System.setProperty(arg, value)
   }
 
   private def help() {
@@ -130,6 +130,8 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("options:")
     println("    -f <path>")
     println("        path of config files (default: %s)".format(configFile))
+    println("    -D <key>=<value>")
+    println("        set or override an optional setting")
     println("    --version")
     println("        show version information")
     println("    --validate")
