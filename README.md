@@ -277,7 +277,7 @@ The commands are:
 
 - reload
 
-  reload the server config file with `Configgy.reload()`
+  reload the server config file for any services that support it (most do not)
 
 - shutdown
 
