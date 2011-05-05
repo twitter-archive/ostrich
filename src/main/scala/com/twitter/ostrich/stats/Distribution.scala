@@ -54,6 +54,7 @@ extends JsonSerializable {
 
   def toMapWithoutHistogram = {
     Map[String, Long]("count" -> count) ++ (
+      // If there are no events then derived values are meaningless; so elide them.
       if (count > 0) {
         Map[String, Long](
           "maximum" -> maximum,
@@ -71,6 +72,7 @@ extends JsonSerializable {
 
   def toMap: Map[String, Long] = {
     toMapWithoutHistogram ++ (histogram match {
+      // If there are no events then derived values are meaningless; so elide them.
       case Some(h) if (count > 0) => Map[String, Long](
         "p25" -> percentile(0.25),
         "p50" -> percentile(0.5),
