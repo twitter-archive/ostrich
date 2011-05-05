@@ -222,6 +222,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
 }
 
 class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) extends Service {
+  val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
   val commandHandler = new CommandHandler(runtime)
 
@@ -251,6 +252,7 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
   def start() = {
     ServiceTracker.register(this)
     httpServer.start()
+    log.info("Admin HTTP interface started on port %d.", port)
   }
 
   override def shutdown() = httpServer.stop(0) // argument is in seconds

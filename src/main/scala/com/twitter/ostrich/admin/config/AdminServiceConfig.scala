@@ -100,7 +100,6 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
         config()(admin)
       }
 
-      ServiceTracker.register(admin)
       admin.start()
 
       // handlers can't be added until the admin server is started.
