@@ -1,38 +1,48 @@
 import sbt._
+import Process._
 import com.twitter.sbt._
 
-class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
+/**
+ * Sbt project files are written in a DSL in scala.
+ *
+ * The % operator is just turning strings into maven dependency declarations, so lines like
+ *     val example = "com.example" % "exampleland" % "1.0.3"
+ * mean to add a dependency on exampleland version 1.0.3 from provider "com.example".
+ */
+class OstrichProject(info: ProjectInfo) extends StandardServiceProject(info) 
+  with CompileThriftScala 
+  with NoisyDependencies 
+  with DefaultRepos 
   with SubversionPublisher
-  with DefaultRepos
-  with IdeaProject
   with PublishSourcesAndJavadocs
   with PublishSite
 {
-  val util = "com.twitter" % "util-core" % "1.8.5"
-  val eval = "com.twitter" % "util-eval" % "1.8.5"
-  val logging = "com.twitter" % "util-logging" % "1.8.5"
-  val json = "com.twitter" % "json_2.8.1" % "2.1.6"
-  val scalaCompiler = "org.scala-lang" % "scala-compiler" % "2.8.1" % "compile"
-  val netty = "org.jboss.netty" % "netty" % "3.2.3.Final"
-  val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
-  val commonsLang = "commons-lang" % "commons-lang" % "2.2"
+  val finagleVersion = "1.2.5"
 
-  // for tests:
-  val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"
+  val finagleC = "com.twitter" % "finagle-core" % finagleVersion
+  val finagleT = "com.twitter" % "finagle-thrift" % finagleVersion
+  val finagleO = "com.twitter" % "finagle-ostrich4" % finagleVersion
+
+  // thrift
+  val libthrift = "thrift" % "libthrift" % "0.5.0"
+  val util = "com.twitter" % "util" % "1.8.3"
+
+  override def originalThriftNamespaces = Map("Ostrich" -> "com.twitter.ostrich.thrift")
+  val scalaThriftTargetNamespace = "com.twitter.ostrich"
+  
+  val slf4jVersion = "1.5.11"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % slf4jVersion withSources() intransitive()
+  val slf4jBindings = "org.slf4j" % "slf4j-jdk14" % slf4jVersion withSources() intransitive()
+
+  // for tests
+  val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.7" % "test" withSources()
+  val jmock = "org.jmock" % "jmock" % "2.4.0" % "test"
+  val hamcrest_all = "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
   val cglib = "cglib" % "cglib" % "2.1_3" % "test"
   val asm = "asm" % "asm" % "1.5.3" % "test"
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
-  val hamcrest = "org.hamcrest" % "hamcrest-all" % "1.1" % "test"
-  val jmock = "org.jmock" % "jmock" % "2.4.0" % "test"
 
-  override def pomExtra =
-    <licenses>
-      <license>
-        <name>Apache 2</name>
-        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
+  override def mainClass = Some("com.twitter.ostrich.Main")
 
-  override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
+  override def subversionRepository = Some("http://svn.local.twitter.com/maven")
 }
