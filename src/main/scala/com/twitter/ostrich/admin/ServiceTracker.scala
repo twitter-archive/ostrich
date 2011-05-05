@@ -25,8 +25,6 @@ import com.sun.net.httpserver.{HttpHandler, HttpExchange}
  */
 object ServiceTracker {
   private val services = new mutable.HashSet[Service]
-  private val queuedAdminHandlers = new mutable.HashMap[String, HttpHandler]
-  private var adminHttpService: Option[AdminHttpService] = None
 
   def clearForTests() {
     services.clear()
@@ -46,50 +44,13 @@ object ServiceTracker {
       services.clear()
       rv
     }.foreach { _.shutdown() }
-    stopAdmin()
   }
 
   def quiesce() {
     synchronized { services.toList }.foreach { _.quiesce() }
-    stopAdmin()
   }
 
   def reload() {
     synchronized { services.toList }.foreach { _.reload() }
-  }
-
-  def startAdmin(service: Option[AdminHttpService]) {
-    synchronized {
-      adminHttpService = service
-      service.foreach { s =>
-        for ((path, handler) <- queuedAdminHandlers) {
-          s.addContext(path, handler)
-        }
-        s.start()
-      }
-    }
-  }
-
-  def stopAdmin() {
-    synchronized {
-      adminHttpService.map { _.shutdown() }
-      adminHttpService = None
-    }
-  }
-
-  def registerAdminHttpHandler(path: String)(generator: (List[(String, String)]) => String) = {
-    val handler = new CustomHttpHandler {
-      def handle(exchange: HttpExchange) {
-        val parameters = CgiRequestHandler.exchangeToParameters(exchange)
-        render(generator(parameters), exchange)
-      }
-    }
-
-    synchronized {
-      adminHttpService match {
-        case Some(ahs) => ahs.addContext(path, handler)
-        case None      => queuedAdminHandlers(path) = handler
-      }
-    }
   }
 }

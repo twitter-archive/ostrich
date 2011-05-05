@@ -25,6 +25,11 @@ import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 
+/**
+ * Custom handler interface for the admin web site. The standard `render` calls are implemented in
+ * terms of a single `handle` call. For more functionality, check out subclasses like
+ * `FolderResourceHandler` and `CgiRequestHandler`.
+ */
 abstract class CustomHttpHandler extends HttpHandler {
   private val log = Logger.get(getClass)
 
@@ -77,6 +82,9 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
   }
 }
 
+/**
+ * Serve static pages as java resources.
+ */
 class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
   /**
    * Given a requestPath (e.g. /static/digraph.js), break it up into the path and filename
