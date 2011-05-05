@@ -35,6 +35,7 @@ object DistributionSpec extends Specification {
         Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15,
             "p25" -> 10, "p50" -> 10, "p75" -> 20, "p90" -> 20, "p99" -> 20,
             "p999" -> 20, "p9999" -> 20)
+      Distribution(0, 0, 0, None, 0.0).toMap mustEqual Map[String, Long]("count" -> 0)
     }
 
     "toJson" in {
