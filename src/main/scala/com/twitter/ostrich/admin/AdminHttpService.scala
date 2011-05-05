@@ -110,15 +110,15 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
 }
 
 object CgiRequestHandler {
-  def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
-    val params = exchange.getRequestURI.getQuery
-
-    if (params != null) {
-      params.split('&').toList
-    } else {
-      Nil
+  def exchangeToParameters(exchange: HttpExchange): List[(String, String)] = {
+    Option(exchange.getRequestURI.getQuery).toList.map { param =>
+      param.split("=", 2).toList match {
+        case k :: v :: Nil => (k, v)
+        case k :: Nil => (k, "")
+        case _ => ("", "") // won't happen, but stops the compiler from whining.
+      }
     }
-  }.map { _.split("=", 2).toList }
+  }
 }
 
 abstract class CgiRequestHandler extends CustomHttpHandler {
@@ -140,15 +140,14 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
     }
   }
 
-  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]])
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)])
 }
 
 class HeapResourceHandler extends CgiRequestHandler {
   private val log = Logger(getClass.getName)
   case class Params(pause: Duration, samplingPeriod: Int, forceGC: Boolean)
 
-  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
-
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     if (!Heapster.instance.isDefined) {
       render("heapster not loaded!", exchange)
       return
@@ -157,13 +156,13 @@ class HeapResourceHandler extends CgiRequestHandler {
 
     val params =
       parameters.foldLeft(Params(10.seconds, 10 << 19, true)) {
-        case (params, "pause" :: pauseVal :: _) =>
+        case (params, ("pause", pauseVal)) =>
           params.copy(pause = pauseVal.toInt.seconds)
-        case (params, "sample_period" :: sampleVal :: _) =>
+        case (params, ("sample_period", sampleVal)) =>
           params.copy(samplingPeriod = sampleVal.toInt)
-        case (params, "force_gc" :: "no" :: _) =>
+        case (params, ("force_gc", "no")) =>
           params.copy(forceGC = false)
-        case (params, "force_gc" :: "0" :: _) =>
+        case (params, ("force_gc", "0")) =>
           params.copy(forceGC = false)
         case (params, _) =>
           params
@@ -184,19 +183,19 @@ class HeapResourceHandler extends CgiRequestHandler {
 }
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
-  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     val command = path.last.split('.').head
     val format: Format = path.last.split('.').last match {
       case "txt" => Format.PlainText
       case _ => Format.Json
     }
 
+    val parameterMap = Map(parameters: _*)
     try {
       val response = {
-        val parameterNames = parameters.map { p => p(0) }
-        val commandResponse = commandHandler(command, parameterNames, format)
+        val commandResponse = commandHandler(command, parameterMap, format)
 
-        if (parameterNames.contains("callback") && (format == Format.Json)) {
+        if (parameterMap.keySet.contains("callback") && (format == Format.Json)) {
           "ostrichCallback(%s)".format(commandResponse)
         } else {
           commandResponse

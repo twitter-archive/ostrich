@@ -77,7 +77,7 @@ object ServiceTracker {
     }
   }
 
-  def registerAdminHttpHandler(path: String)(generator: (List[List[String]]) => String) = {
+  def registerAdminHttpHandler(path: String)(generator: (List[(String, String)]) => String) = {
     val handler = new CustomHttpHandler {
       def handle(exchange: HttpExchange) {
         val parameters = CgiRequestHandler.exchangeToParameters(exchange)

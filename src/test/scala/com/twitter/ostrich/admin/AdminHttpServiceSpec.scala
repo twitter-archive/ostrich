@@ -180,13 +180,13 @@ object AdminHttpServiceSpec extends Specification {
         Stats.clearAll()
         Stats.incr("apples", 10)
 
-        val stats1 = Json.parse(get("/stats.json?ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats1 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats1("counters")("apples") mustEqual 10
 
         Stats.incr("apples", 6)
-        val stats2 = Json.parse(get("/stats.json?ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats2 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats2("counters")("apples") mustEqual 6
-        val stats3 = Json.parse(get("/stats.json?vex")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats3 = Json.parse(get("/stats.json?namespace=vex")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats3("counters")("apples") mustEqual 16
       }
 

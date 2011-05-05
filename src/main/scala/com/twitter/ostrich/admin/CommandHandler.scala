@@ -57,8 +57,8 @@ class CommandHandler(runtime: RuntimeEnvironment) {
 
   def flatten(obj: Any): String = build(obj).mkString("\n") + "\n"
 
-  def apply(command: String, parameters: List[String], format: Format): String = {
-    val rv = handleRawCommand(command, parameters)
+  def apply(command: String, parameters: Map[String, String], format: Format): String = {
+    val rv = handleCommand(command, parameters)
     format match {
       case Format.PlainText =>
         flatten(rv)
@@ -71,7 +71,7 @@ class CommandHandler(runtime: RuntimeEnvironment) {
     }
   }
 
-  def handleRawCommand(command: String, parameters: List[String]): Any = {
+  def handleCommand(command: String, parameters: Map[String, String]): Any = {
     command match {
       case "ping" =>
         "pong"
@@ -93,11 +93,10 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         }
         "ok"
       case "stats" =>
-        if (parameters.size == 0 || parameters(0) == "reset") {
-          Stats.get().toMap
-        } else {
-          StatsListener(parameters(0), Stats).get().toMap
-        }
+        (parameters.get("namespace") match {
+          case None => Stats.get()
+          case Some(namespace) => StatsListener(namespace, Stats).get()
+        }).toMap
       case "server_info" =>
         val mxRuntime = ManagementFactory.getRuntimeMXBean()
         immutable.Map("name" -> runtime.jarName,
