@@ -19,6 +19,7 @@ package com.twitter.ostrich.stats
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{Map, mutable, immutable}
+import com.twitter.conversions.string._
 import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Local
 
@@ -72,7 +73,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     var totalTime = 0L
 
     ManagementFactory.getGarbageCollectorMXBeans().asScala.foreach { gc =>
-      val name = gc.getName
+      val name = gc.getName.regexSub("""[^\w]""".r) { m => "_" }
       out += ("jvm_gc_" + name + "_cycles" -> gc.getCollectionCount)
       out += ("jvm_gc_" + name + "_msec" -> gc.getCollectionTime)
       totalCycles += gc.getCollectionCount
