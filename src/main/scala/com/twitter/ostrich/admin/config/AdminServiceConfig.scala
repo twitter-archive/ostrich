@@ -18,6 +18,8 @@ package com.twitter.ostrich
 package admin
 package config
 
+import scala.collection.Map
+import scala.collection.mutable
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Config, Duration}
@@ -84,16 +86,27 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
    */
   var statsNodes: List[StatsConfig] = Nil
 
+  /**
+   * Extra handlers for the admin web interface.
+   * Each key is a path prefix, and each value is the handler to invoke for that path. You can use
+   * this to setup extra functionality for the admin web interface.
+   */
+  var extraHandlers: Map[String, CustomHttpHandler] = new mutable.HashMap[String, CustomHttpHandler]
+
   def apply() = { (runtime: RuntimeEnvironment) =>
-    val adminHttpService = httpPort.map { port =>
+    httpPort.map { port =>
       val admin = new AdminHttpService(port, httpBacklog, runtime)
       statsNodes.foreach { config =>
         config()(admin)
       }
+
+      admin.start()
+
+      // handlers can't be added until the admin server is started.
+      extraHandlers.foreach { case (path, handler) =>
+        admin.addContext(path, handler)
+      }
       admin
     }
-
-    ServiceTracker.startAdmin(adminHttpService)
-    adminHttpService
   }
 }

@@ -72,5 +72,13 @@ object StatsListenerSpec extends Specification {
         Map("beans" -> new Distribution(1, 3, 3, None, 3.0),
             "rice" -> new Distribution(0, 0, 0, None, 0.0))
     }
+
+    "named" in {
+      collection.incr("a", 5)
+      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
+      collection.incr("a", 4)
+      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 4)
+      StatsListener("king", collection).getCounters() mustEqual Map("a" -> 9)
+    }
   }
 }
