@@ -40,6 +40,13 @@ object StatsCollectionSpec extends Specification {
       map.keys.toList must contain("jvm_start_time")
     }
 
+    "fillInJvmCounters" in {
+      val map = new mutable.HashMap[String, Long]
+      collection.fillInJvmCounters(map)
+      map.keys.toList must contain("jvm_gc_cycles")
+      map.keys.toList must contain("jvm_gc_msec")
+    }
+
     "counters" in {
       "basic" in {
         collection.incr("widgets", 1)
