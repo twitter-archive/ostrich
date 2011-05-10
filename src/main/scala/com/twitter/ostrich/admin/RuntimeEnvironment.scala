@@ -64,6 +64,10 @@ class RuntimeEnvironment(obj: AnyRef) {
   val jarBuildRevision = buildProperties.getProperty("build_revision", "unknown")
   val stageName = System.getProperty("stage", "production")
 
+  // require standard-project >= 0.12.4:
+  val jarBuildBranchName = buildProperties.getProperty("build_branch_name", "unknown")
+  val jarBuildLastFewCommits = buildProperties.getProperty("build_last_few_commits", "unknown")
+
   /**
    * Return the path this jar was executed from. Depends on the presence of
    * a valid `build.properties` file. Will return `None` if it couldn't

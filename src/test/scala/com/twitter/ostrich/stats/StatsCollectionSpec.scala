@@ -38,6 +38,14 @@ object StatsCollectionSpec extends Specification {
       map.keys.toList must contain("jvm_num_cpus")
       map.keys.toList must contain("jvm_heap_used")
       map.keys.toList must contain("jvm_start_time")
+      map.keys.toList must contain("jvm_post_gc_used")
+    }
+
+    "fillInJvmCounters" in {
+      val map = new mutable.HashMap[String, Long]
+      collection.fillInJvmCounters(map)
+      map.keys.toList must contain("jvm_gc_cycles")
+      map.keys.toList must contain("jvm_gc_msec")
     }
 
     "counters" in {
