@@ -38,6 +38,7 @@ object StatsCollectionSpec extends Specification {
       map.keys.toList must contain("jvm_num_cpus")
       map.keys.toList must contain("jvm_heap_used")
       map.keys.toList must contain("jvm_start_time")
+      map.keys.toList must contain("jvm_post_gc_used")
     }
 
     "fillInJvmCounters" in {
