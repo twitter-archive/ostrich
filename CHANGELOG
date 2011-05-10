@@ -1,3 +1,16 @@
+4.2.0 (9 May 2011)
+-----
+- Made -D option set system properties, too.
+- Metrics with no recorded events during a timeslice no longer report statistics for that
+  timeslice.
+- Added admin command "stats?namespace=<name>", which will report a named StatsListener.
+- Removed old hooks for adding admin HTTP path handlers. You have to use the config fields in
+  AdminServiceConfig now.
+- Added several GC-related counters & gauges to stats.
+- Added support to the admin "server_info" command for two new build fields: current branch alias
+  and the last few commit summaries (requires standard-project >= 0.12.4).
+- Improved documentation significantly.
+
 4.1.1
 -----
 - Derived metrics (i.e. average, max, min, percentiles) are now exposed only
