@@ -20,18 +20,38 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.json.{Json, JsonSerializable}
 
+object StatsListener {
+  val listeners = new mutable.HashMap[String, StatsListener]
+
+  /**
+   * Get a named StatsListener that's attached to a specified stats collection, creating it if it
+   * doesn't already exist.
+   */
+  def apply(name: String, collection: StatsCollection): StatsListener = {
+    listeners.getOrElseUpdate(name, new StatsListener(collection, false))
+  }
+
+  /**
+   * Get a named StatsListener that's attached to the global stats collection, creating it if it
+   * doesn't already exist.
+   */
+  def apply(name: String): StatsListener = apply(name, Stats)
+}
+
 /**
  * Attaches to a StatsCollection and reports on all the counters, metrics, gauges, and labels.
  * Each report resets state, so counters are reported as deltas, and metrics distributions are
  * only tracked since the last report.
  */
-class StatsListener(collection: StatsCollection) {
+class StatsListener(collection: StatsCollection, startClean: Boolean = true) {
   private val metricMap = new ConcurrentHashMap[String, Metric]()
   private val lastCounterMap = new mutable.HashMap[String, Long]()
 
   collection.addListener(this)
-  collection.getCounters.foreach { case (key, value) =>
-    lastCounterMap(key) = value
+  if (startClean) {
+    collection.getCounters.foreach { case (key, value) =>
+      lastCounterMap(key) = value
+    }
   }
 
   def getMetric(name: String) = {

@@ -174,27 +174,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     listeners.clear()
   }
 
-  /**
-   * Dump a nested map of the stats in this collection, suitable for json output.
-   */
-  def toMap: Map[String, Any] = {
-    val gauges = Map[String, Any]() ++ getGauges().map { case (k, v) =>
-      if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
-    }
-    Map(
-      "counters" -> getCounters(),
-      "metrics" -> getMetrics(),
-      "gauges" -> gauges,
-      "labels" -> getLabels()
-    )
-  }
-
-  /**
-   * Dump a json-encoded map of the stats in this collection.
-   */
-  def toJson = {
-    Json.build(toMap).toString
-  }
+  def toJson = get().toJson
 }
 
 /**
