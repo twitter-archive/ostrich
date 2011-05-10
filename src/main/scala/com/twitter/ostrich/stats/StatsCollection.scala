@@ -66,6 +66,16 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
     val os = ManagementFactory.getOperatingSystemMXBean()
     out += ("jvm_num_cpus" -> os.getAvailableProcessors().toLong)
+
+    var totalUsage = 0L
+    ManagementFactory.getMemoryPoolMXBeans().asScala.foreach { pool =>
+      val name = pool.getName.regexSub("""[^\w]""".r) { m => "_" }
+      Option(pool.getCollectionUsage).foreach { usage =>
+        out += ("jvm_post_gc_" + name + "_used" -> usage.getUsed)
+        totalUsage += usage.getUsed
+      }
+    }
+    out += ("jvm_post_gc_used" -> totalUsage)
   }
 
   def fillInJvmCounters(out: mutable.Map[String, Long]) {
