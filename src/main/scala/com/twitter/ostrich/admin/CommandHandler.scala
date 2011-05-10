@@ -99,12 +99,16 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         }).toMap
       case "server_info" =>
         val mxRuntime = ManagementFactory.getRuntimeMXBean()
-        immutable.Map("name" -> runtime.jarName,
-                      "version" -> runtime.jarVersion,
-                      "build" -> runtime.jarBuild,
-                      "build_revision" -> runtime.jarBuildRevision,
-                      "start_time" -> (new Date(mxRuntime.getStartTime())).toString,
-                      "uptime" -> mxRuntime.getUptime())
+        immutable.Map(
+          "name" -> runtime.jarName,
+          "version" -> runtime.jarVersion,
+          "build" -> runtime.jarBuild,
+          "build_revision" -> runtime.jarBuildRevision,
+          "build_branch_name" -> runtime.jarBuildBranchName,
+          "build_last_few_commits" -> runtime.jarBuildLastFewCommits.split("\n"),
+          "start_time" -> (new Date(mxRuntime.getStartTime())).toString,
+          "uptime" -> mxRuntime.getUptime()
+        )
       case "threads" =>
         getThreadStacks()
       case "gc" =>
