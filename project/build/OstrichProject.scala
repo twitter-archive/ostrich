@@ -4,7 +4,6 @@ import com.twitter.sbt._
 class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with SubversionPublisher
   with DefaultRepos
-  with IdeaProject
   with PublishSourcesAndJavadocs
   with PublishSite
 {
