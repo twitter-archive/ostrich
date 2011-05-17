@@ -17,14 +17,15 @@
 package com.twitter.ostrich
 package admin
 
-import java.net.{Socket, SocketException, URL}
+import java.net.{Socket, SocketException, URI, URL}
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
+import org.specs.util.DataTables
 import stats.Stats
 
-object AdminHttpServiceSpec extends Specification {
+object AdminHttpServiceSpec extends Specification with DataTables {
   val PORT = 9996
   val BACKLOG = 20
 
@@ -281,6 +282,19 @@ object AdminHttpServiceSpec extends Specification {
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         get("/stats.txt") must beMatching("  kangaroos: 1")
+      }
+    }
+
+    "parse parameters" in {
+      "uri"         | "result"                        |>
+      "/p"          ! Nil                             |
+      "/p?a=b"      ! ("a", "b") :: Nil               |
+      "/p?a=b&c=d"  ! ("a", "b") :: ("c", "d") :: Nil |
+      "/p?"         ! Nil                             |
+      "/p?invalid"  ! Nil                             |
+      "/p?a="       ! ("a", "") :: Nil                |
+      "/p?=b"       ! ("", "b") :: Nil                | { (uriStr, result) =>
+        CgiRequestHandler.uriToParameters(new URI(uriStr)) mustEqual result
       }
     }
   }
