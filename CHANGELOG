@@ -1,3 +1,19 @@
+4.2.2
+-----
+release: 17 May 2011
+
+- CgiRequestHandler: Handle multiple CGI parameters correctly
+
+
+4.2.1
+-----
+release: 13 May 2011
+
+- remove idea plugin
+
+- fix bug in reporting metrics that may not exist
+
+
 4.2.0
 -----
 release: 9 May 2011
