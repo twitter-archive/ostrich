@@ -18,7 +18,7 @@ package com.twitter.ostrich
 package admin
 
 import java.io.{InputStream, OutputStream}
-import java.net.{InetSocketAddress, Socket}
+import java.net.{InetSocketAddress, Socket, URI}
 import scala.io.Source
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.conversions.time._
@@ -118,8 +118,14 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
 }
 
 object CgiRequestHandler {
-  def exchangeToParameters(exchange: HttpExchange): List[(String, String)] = {
-    Option(exchange.getRequestURI.getQuery).toList.map { param =>
+  def exchangeToParameters(exchange: HttpExchange): List[(String, String)] =
+    Option(exchange.getRequestURI) match {
+      case Some(uri) => uriToParameters(uri)
+      case None      => Nil
+    }
+
+  def uriToParameters(uri: URI): List[(String, String)] = {
+    Option(uri.getQuery).getOrElse("").split("&").toList.filter { _.contains("=") }.map { param =>
       param.split("=", 2).toList match {
         case k :: v :: Nil => (k, v)
         case k :: Nil => (k, "")
