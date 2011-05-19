@@ -1,3 +1,12 @@
+4.2.3
+-----
+release: 19 May 2011
+
+- fix StatsListener constructor to keep backwards compatibility
+
+- better timers for Future
+
+
 4.2.2
 -----
 release: 17 May 2011
