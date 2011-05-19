@@ -43,7 +43,9 @@ object StatsListener {
  * Each report resets state, so counters are reported as deltas, and metrics distributions are
  * only tracked since the last report.
  */
-class StatsListener(collection: StatsCollection, startClean: Boolean = true) {
+class StatsListener(collection: StatsCollection, startClean: Boolean) {
+  def this(collection: StatsCollection) = this(collection, true)
+
   private val metricMap = new ConcurrentHashMap[String, Metric]()
   private val lastCounterMap = new mutable.HashMap[String, Long]()
 
