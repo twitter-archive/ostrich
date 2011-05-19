@@ -18,7 +18,7 @@ package com.twitter.ostrich.stats
 
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
-import com.twitter.util.{Duration, Future}
+import com.twitter.util.{Duration, Future, Time}
 
 /**
  * Immutable summary of counters, metrics, gauges, and labels.
@@ -182,12 +182,37 @@ trait StatsProvider {
   }
 
   /**
-   * Records the wall-clock time until the future has a value (or failure), in milliseconds, with the given name.
+   * Runs the function f and logs that duration until the future is satisfied, in microseconds, with
+   * the given name.
+   */
+  def timeFutureMicros[T](name: String)(f: Future[T]): Future[T] = {
+    val start = Time.now
+    f.respond { _ =>
+      addMetric(name + "_usec", start.sinceNow.inMicroseconds)
+    }
+    f
+  }
+
+  /**
+   * Runs the function f and logs that duration until the future is satisfied, in milliseconds, with
+   * the given name.
    */
   def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
-    val startTime = System.currentTimeMillis
+    val start = Time.now
     f.respond { _ =>
-      addMetric(name + "_msec", (System.currentTimeMillis - startTime).toInt)
+      addMetric(name + "_msec", start.sinceNow.inMilliseconds)
+    }
+    f
+  }
+
+  /**
+   * Runs the function f and logs that duration until the future is satisfied, in nanoseconds, with
+   * the given name.
+   */
+  def timeFutureNanos[T](name: String)(f: Future[T]): Future[T] = {
+    val start = Time.now
+    f.respond { _ =>
+      addMetric(name + "_nsec", start.sinceNow.inNanoseconds)
     }
     f
   }
