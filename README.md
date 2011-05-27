@@ -273,36 +273,41 @@ The commands are:
 
 - ping
 
-  verify that the admin interface is working; server should say "pong" back
+  Verify that the admin interface is working; server should say "pong" back.
 
 - reload
 
-  reload the server config file for any services that support it (most do not)
+  Reload the server config file for any services that support it (most do not).
 
 - shutdown
 
-  immediately shutdown the server
+  Immediately shutdown the server.
 
 - quiesce
 
-  close any listening sockets, stop accepting new connections, and shutdown the server as soon as
-  the last client connection is done
+  Close any listening sockets, stop accepting new connections, and shutdown the server as soon as
+  the last client connection is done.
 
 - stats
 
-  dump server statistics as 4 groups: counters, gauges, metrics, and labels
+  Dump server statistics as 4 groups: counters, gauges, metrics, and labels.
+
+  Normally you want to add a `namespace` argument, which will create a new listener for the given
+  name. For example, `/stats.json?namespace=ganglia` lets ganglia fetch stats using its own
+  listener. (See `src/scripts/json_stats_fetcher.rb` for an example.) If you omit a namespace, the
+  main stats object will be fetched, and metrics will be globally reset each time.
 
 - server_info
 
-  dump server info (server name, version, build, and git revision)
+  Dump server info (server name, version, build, and git revision).
 
 - threads
 
-  dump stack traces and stats about each currently running thread
+  Dump stack traces and stats about each currently running thread.
 
 - gc
 
-  force a garbage collection cycle
+  Force a garbage collection cycle.
 
 
 ## Web graphs
