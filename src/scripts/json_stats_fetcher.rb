@@ -111,8 +111,10 @@ File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 begin
   Timeout::timeout(60) do
     data = if use_web
-      # Note reset argument is ignored in Ostrich >3
-      open("http://#{hostname}:#{port}/stats.json#{'?reset=1' if $report_to_ganglia}").read
+      # Ostrich 2 uses reset
+      # Ostrich 4.2 uses namespace for similar functionality
+      # Ostrich 3 and 4.0 don't have this open and don't reset counters.
+      open("http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}").read
     else
       socket = TCPSocket.new(hostname, port)
       socket.puts("stats/json#{' reset' if $report_to_ganglia}")
@@ -133,8 +135,6 @@ begin
     end
 
     stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      # Ostrich >3 counters are monotonically increasing
-      slope = ($ostrich3) ? "positive" : nil
       report_metric(name, (value.to_i rescue 0), "items", slope)
     end
 
