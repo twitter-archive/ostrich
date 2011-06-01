@@ -1,6 +1,6 @@
 4.3.0
 -----
-release: 19 May 2011
+release: 1 June 2011
 
 - track sum in Metric and Distribution and derive mean
 
