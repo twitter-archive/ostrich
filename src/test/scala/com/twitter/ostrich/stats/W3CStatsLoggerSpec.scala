@@ -61,8 +61,8 @@ object W3CStatsLoggerSpec extends Specification {
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
         getLines() mustEqual List(
-          "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum",
-          "2255650878 15 2 20 10"
+          "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum zzz_msec_sum",
+          "1176525931 15 2 20 10 30"
         )
       }
     }
@@ -77,9 +77,9 @@ object W3CStatsLoggerSpec extends Specification {
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.periodic()
         getLines() mustEqual List(
-          "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum",
-          "3683459327 1 3 10 1 10 10",
-          "3683459327 1 0 20 1 20 20"
+          "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum zzz_msec_sum",
+          "2826312472 1 3 10 1 10 10 10",
+          "2826312472 1 0 20 1 20 20 20"
         )
       }
     }

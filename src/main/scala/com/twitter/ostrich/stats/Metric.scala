@@ -26,20 +26,20 @@ import com.twitter.logging.Logger
 class Metric {
   val log = Logger.get(getClass.getName)
 
+  private var sum: Int = 0
   private var maximum = Int.MinValue
   private var minimum = Int.MaxValue
   private var count: Int = 0
   private var histogram = new Histogram()
-  private var mean: Double = 0.0
 
   /**
    * Resets the state of this Metric. Clears all data points collected so far.
    */
   def clear() = synchronized {
+    sum = 0
     maximum = Int.MinValue
     minimum = Int.MaxValue
     count = 0
-    mean = 0.0
     histogram.clear()
   }
 
@@ -51,16 +51,12 @@ class Metric {
     var rv = 0
     if (n > -1) {
       synchronized {
+        sum += n
         maximum = n max maximum
         minimum = n min minimum
         count += 1
         rv = count
         histogram.addToBucket(histogramBucketIndex)
-        if (rv == 1) {
-          mean = n
-        } else {
-          mean += (n.toDouble - mean) / count
-        }
       }
       rv
     } else {
@@ -76,8 +72,8 @@ class Metric {
     if (distribution.count > 0) {
       // these equations end up using the sum again, and may be lossy. i couldn't find or think of
       // a better way.
-      mean = (mean * count + distribution.mean * distribution.count) / (count + distribution.count)
       count += distribution.count
+      sum += distribution.sum
       maximum = distribution.maximum max maximum
       minimum = distribution.minimum min minimum
       distribution.histogram.map { h => histogram.merge(h) }
@@ -94,7 +90,7 @@ class Metric {
       if (count > 0) maximum else 0,
       if (count > 0) minimum else 0,
       if (count > 0) Some(histogram.clone()) else None,
-      mean)
+      sum)
     if (reset) clear()
     rv
   }

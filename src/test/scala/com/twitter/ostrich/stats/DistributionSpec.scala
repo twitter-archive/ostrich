@@ -23,24 +23,24 @@ object DistributionSpec extends Specification {
     val histogram = Histogram(10, 20)
 
     "equals" in {
-      Distribution(1, 10, 10, None, 10.0) mustEqual Distribution(1, 10, 10, None, 10.0)
-      Distribution(1, 10, 10, None, 10.0) must not(beEqual(Distribution(2, 20, 10, None, 15.0)))
-      Distribution(1, 10, 10, None, 10.0) mustEqual Distribution(1, 10, 10, Some(histogram), 10.0)
+      Distribution(1, 10, 10, None, 10) mustEqual Distribution(1, 10, 10, None, 10)
+      Distribution(1, 10, 10, None, 10) must not(beEqual(Distribution(2, 20, 10, None, 15)))
+      Distribution(1, 10, 10, None, 10) mustEqual Distribution(1, 10, 10, Some(histogram), 10)
     }
 
     "toMap" in {
-      Distribution(2, 20, 10, None, 15.0).toMap mustEqual
-        Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15)
-      Distribution(2, 20, 10, Some(histogram), 15.0).toMap mustEqual
-        Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15,
+      new Distribution(2, 20, 10, 30).toMap mustEqual
+        Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15, "sum" -> 30)
+      Distribution(2, 20, 10, Some(histogram), 30).toMap mustEqual
+        Map("count" -> 2, "maximum" -> 20, "minimum" -> 10, "average" -> 15, "sum" -> 30,
             "p25" -> 10, "p50" -> 10, "p75" -> 20, "p90" -> 20, "p99" -> 20,
             "p999" -> 20, "p9999" -> 20)
-      Distribution(0, 0, 0, None, 0.0).toMap mustEqual Map[String, Long]("count" -> 0)
+      Distribution(0, 0, 0, None, 0).toMap mustEqual Map[String, Long]("count" -> 0)
     }
 
     "toJson" in {
-      Distribution(2, 20, 10, None, 15.0).toJson mustEqual
-        "{\"average\":15,\"count\":2,\"maximum\":20,\"minimum\":10}"
+      Distribution(2, 20, 10, None, 30).toJson mustEqual
+        "{\"average\":15,\"count\":2,\"maximum\":20,\"minimum\":10,\"sum\":30}"
     }
   }
 }

@@ -40,6 +40,7 @@ class RuntimeEnvironmentSpec extends Specification {
       runtime.parseArgs(List("-D", "foo=bar"))
       runtime.arguments.get("foo") mustEqual Some("bar")
       System.getProperty("foo") mustEqual "bar"
+      System.clearProperty("foo")  // allow this test to be run multiple times
     }
   }
 }

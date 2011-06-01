@@ -25,13 +25,13 @@ import com.twitter.json.{Json, JsonSerializable}
  * A set of data points summarized into a histogram, mean, min, and max.
  * Distributions are immutable.
  */
-case class Distribution(count: Int, maximum: Int, minimum: Int, histogram: Option[Histogram],
-                        mean: Double)
+case class Distribution(count: Int, maximum: Int, minimum: Int,
+                        histogram: Option[Histogram], sum: Int)
 extends JsonSerializable {
-  def average = mean
+  def average = if (count > 0) sum / count else 0.0
 
-  def this(count: Int, maximum: Int, minimum: Int, mean: Double) =
-    this(count, maximum, minimum, None, mean)
+  def this(count: Int, maximum: Int, minimum: Int, sum: Int) =
+    this(count, maximum, minimum, None, sum)
 
   def toJson() = {
     val out: Map[String, Any] = toMap ++ (histogram match {
@@ -43,7 +43,7 @@ extends JsonSerializable {
 
   override def equals(other: Any) = other match {
     case t: Distribution =>
-      t.count == count && t.maximum == maximum && t.minimum == minimum && t.mean == mean
+      t.count == count && t.maximum == maximum && t.minimum == minimum && t.sum == sum
     case _ => false
   }
 
@@ -57,6 +57,7 @@ extends JsonSerializable {
       // If there are no events then derived values are meaningless; so elide them.
       if (count > 0) {
         Map[String, Long](
+          "sum" -> sum,
           "maximum" -> maximum,
           "minimum" -> minimum,
           "average" -> average.toLong)

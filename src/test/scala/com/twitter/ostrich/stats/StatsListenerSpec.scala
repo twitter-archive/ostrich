@@ -44,8 +44,8 @@ object StatsListenerSpec extends Specification {
       "metrics" in {
         collection.addMetric("beans", 3)
         collection.addMetric("beans", 4)
-        collection.getMetrics() mustEqual Map("beans" -> new Distribution(2, 4, 3, None, 3.5))
-        collection.getMetrics() mustEqual Map("beans" -> new Distribution(0, 0, 0, None, 0.0))
+        collection.getMetrics() mustEqual Map("beans" -> new Distribution(2, 4, 3, None, 7))
+        collection.getMetrics() mustEqual Map("beans" -> new Distribution(0, 0, 0, None, 0))
       }
     }
 
@@ -69,8 +69,8 @@ object StatsListenerSpec extends Specification {
       collection.addMetric("beans", 3)
       listener3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
       listener3.getMetrics() mustEqual
-        Map("beans" -> new Distribution(1, 3, 3, None, 3.0),
-            "rice" -> new Distribution(0, 0, 0, None, 0.0))
+        Map("beans" -> new Distribution(1, 3, 3, None, 3),
+            "rice" -> new Distribution(0, 0, 0, None, 0))
     }
 
     "named" in {
