@@ -27,8 +27,6 @@ class Metric {
   val log = Logger.get(getClass.getName)
 
   private var sum: Int = 0
-  private var maximum = Int.MinValue
-  private var minimum = Int.MaxValue
   private var count: Int = 0
   private var histogram = new Histogram()
 
@@ -37,8 +35,6 @@ class Metric {
    */
   def clear() = synchronized {
     sum = 0
-    maximum = Int.MinValue
-    minimum = Int.MaxValue
     count = 0
     histogram.clear()
   }
@@ -47,18 +43,14 @@ class Metric {
    * Adds a data point.
    */
   def add(n: Int): Long = {
-    val histogramBucketIndex = Histogram.bucketIndex(n)
-    var rv = 0
     if (n > -1) {
+      val histogramBucketIndex = Histogram.bucketIndex(n)
       synchronized {
         sum += n
-        maximum = n max maximum
-        minimum = n min minimum
         count += 1
-        rv = count
         histogram.addToBucket(histogramBucketIndex)
+        count
       }
-      rv
     } else {
       log.warning("Tried to add a negative data point.")
       count
@@ -70,12 +62,8 @@ class Metric {
    */
   def add(distribution: Distribution): Long = synchronized {
     if (distribution.count > 0) {
-      // these equations end up using the sum again, and may be lossy. i couldn't find or think of
-      // a better way.
       count += distribution.count
       sum += distribution.sum
-      maximum = distribution.maximum max maximum
-      minimum = distribution.minimum min minimum
       distribution.histogram.map { h => histogram.merge(h) }
     }
     count
@@ -87,8 +75,8 @@ class Metric {
   def apply(reset: Boolean): Distribution = synchronized {
     val rv = new Distribution(
       count,
-      if (count > 0) maximum else 0,
-      if (count > 0) minimum else 0,
+      if (count > 0) histogram.maximum else 0,
+      if (count > 0) histogram.minimum else 0,
       if (count > 0) Some(histogram.clone()) else None,
       sum)
     if (reset) clear()

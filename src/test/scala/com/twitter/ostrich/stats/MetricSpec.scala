@@ -24,43 +24,26 @@ object MetricSpec extends Specification {
       val metric = new Metric()
       metric.add(10)
       metric.add(20)
-      metric.apply(false) mustEqual Distribution(2, 20, 10, None, 30)
+      metric.apply(false) mustEqual Distribution(2, 23, 10, None, 30)
       metric.add(60)
-      metric.apply(false) mustEqual Distribution(3, 60, 10, None, 90)
+      metric.apply(false) mustEqual Distribution(3, 66, 10, None, 90)
 
       metric.apply(false).histogram.get.get(false) mustEqual Histogram(10, 20, 60).get(false)
     }
 
     "add distribution" in {
       val metric = new Metric()
-      metric.add(Distribution(2, 20, 10, None, 30))
+      metric.add(Distribution(2, 24, 11, Some(Histogram(10, 20)), 30))
       metric.add(60)
-      metric.apply(false) mustEqual Distribution(3, 60, 10, None, 90)
+      metric.apply(false) mustEqual Distribution(3, 66, 10, None, 90)
     }
 
     "clear" in {
       val metric = new Metric()
       metric.add(10)
       metric.add(20)
-      metric.apply(false) mustEqual Distribution(2, 20, 10, None, 30)
-      metric.apply(true) mustEqual Distribution(2, 20, 10, None, 30)
-      metric.apply(true) mustEqual Distribution(0, 0, 0, None, 0)
-    }
-
-    "fanout" in {
-      val fanout = new FanoutMetric()
-      fanout.add(10)
-
-      val metric = new Metric()
-      fanout.addFanout(metric)
-      fanout.add(20)
-
-      fanout.apply(false) mustEqual Distribution(2, 20, 10, None, 30)
-      metric.apply(false) mustEqual Distribution(1, 20, 20, None, 20)
-
-      fanout.apply(true) mustEqual Distribution(2, 20, 10, None, 30)
-
-      fanout.apply(true) mustEqual Distribution(0, 0, 0, None, 0)
+      metric.apply(false) mustEqual Distribution(2, 23, 10, None, 30)
+      metric.apply(true) mustEqual Distribution(2, 23, 10, None, 30)
       metric.apply(true) mustEqual Distribution(0, 0, 0, None, 0)
     }
   }

@@ -110,11 +110,36 @@ class Histogram {
     }
   }
 
+  def maximum: Int = {
+    if (buckets(buckets.size - 1) > 0) {
+      Int.MaxValue
+    } else {
+      var index = Histogram.BUCKET_OFFSETS.size - 1
+      while (index >= 0 && buckets(index) == 0) index -= 1
+      if (index < 0) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+    }
+  }
+
+  def minimum: Int = {
+    var index = 0
+    while (index < Histogram.BUCKET_OFFSETS.size && buckets(index) == 0) index += 1
+    if (index >= Histogram.BUCKET_OFFSETS.size) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+  }
+
   def merge(other: Histogram) {
     for (i <- 0 until numBuckets) {
       buckets(i) += other.buckets(i)
     }
     total += other.total
+  }
+
+  override def toString = {
+    "<Histogram count=" + total +
+      buckets.indices.map { i =>
+        (if (i < Histogram.BUCKET_OFFSETS.size) Histogram.BUCKET_OFFSETS(i) else "inf") +
+        "=" + buckets(i)
+      }.mkString(" ", ", ", "") +
+      ">"
   }
 
   override def clone(): Histogram = {

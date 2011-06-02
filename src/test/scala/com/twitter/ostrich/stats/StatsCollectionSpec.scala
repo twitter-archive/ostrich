@@ -118,7 +118,7 @@ object StatsCollectionSpec extends Specification {
         val avg = sum / 2.0
         val test = collection.getMetric("test")
         test(true) mustEqual
-          new Distribution(2, Int.MaxValue, 5, Some(Histogram(5, Int.MaxValue)), sum)
+          new Distribution(2, Int.MaxValue, 6, Some(Histogram(5, Int.MaxValue)), sum)
       }
 
       "handle code blocks" in {
@@ -146,7 +146,7 @@ object StatsCollectionSpec extends Specification {
         val timingStat = new Distribution(3, 20, 10, Some(Histogram(10, 15, 20)), 45)
         collection.addMetric("test", timingStat)
         collection.addMetric("test", 25)
-        collection.getMetric("test")(true) mustEqual Distribution(4, 25, 10, None, 70)
+        collection.getMetric("test")(true) mustEqual Distribution(4, 30, 10, None, 70)
       }
 
       "add multiple bundles of timings" in {
@@ -154,7 +154,7 @@ object StatsCollectionSpec extends Specification {
         val timingStat2 = new Distribution(2, 20, 10, Some(Histogram(10, 20)), 30)
         collection.addMetric("test", timingStat1)
         collection.addMetric("test", timingStat2)
-        collection.getMetric("test")(true) mustEqual Distribution(4, 25, 10, None, 70)
+        collection.getMetric("test")(true) mustEqual Distribution(4, 30, 10, None, 70)
       }
 
       "timing stats can be added and reflected in Stats.getMetrics" in {

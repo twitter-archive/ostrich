@@ -159,8 +159,8 @@ object AdminHttpServiceSpec extends Specification with DataTables {
 
         val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
-        timing("average") mustEqual timing("minimum")
-        timing("average") mustEqual timing("maximum")
+        timing("minimum") must be_>=(0)
+        timing("maximum") must be_>=(timing("minimum"))
       }
 
       "in json, with reset" in {
