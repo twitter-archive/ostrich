@@ -113,6 +113,8 @@ class Histogram {
   def maximum: Int = {
     if (buckets(buckets.size - 1) > 0) {
       Int.MaxValue
+    } else if (total == 0) {
+      0
     } else {
       var index = Histogram.BUCKET_OFFSETS.size - 1
       while (index >= 0 && buckets(index) == 0) index -= 1
@@ -121,9 +123,13 @@ class Histogram {
   }
 
   def minimum: Int = {
-    var index = 0
-    while (index < Histogram.BUCKET_OFFSETS.size && buckets(index) == 0) index += 1
-    if (index >= Histogram.BUCKET_OFFSETS.size) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+    if (total == 0) {
+      0
+    } else {
+      var index = 0
+      while (index < Histogram.BUCKET_OFFSETS.size && buckets(index) == 0) index += 1
+      if (index >= Histogram.BUCKET_OFFSETS.size) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+    }
   }
 
   def merge(other: Histogram) {
@@ -131,6 +137,15 @@ class Histogram {
       buckets(i) += other.buckets(i)
     }
     total += other.total
+  }
+
+  def -(other: Histogram): Histogram = {
+    val rv = new Histogram()
+    rv.total = total - other.total
+    for (i <- 0 until numBuckets) {
+      rv.buckets(i) = buckets(i) - other.buckets(i)
+    }
+    rv
   }
 
   override def toString = {

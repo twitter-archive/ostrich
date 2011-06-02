@@ -69,15 +69,20 @@ class Metric {
     count
   }
 
+  def since(previous: Metric): Distribution = {
+    val h = histogram - previous.histogram
+    new Distribution(count - previous.count, h.maximum, h.minimum, Some(h), sum - previous.sum)
+  }
+
   /**
    * Returns a Distribution for this Metric.
    */
   def apply(reset: Boolean): Distribution = synchronized {
     val rv = new Distribution(
       count,
-      if (count > 0) histogram.maximum else 0,
-      if (count > 0) histogram.minimum else 0,
-      if (count > 0) Some(histogram.clone()) else None,
+      histogram.maximum,
+      histogram.minimum,
+      Some(histogram.clone()),
       sum)
     if (reset) clear()
     rv
