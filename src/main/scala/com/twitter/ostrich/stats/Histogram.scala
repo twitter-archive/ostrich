@@ -59,7 +59,7 @@ object Histogram {
 
 class Histogram {
   val numBuckets = Histogram.BUCKET_OFFSETS.length + 1
-  val buckets = new Array[Int](numBuckets)
+  val buckets = new Array[Long](numBuckets)
   var total = 0
 
   /**
@@ -95,7 +95,7 @@ class Histogram {
   }
 
   def getPercentile(percentile: Double): Int = {
-    var sum = 0
+    var sum = 0L
     var index = 0
     while (sum < percentile * total) {
       sum += buckets(index)
