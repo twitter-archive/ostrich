@@ -16,18 +16,23 @@ class LocalStatsCollectionSpec extends Specification {
     "writes to global stats at the same time" in {
       localStats.addMetric("whateva", 5)
       localStats.addMetric("whateva", 15)
-      Stats.getMetric("whateva").apply(false) mustEqual localStats.getMetric("whateva").apply(false)
+      Stats.getMetric("whateva")() mustEqual Distribution(Histogram(5, 15))
+      localStats.getMetric("whateva")() mustEqual Distribution(Histogram(5, 15))
     }
 
     "flush" in {
       localStats.incr("tflock")
       localStats.incr("tflock")
       localStats.getCounter("tflock")() mustEqual 2
+      localStats.addMetric("timing", 900)
+      localStats.getMetric("timing")() mustEqual Distribution(Histogram(900))
 
       localStats.flushInto(Stats)
 
       Stats.getCounter(jobClassName + ".tflock")() mustEqual 2
+      Stats.getMetric(jobClassName + ".timing")() mustEqual Distribution(Histogram(900))
       localStats.getCounter("tflock")() mustEqual 0
+      localStats.getMetric("timing")() mustEqual Distribution(Histogram())
     }
   }
 }

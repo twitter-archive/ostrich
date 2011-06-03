@@ -24,27 +24,28 @@ object MetricSpec extends Specification {
       val metric = new Metric()
       metric.add(10)
       metric.add(20)
-      metric.apply(false) mustEqual Distribution(2, 23, 10, None, 30)
+      metric() mustEqual Distribution(Histogram(10, 20))
       metric.add(60)
-      metric.apply(false) mustEqual Distribution(3, 66, 10, None, 90)
+      metric() mustEqual Distribution(Histogram(10, 20, 60))
 
-      metric.apply(false).histogram.get.get(false) mustEqual Histogram(10, 20, 60).get(false)
+      metric().histogram.get(false) mustEqual Histogram(10, 20, 60).get(false)
     }
 
     "add distribution" in {
       val metric = new Metric()
-      metric.add(Distribution(2, 24, 11, Some(Histogram(10, 20)), 30))
+      metric.add(Distribution(Histogram(10, 20)))
       metric.add(60)
-      metric.apply(false) mustEqual Distribution(3, 66, 10, None, 90)
+      metric() mustEqual Distribution(Histogram(10, 20, 60))
     }
 
     "clear" in {
       val metric = new Metric()
       metric.add(10)
       metric.add(20)
-      metric.apply(false) mustEqual Distribution(2, 23, 10, None, 30)
-      metric.apply(true) mustEqual Distribution(2, 23, 10, None, 30)
-      metric.apply(true) mustEqual Distribution(0, 0, 0, None, 0)
+      metric() mustEqual Distribution(Histogram(10, 20))
+      metric() mustEqual Distribution(Histogram(10, 20))
+      metric.clear()
+      metric() mustEqual Distribution(Histogram())
     }
   }
 }

@@ -69,9 +69,9 @@ object HistogramSpec extends Specification {
         histogram.add(i * 10)
         histogram2.add(i * 10)
       }
-      val origTotal = histogram.total
+      val origTotal = histogram.count
       histogram.merge(histogram2)
-      histogram.total mustEqual origTotal + histogram2.total
+      histogram.count mustEqual origTotal + histogram2.count
       val stats = histogram.get(true)
       val stats2 = histogram2.get(true)
       for (i <- 0 until 50) {
@@ -87,7 +87,7 @@ object HistogramSpec extends Specification {
       val histClone = histogram.clone()
       histogram.buckets.toList must containAll(histClone.buckets.toList)
       histClone.buckets.toList must containAll(histogram.buckets.toList)
-      histogram.total mustEqual histClone.total
+      histogram.count mustEqual histClone.count
     }
 
     "handle a very large timing" in {
@@ -95,5 +95,13 @@ object HistogramSpec extends Specification {
       histogram.getPercentile(1.0) mustEqual Int.MaxValue
     }
 
+    "track count and sum" in {
+      histogram.add(10)
+      histogram.add(15)
+      histogram.add(20)
+      histogram.add(20)
+      histogram.count mustEqual 4
+      histogram.sum mustEqual 65
+    }
   }
 }

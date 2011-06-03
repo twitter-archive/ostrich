@@ -61,7 +61,7 @@ object W3CStatsSpec extends Specification {
     "can be called manually" in {
       val counters = Map("widgets" -> 3L)
       val gauges = Map("wodgets" -> 3.5)
-      val metrics = Map("backend-response-time_msec" -> new Distribution(1, 10, 10, 10))
+      val metrics = Map("backend-response-time_msec" -> new Distribution(Histogram(10)))
       val labels = Map("request-uri" -> "/home")
       w3c.write(StatsSummary(counters, metrics, gauges, labels))
       getLine() mustEqual "10 - /home - - - 3 3.5"

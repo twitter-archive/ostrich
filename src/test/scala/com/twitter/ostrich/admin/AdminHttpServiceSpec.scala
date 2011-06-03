@@ -163,26 +163,14 @@ object AdminHttpServiceSpec extends Specification with DataTables {
         timing("maximum") must be_>=(timing("minimum"))
       }
 
-      "in json, with reset" in {
-        // make some statsy things happen
-        Stats.clearAll()
-        Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
-
-        val stats = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
-        timing("count") mustEqual 1
-
-        val stats2 = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing2 = stats2("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
-        timing2("count") mustEqual 0
-      }
-
       "in json, with custom listeners" in {
         Stats.clearAll()
         Stats.incr("apples", 10)
+        Stats.addMetric("oranges", 5)
 
         val stats1 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats1("counters")("apples") mustEqual 10
+        stats1("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
 
         Stats.incr("apples", 6)
         val stats2 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]

@@ -69,12 +69,10 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
         hourly.getOrElseUpdate("counter:" + k, new TimeSeries[Double](60, 0)).add(v.toDouble)
       }
       stats.metrics.foreach { case (k, v) =>
-        v.histogram.foreach { hist =>
-          val data = PERCENTILES.map { percent =>
-            hist.getPercentile(percent).toLong
-          }
-          hourlyTimings.getOrElseUpdate("metric:" + k, new TimeSeries[List[Long]](60, EMPTY_TIMINGS)).add(data)
+        val data = PERCENTILES.map { percent =>
+          v.histogram.getPercentile(percent).toLong
         }
+        hourlyTimings.getOrElseUpdate("metric:" + k, new TimeSeries[List[Long]](60, EMPTY_TIMINGS)).add(data)
       }
       lastCollection = Time.now
     }

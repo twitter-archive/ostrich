@@ -44,18 +44,55 @@ object StatsListenerSpec extends Specification {
       "metrics" in {
         collection.addMetric("beans", 3)
         collection.addMetric("beans", 4)
-        collection.getMetrics() mustEqual Map("beans" -> new Distribution(2, 4, 3, None, 7))
-        collection.getMetrics() mustEqual Map("beans" -> new Distribution(0, 0, 0, None, 0))
+        collection.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
+        listener.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
+        listener2.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
       }
     }
 
     "independently tracks deltas" in {
-      collection.incr("a", 3)
-      listener.getCounters() mustEqual Map("a" -> 3)
-      collection.incr("a", 5)
-      listener2.getCounters() mustEqual Map("a" -> 8)
-      collection.incr("a", 1)
-      listener.getCounters() mustEqual Map("a" -> 6)
+      "counters" in {
+        collection.incr("a", 3)
+        listener.getCounters() mustEqual Map("a" -> 3)
+        collection.incr("a", 5)
+        listener2.getCounters() mustEqual Map("a" -> 8)
+        collection.incr("a", 1)
+        listener.getCounters() mustEqual Map("a" -> 6)
+      }
+
+      "metrics" in {
+        collection.addMetric("timing", 10)
+        collection.addMetric("timing", 20)
+        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20)))
+        collection.addMetric("timing", 10)
+        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
+        collection.addMetric("timing", 10)
+        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 10)))
+        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10)))
+
+        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram()))
+        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram()))
+      }
+    }
+
+    "master stats always increase, even with listeners connected" in {
+      "counters" in {
+        collection.incr("a", 3)
+        listener.getCounters() mustEqual Map("a" -> 3)
+        collection.incr("a", 5)
+        listener.getCounters() mustEqual Map("a" -> 5)
+
+        collection.getCounters() mustEqual Map("a" -> 8)
+      }
+
+      "metrics" in {
+        collection.addMetric("timing", 10)
+        collection.addMetric("timing", 20)
+        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20)))
+        collection.addMetric("timing", 10)
+
+        collection.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
+      }
     }
 
     "tracks stats only from the point a listener was attached, but report all keys" in {
@@ -69,8 +106,8 @@ object StatsListenerSpec extends Specification {
       collection.addMetric("beans", 3)
       listener3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
       listener3.getMetrics() mustEqual
-        Map("beans" -> new Distribution(1, 3, 3, None, 3),
-            "rice" -> new Distribution(0, 0, 0, None, 0))
+        Map("beans" -> new Distribution(Histogram(3)),
+            "rice" -> new Distribution(Histogram()))
     }
 
     "named" in {
