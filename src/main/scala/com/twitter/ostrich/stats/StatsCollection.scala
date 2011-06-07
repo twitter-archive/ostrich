@@ -180,6 +180,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     metrics
   }
 
+  def getMetricsNoReset() = {
+    val metrics = new mutable.HashMap[String, Distribution]
+    for ((key, metric) <- metricMap.asScala) {
+      metrics += (key -> metric(false))
+    }
+    metrics
+  }
+
   def getGauges() = {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
