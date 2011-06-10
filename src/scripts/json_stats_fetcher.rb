@@ -146,7 +146,7 @@ begin
     stats[metricsKey].reject { |name, val| name =~ $pattern }.each do |name, timing|
       report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
       report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
-      [:p25, :p50, :p75, :p90, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
+      [:p25, :p50, :p75, :p90, :p95, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
         report_metric("#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec") if timing[bucket]
       end
     end

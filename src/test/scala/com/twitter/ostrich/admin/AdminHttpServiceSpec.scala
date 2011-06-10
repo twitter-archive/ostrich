@@ -260,6 +260,9 @@ object AdminHttpServiceSpec extends Specification with DataTables {
         timings must haveKey("p75")
         timings("p75")  mustEqual 6
 
+        timings must haveKey("p95")
+        timings("p95") mustEqual 6
+
         timings must haveKey("p99")
         timings("p99") mustEqual 6
 

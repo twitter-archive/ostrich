@@ -79,6 +79,7 @@ extends JsonSerializable {
         "p50" -> percentile(0.5),
         "p75" -> percentile(0.75),
         "p90" -> percentile(0.9),
+        "p95" -> percentile(0.95),
         "p99" -> percentile(0.99),
         "p999" -> percentile(0.999),
         "p9999" -> percentile(0.9999))
