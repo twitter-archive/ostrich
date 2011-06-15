@@ -134,22 +134,32 @@ begin
       $ostrich3 = true
     end
 
-    stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      report_metric(name, (value.to_i rescue 0), "items", slope)
-    end
-
-    stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      report_metric(name, value, "value")
-    end
-
-    metricsKey = ($ostrich3) ? "metrics" : "timings"
-    stats[metricsKey].reject { |name, val| name =~ $pattern }.each do |name, timing|
-      report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
-      report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
-      [:p25, :p50, :p75, :p90, :p95, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
-        report_metric("#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec") if timing[bucket]
+    begin
+      stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
+        report_metric(name, (value.to_i rescue 0), "items", slope)
       end
+    rescue NoMethodError
     end
+
+    begin
+      stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
+        report_metric(name, value, "value")
+      end
+    rescue NoMethodError
+    end
+
+    begin
+      metricsKey = ($ostrich3) ? "metrics" : "timings"
+      stats[metricsKey].reject { |name, val| name =~ $pattern }.each do |name, timing|
+        report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
+        report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
+        [:p25, :p50, :p75, :p90, :p95, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
+          report_metric("#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec") if timing[bucket]
+        end
+      end
+    rescue NoMethodError
+    end
+
   end
 ensure
   File.unlink(singleton_file)
