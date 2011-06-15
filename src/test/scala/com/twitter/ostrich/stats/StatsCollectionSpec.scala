@@ -170,7 +170,7 @@ object StatsCollectionSpec extends Specification {
         Stats.addMetric("alpha", new Distribution(Histogram(0)))
         Stats.getMetrics()("alpha").toString mustEqual
           "(average=0, count=1, maximum=0, minimum=0, " +
-          "p25=0, p50=0, p75=0, p90=0, p99=0, p999=0, p9999=0, sum=0)"
+          "p25=0, p50=0, p75=0, p90=0, p95=0, p99=0, p999=0, p9999=0, sum=0)"
       }
     }
 
