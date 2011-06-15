@@ -46,23 +46,17 @@ object StatsListener {
 class StatsListener(collection: StatsCollection, startClean: Boolean) {
   def this(collection: StatsCollection) = this(collection, true)
 
-  private val metricMap = new ConcurrentHashMap[String, Metric]()
   private val lastCounterMap = new mutable.HashMap[String, Long]()
+  private val lastMetricMap = new mutable.HashMap[String, Distribution]()
 
   collection.addListener(this)
   if (startClean) {
-    collection.getCounters.foreach { case (key, value) =>
+    collection.getCounters().foreach { case (key, value) =>
       lastCounterMap(key) = value
     }
-  }
-
-  def getMetric(name: String) = {
-    var metric = metricMap.get(name)
-    while (metric == null) {
-      metric = metricMap.putIfAbsent(name, new Metric())
-      metric = metricMap.get(name)
+    collection.getMetrics().foreach { case (key, value) =>
+      lastMetricMap(key) = value
     }
-    metric
   }
 
   def getCounters() = synchronized {
@@ -74,12 +68,13 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     deltas
   }
 
-  def getMetrics() = {
-    val metrics = new mutable.HashMap[String, Distribution]
-    for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
-      metrics += (key -> metric(true))
+  def getMetrics() = synchronized {
+    val deltas = new mutable.HashMap[String, Distribution]
+    for ((key, newValue) <- collection.getMetrics()) {
+      deltas(key) = newValue - lastMetricMap.getOrElse(key, new Distribution())
+      lastMetricMap(key) = newValue
     }
-    metrics
+    deltas
   }
 
   def get(): StatsSummary = {

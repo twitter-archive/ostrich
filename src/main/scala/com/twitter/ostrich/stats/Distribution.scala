@@ -25,41 +25,38 @@ import com.twitter.json.{Json, JsonSerializable}
  * A set of data points summarized into a histogram, mean, min, and max.
  * Distributions are immutable.
  */
-case class Distribution(count: Int, maximum: Int, minimum: Int,
-                        histogram: Option[Histogram], sum: Int)
+case class Distribution(histogram: Histogram)
 extends JsonSerializable {
-  def average = if (count > 0) sum / count else 0.0
+  def this() = this(Histogram())
 
-  def this(count: Int, maximum: Int, minimum: Int, sum: Int) =
-    this(count, maximum, minimum, None, sum)
+  def count = histogram.count
+  def sum = histogram.sum
+  def minimum = histogram.minimum
+  def maximum = histogram.maximum
+  def average = if (histogram.count > 0) histogram.sum / histogram.count else 0.0
 
-  def toJson() = {
-    val out: Map[String, Any] = toMap ++ (histogram match {
-      case None => immutable.Map.empty[String, Any]
-      case Some(h) => immutable.Map[String, Any]("histogram" -> h.get(false))
-    })
-    Json.build(out).toString
-  }
+  def toJson() = Json.build(toMap).toString
 
   override def equals(other: Any) = other match {
-    case t: Distribution =>
-      t.count == count && t.maximum == maximum && t.minimum == minimum && t.sum == sum
+    case t: Distribution => t.histogram == histogram
     case _ => false
   }
+
+  def -(other: Distribution): Distribution = Distribution(histogram - other.histogram)
 
   override def toString = {
     val out = toMap
     out.keys.toSeq.sorted.map { key => "%s=%d".format(key, out(key)) }.mkString("(", ", ", ")")
   }
 
-  def toMapWithoutHistogram = {
-    Map[String, Long]("count" -> count) ++ (
+  def toMapWithoutPercentiles = {
+    Map[String, Long]("count" -> histogram.count) ++ (
       // If there are no events then derived values are meaningless; so elide them.
-      if (count > 0) {
+      if (histogram.count > 0) {
         Map[String, Long](
-          "sum" -> sum,
-          "maximum" -> maximum,
-          "minimum" -> minimum,
+          "sum" -> histogram.sum,
+          "maximum" -> histogram.maximum,
+          "minimum" -> histogram.minimum,
           "average" -> average.toLong)
       } else {
         Map.empty[String, Long]
@@ -67,22 +64,25 @@ extends JsonSerializable {
     )
   }
 
-  def percentile(percentile: Double) = {
-    (histogram.get.getPercentile(percentile) max minimum) min maximum
+  private def percentile(percentile: Double) = {
+    histogram.getPercentile(percentile)
   }
 
   def toMap: Map[String, Long] = {
-    toMapWithoutHistogram ++ (histogram match {
+    toMapWithoutPercentiles ++
       // If there are no events then derived values are meaningless; so elide them.
-      case Some(h) if (count > 0) => Map[String, Long](
-        "p25" -> percentile(0.25),
-        "p50" -> percentile(0.5),
-        "p75" -> percentile(0.75),
-        "p90" -> percentile(0.9),
-        "p99" -> percentile(0.99),
-        "p999" -> percentile(0.999),
-        "p9999" -> percentile(0.9999))
-      case _ => Map.empty[String, Long]
-    })
+      (if (histogram.count > 0) {
+        Map[String, Long](
+          "p25" -> percentile(0.25),
+          "p50" -> percentile(0.5),
+          "p75" -> percentile(0.75),
+          "p90" -> percentile(0.9),
+          "p99" -> percentile(0.99),
+          "p999" -> percentile(0.999),
+          "p9999" -> percentile(0.9999)
+        )
+      } else {
+        Map.empty[String, Long]
+      })
   }
 }

@@ -59,8 +59,9 @@ object Histogram {
 
 class Histogram {
   val numBuckets = Histogram.BUCKET_OFFSETS.length + 1
-  val buckets = new Array[Int](numBuckets)
-  var total = 0
+  val buckets = new Array[Long](numBuckets)
+  var count = 0L
+  var sum = 0L
 
   /**
    * Adds a value directly to a bucket in a histogram. Can be used for
@@ -72,18 +73,21 @@ class Histogram {
    */
   def addToBucket(index: Int) {
     buckets(index) += 1
-    total += 1
+    count += 1
   }
 
-  def add(n: Int) {
+  def add(n: Int): Long = {
     addToBucket(Histogram.bucketIndex(n))
+    sum += n
+    count
   }
 
   def clear() {
     for (i <- 0 until numBuckets) {
       buckets(i) = 0
     }
-    total = 0
+    count = 0
+    sum = 0
   }
 
   def get(reset: Boolean) = {
@@ -95,10 +99,10 @@ class Histogram {
   }
 
   def getPercentile(percentile: Double): Int = {
-    var sum = 0
+    var total = 0L
     var index = 0
-    while (sum < percentile * total) {
-      sum += buckets(index)
+    while (total < percentile * count) {
+      total += buckets(index)
       index += 1
     }
     if (index == 0) {
@@ -110,11 +114,66 @@ class Histogram {
     }
   }
 
-  def merge(other: Histogram) {
-    for (i <- 0 until numBuckets) {
-      buckets(i) += other.buckets(i)
+  def maximum: Int = {
+    if (buckets(buckets.size - 1) > 0) {
+      Int.MaxValue
+    } else if (count == 0) {
+      0
+    } else {
+      var index = Histogram.BUCKET_OFFSETS.size - 1
+      while (index >= 0 && buckets(index) == 0) index -= 1
+      if (index < 0) 0 else Histogram.BUCKET_OFFSETS(index) - 1
     }
-    total += other.total
+  }
+
+  def minimum: Int = {
+    if (count == 0) {
+      0
+    } else {
+      var index = 0
+      while (index < Histogram.BUCKET_OFFSETS.size && buckets(index) == 0) index += 1
+      if (index >= Histogram.BUCKET_OFFSETS.size) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+    }
+  }
+
+  def merge(other: Histogram) {
+    if (other.count > 0) {
+      for (i <- 0 until numBuckets) {
+        buckets(i) += other.buckets(i)
+      }
+      count += other.count
+      sum += other.sum
+    }
+  }
+
+  def -(other: Histogram): Histogram = {
+    val rv = new Histogram()
+    rv.count = count - other.count
+    rv.sum = sum - other.sum
+    for (i <- 0 until numBuckets) {
+      rv.buckets(i) = buckets(i) - other.buckets(i)
+    }
+    rv
+  }
+
+  /**
+   * Get an immutable snapshot of this histogram.
+   */
+  def apply(): Distribution = synchronized { new Distribution(clone()) }
+
+  override def equals(other: Any) = other match {
+    case h: Histogram =>
+      h.count == count && h.sum == sum && h.buckets.indices.forall { i => h.buckets(i) == buckets(i) }
+    case _ => false
+  }
+
+  override def toString = {
+    "<Histogram count=" + count + " sum=" + sum +
+      buckets.indices.map { i =>
+        (if (i < Histogram.BUCKET_OFFSETS.size) Histogram.BUCKET_OFFSETS(i) else "inf") +
+        "=" + buckets(i)
+      }.mkString(" ", ", ", "") +
+      ">"
   }
 
   override def clone(): Histogram = {

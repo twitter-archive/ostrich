@@ -1,3 +1,17 @@
+4.4.0
+-----
+release: 14 June 2011
+
+- StatsListener computes distributions as deltas just like it does for
+  counters.
+
+- Distribution is now just a thin immutable wrapper around a Histogram, and
+  FanoutMetric now has the same behavior as FanoutCounter.
+
+- Min/max are now computed on the histogram and vary across samples. Count
+  and sum have been pushed into Histogram.
+
+
 4.3.0
 -----
 release: 1 June 2011

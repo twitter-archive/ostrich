@@ -78,8 +78,8 @@ extends TransactionalStatsCollection {
     val flatmap = new mutable.HashMap[String, Any]
     flatmap ++= summary.counters
     summary.metrics.foreach { case (k1, d) =>
-      // w3c logs don't want histograms (for now?)
-      d.toMapWithoutHistogram.foreach { case (k2, v) => flatmap(k1 + "_" + k2) = v }
+      // w3c logs don't want percentiles (for now?)
+      d.toMapWithoutPercentiles.foreach { case (k2, v) => flatmap(k1 + "_" + k2) = v }
     }
     flatmap ++= summary.gauges
     flatmap ++= summary.labels

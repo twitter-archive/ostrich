@@ -30,7 +30,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   import scala.collection.JavaConverters._
 
   protected val counterMap = new ConcurrentHashMap[String, Counter]()
-  protected val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
+  protected val metricMap = new ConcurrentHashMap[String, Metric]()
   protected val gaugeMap = new ConcurrentHashMap[String, () => Double]()
   protected val labelMap = new ConcurrentHashMap[String, String]()
 
@@ -100,9 +100,6 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def addListener(listener: StatsListener) {
     synchronized {
       listeners += listener
-      for ((key, metric) <- metricMap.asScala) {
-        metric.addFanout(listener.getMetric(key))
-      }
     }
   }
 
@@ -138,19 +135,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getMetric(name: String) = {
     var metric = metricMap.get(name)
     if (metric == null) {
-      metric = new FanoutMetric()
-      metricMap.putIfAbsent(name, newMetric(name))
+      metric = metricMap.putIfAbsent(name, newMetric(name))
       metric = metricMap.get(name)
     }
     metric
   }
 
   protected def newMetric(name: String) = {
-    val metric = new FanoutMetric()
-    synchronized {
-      listeners.foreach { listener => metric.addFanout(listener.getMetric(name)) }
-    }
-    metric
+    new Metric()
   }
 
   def getLabel(name: String) = {
@@ -175,7 +167,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getMetrics() = {
     val metrics = new mutable.HashMap[String, Distribution]
     for ((key, metric) <- metricMap.asScala) {
-      metrics += (key -> metric(true))
+      metrics += (key -> metric())
     }
     metrics
   }
@@ -238,14 +230,15 @@ class LocalStatsCollection(collectionName: String) extends FanoutStatsCollection
 
   /**
    * Flush this collection's counters and metrics into another StatsCollection, with each counter
-   * and metric name prefixed by this collection's name.
+   * and metric name prefixed by this collection's name. Counters and metrics in this collection
+   * will be cleared out. This is not an atomic operation.
    */
   def flushInto(collection: StatsProvider) {
     counterMap.asScala.foreach { case (name, counter) =>
       collection.getCounter(collectionName + "." + name).incr(counter().toInt)
     }
     metricMap.asScala.foreach { case (name, metric) =>
-      collection.getMetric(collectionName + "." + name).add(metric(true))
+      collection.getMetric(collectionName + "." + name).add(metric())
     }
     counterMap.clear()
     metricMap.clear()
