@@ -11,6 +11,8 @@ release: 14 June 2011
 - Min/max are now computed on the histogram and vary across samples. Count
   and sum have been pushed into Histogram.
 
+- Added 95th percentile to reported stats.
+
 
 4.3.0
 -----
