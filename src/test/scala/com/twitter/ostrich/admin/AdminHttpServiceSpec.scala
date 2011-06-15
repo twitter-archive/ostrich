@@ -17,14 +17,15 @@
 package com.twitter.ostrich
 package admin
 
-import java.net.{Socket, SocketException, URL}
+import java.net.{Socket, SocketException, URI, URL}
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
+import org.specs.util.DataTables
 import stats.Stats
 
-object AdminHttpServiceSpec extends Specification {
+object AdminHttpServiceSpec extends Specification with DataTables {
   val PORT = 9996
   val BACKLOG = 20
 
@@ -158,22 +159,24 @@ object AdminHttpServiceSpec extends Specification {
 
         val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
         timing("count") mustEqual 1
-        timing("average") mustEqual timing("minimum")
-        timing("average") mustEqual timing("maximum")
+        timing("minimum") must be_>=(0)
+        timing("maximum") must be_>=(timing("minimum"))
       }
 
-      "in json, with reset" in {
-        // make some statsy things happen
+      "in json, with custom listeners" in {
         Stats.clearAll()
-        Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
+        Stats.incr("apples", 10)
+        Stats.addMetric("oranges", 5)
 
-        val stats = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
-        timing("count") mustEqual 1
+        val stats1 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        stats1("counters")("apples") mustEqual 10
+        stats1("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
 
-        val stats2 = Json.parse(get("/stats.json?reset=true")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        val timing2 = stats2("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
-        timing2("count") mustEqual 0
+        Stats.incr("apples", 6)
+        val stats2 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        stats2("counters")("apples") mustEqual 6
+        val stats3 = Json.parse(get("/stats.json?namespace=vex")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        stats3("counters")("apples") mustEqual 16
       }
 
       "in json, with histograms" in {
@@ -245,6 +248,9 @@ object AdminHttpServiceSpec extends Specification {
         timings must haveKey("p75")
         timings("p75")  mustEqual 6
 
+        timings must haveKey("p95")
+        timings("p95") mustEqual 6
+
         timings must haveKey("p99")
         timings("p99") mustEqual 6
 
@@ -267,6 +273,19 @@ object AdminHttpServiceSpec extends Specification {
         Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
         get("/stats.txt") must beMatching("  kangaroos: 1")
+      }
+    }
+
+    "parse parameters" in {
+      "uri"         | "result"                        |>
+      "/p"          ! Nil                             |
+      "/p?a=b"      ! ("a", "b") :: Nil               |
+      "/p?a=b&c=d"  ! ("a", "b") :: ("c", "d") :: Nil |
+      "/p?"         ! Nil                             |
+      "/p?invalid"  ! Nil                             |
+      "/p?a="       ! ("a", "") :: Nil                |
+      "/p?=b"       ! ("", "b") :: Nil                | { (uriStr, result) =>
+        CgiRequestHandler.uriToParameters(new URI(uriStr)) mustEqual result
       }
     }
   }

@@ -26,20 +26,12 @@ import com.twitter.logging.Logger
 class Metric {
   val log = Logger.get(getClass.getName)
 
-  private var maximum = Int.MinValue
-  private var minimum = Int.MaxValue
-  private var count: Int = 0
   private var histogram = new Histogram()
-  private var mean: Double = 0.0
 
   /**
    * Resets the state of this Metric. Clears all data points collected so far.
    */
   def clear() = synchronized {
-    maximum = Int.MinValue
-    minimum = Int.MaxValue
-    count = 0
-    mean = 0.0
     histogram.clear()
   }
 
@@ -47,25 +39,13 @@ class Metric {
    * Adds a data point.
    */
   def add(n: Int): Long = {
-    val histogramBucketIndex = Histogram.bucketIndex(n)
-    var rv = 0
     if (n > -1) {
       synchronized {
-        maximum = n max maximum
-        minimum = n min minimum
-        count += 1
-        rv = count
-        histogram.addToBucket(histogramBucketIndex)
-        if (rv == 1) {
-          mean = n
-        } else {
-          mean += (n.toDouble - mean) / count
-        }
+        histogram.add(n)
       }
-      rv
     } else {
       log.warning("Tried to add a negative data point.")
-      count
+      histogram.count
     }
   }
 
@@ -73,50 +53,35 @@ class Metric {
    * Add a summarized set of data points.
    */
   def add(distribution: Distribution): Long = synchronized {
-    if (distribution.count > 0) {
-      // these equations end up using the sum again, and may be lossy. i couldn't find or think of
-      // a better way.
-      mean = (mean * count + distribution.mean * distribution.count) / (count + distribution.count)
-      count += distribution.count
-      maximum = distribution.maximum max maximum
-      minimum = distribution.minimum min minimum
-      distribution.histogram.map { h => histogram.merge(h) }
-    }
-    count
+    histogram.merge(distribution.histogram)
+    histogram.count
+  }
+
+  override def clone(): Metric = {
+    val rv = new Metric
+    rv.histogram = histogram.clone()
+    rv
   }
 
   /**
    * Returns a Distribution for this Metric.
    */
-  def apply(reset: Boolean): Distribution = synchronized {
-    val rv = new Distribution(count, if (count > 0) maximum else 0, if (count > 0) minimum else 0, Some(histogram.clone()), mean)
-    if (reset) clear()
-    rv
-  }
+  def apply(): Distribution = histogram()
 }
 
 class FanoutMetric(others: Metric*) extends Metric {
-  private val fanout = new mutable.HashSet[Metric]
-  others.foreach { metric => addFanout(metric) }
-
-  def addFanout(metric: Metric) {
-    fanout += metric
-  }
-
   override def clear() {
-    synchronized {
-      super.clear()
-      fanout.foreach { _.clear() }
-    }
+    others.foreach { _.clear() }
+    super.clear()
   }
 
   override def add(n: Int) = synchronized {
-    fanout.foreach { _.add(n) }
+    others.foreach { _.add(n) }
     super.add(n)
   }
 
   override def add(distribution: Distribution) = synchronized {
-    fanout.foreach { _.add(distribution) }
+    others.foreach { _.add(distribution) }
     super.add(distribution)
   }
 }

@@ -20,27 +20,43 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.json.{Json, JsonSerializable}
 
+object StatsListener {
+  val listeners = new mutable.HashMap[String, StatsListener]
+
+  /**
+   * Get a named StatsListener that's attached to a specified stats collection, creating it if it
+   * doesn't already exist.
+   */
+  def apply(name: String, collection: StatsCollection): StatsListener = {
+    listeners.getOrElseUpdate(name, new StatsListener(collection, false))
+  }
+
+  /**
+   * Get a named StatsListener that's attached to the global stats collection, creating it if it
+   * doesn't already exist.
+   */
+  def apply(name: String): StatsListener = apply(name, Stats)
+}
+
 /**
  * Attaches to a StatsCollection and reports on all the counters, metrics, gauges, and labels.
  * Each report resets state, so counters are reported as deltas, and metrics distributions are
  * only tracked since the last report.
  */
-class StatsListener(collection: StatsCollection) {
-  private val metricMap = new ConcurrentHashMap[String, Metric]()
+class StatsListener(collection: StatsCollection, startClean: Boolean) {
+  def this(collection: StatsCollection) = this(collection, true)
+
   private val lastCounterMap = new mutable.HashMap[String, Long]()
+  private val lastMetricMap = new mutable.HashMap[String, Distribution]()
 
   collection.addListener(this)
-  collection.getCounters.foreach { case (key, value) =>
-    lastCounterMap(key) = value
-  }
-
-  def getMetric(name: String) = {
-    var metric = metricMap.get(name)
-    while (metric == null) {
-      metric = metricMap.putIfAbsent(name, new Metric())
-      metric = metricMap.get(name)
+  if (startClean) {
+    collection.getCounters().foreach { case (key, value) =>
+      lastCounterMap(key) = value
     }
-    metric
+    collection.getMetrics().foreach { case (key, value) =>
+      lastMetricMap(key) = value
+    }
   }
 
   def getCounters() = synchronized {
@@ -52,12 +68,13 @@ class StatsListener(collection: StatsCollection) {
     deltas
   }
 
-  def getMetrics() = {
-    val metrics = new mutable.HashMap[String, Distribution]
-    for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
-      metrics += (key -> metric(true))
+  def getMetrics() = synchronized {
+    val deltas = new mutable.HashMap[String, Distribution]
+    for ((key, newValue) <- collection.getMetrics()) {
+      deltas(key) = newValue - lastMetricMap.getOrElse(key, new Distribution())
+      lastMetricMap(key) = newValue
     }
-    metrics
+    deltas
   }
 
   def get(): StatsSummary = {

@@ -49,7 +49,7 @@ object Stats extends StatsCollection {
   }
 
   // helper function for computing deltas over counters
-  final def delta(oldValue: Long, newValue: Long): Long = {
+  def delta(oldValue: Long, newValue: Long): Long = {
     if (oldValue <= newValue) {
       newValue - oldValue
     } else {

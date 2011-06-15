@@ -18,13 +18,18 @@ package com.twitter.ostrich
 package admin
 
 import java.io.{InputStream, OutputStream}
-import java.net.{InetSocketAddress, Socket}
+import java.net.{InetSocketAddress, Socket, URI}
 import scala.io.Source
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 
+/**
+ * Custom handler interface for the admin web site. The standard `render` calls are implemented in
+ * terms of a single `handle` call. For more functionality, check out subclasses like
+ * `FolderResourceHandler` and `CgiRequestHandler`.
+ */
 abstract class CustomHttpHandler extends HttpHandler {
   private val log = Logger.get(getClass)
 
@@ -77,6 +82,9 @@ class PageResourceHandler(path: String) extends CustomHttpHandler {
   }
 }
 
+/**
+ * Serve static pages as java resources.
+ */
 class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
   /**
    * Given a requestPath (e.g. /static/digraph.js), break it up into the path and filename
@@ -110,15 +118,21 @@ class FolderResourceHandler(staticPath: String) extends CustomHttpHandler {
 }
 
 object CgiRequestHandler {
-  def exchangeToParameters(exchange: HttpExchange): List[List[String]] = {
-    val params = exchange.getRequestURI.getQuery
-
-    if (params != null) {
-      params.split('&').toList
-    } else {
-      Nil
+  def exchangeToParameters(exchange: HttpExchange): List[(String, String)] =
+    Option(exchange.getRequestURI) match {
+      case Some(uri) => uriToParameters(uri)
+      case None      => Nil
     }
-  }.map { _.split("=", 2).toList }
+
+  def uriToParameters(uri: URI): List[(String, String)] = {
+    Option(uri.getQuery).getOrElse("").split("&").toList.filter { _.contains("=") }.map { param =>
+      param.split("=", 2).toList match {
+        case k :: v :: Nil => (k, v)
+        case k :: Nil => (k, "")
+        case _ => ("", "") // won't happen, but stops the compiler from whining.
+      }
+    }
+  }
 }
 
 abstract class CgiRequestHandler extends CustomHttpHandler {
@@ -140,15 +154,14 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
     }
   }
 
-  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]])
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)])
 }
 
 class HeapResourceHandler extends CgiRequestHandler {
   private val log = Logger(getClass.getName)
   case class Params(pause: Duration, samplingPeriod: Int, forceGC: Boolean)
 
-  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
-
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     if (!Heapster.instance.isDefined) {
       render("heapster not loaded!", exchange)
       return
@@ -157,13 +170,13 @@ class HeapResourceHandler extends CgiRequestHandler {
 
     val params =
       parameters.foldLeft(Params(10.seconds, 10 << 19, true)) {
-        case (params, "pause" :: pauseVal :: _) =>
+        case (params, ("pause", pauseVal)) =>
           params.copy(pause = pauseVal.toInt.seconds)
-        case (params, "sample_period" :: sampleVal :: _) =>
+        case (params, ("sample_period", sampleVal)) =>
           params.copy(samplingPeriod = sampleVal.toInt)
-        case (params, "force_gc" :: "no" :: _) =>
+        case (params, ("force_gc", "no")) =>
           params.copy(forceGC = false)
-        case (params, "force_gc" :: "0" :: _) =>
+        case (params, ("force_gc", "0")) =>
           params.copy(forceGC = false)
         case (params, _) =>
           params
@@ -184,19 +197,19 @@ class HeapResourceHandler extends CgiRequestHandler {
 }
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
-  def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     val command = path.last.split('.').head
     val format: Format = path.last.split('.').last match {
       case "txt" => Format.PlainText
       case _ => Format.Json
     }
 
+    val parameterMap = Map(parameters: _*)
     try {
       val response = {
-        val parameterNames = parameters.map { p => p(0) }
-        val commandResponse = commandHandler(command, parameterNames, format)
+        val commandResponse = commandHandler(command, parameterMap, format)
 
-        if (parameterNames.contains("callback") && (format == Format.Json)) {
+        if (parameterMap.keySet.contains("callback") && (format == Format.Json)) {
           "ostrichCallback(%s)".format(commandResponse)
         } else {
           commandResponse
@@ -215,6 +228,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
 }
 
 class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) extends Service {
+  val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
   val commandHandler = new CommandHandler(runtime)
 
@@ -244,6 +258,7 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
   def start() = {
     ServiceTracker.register(this)
     httpServer.start()
+    log.info("Admin HTTP interface started on port %d.", port)
   }
 
   override def shutdown() = httpServer.stop(0) // argument is in seconds

@@ -1,11 +1,15 @@
 # Ostrich
 
-Ostrich is a small library for collecting and reporting runtime statistics and
-debugging info from a scala server. It can collect counters, gauges, and
-timings, and it can report them via log files or a simple web interface that
-includes graphs. A server can also be asked to shutdown or reload its config
-files using these interfaces. The idea is that it should be simple and
-straightforward, allowing you to plug it in and get started quickly.
+Ostrich is a library for scala servers that makes it easy to:
+
+- load & reload per-environment configuration
+- collect runtime statistics (counters, gauges, metrics, and labels)
+- report those statistics through a simple web interface (optionally with
+  graphs) or into log files
+- interact with the server over HTTP to check build versions or shut it down
+
+The idea is that it should be simple and straightforward, allowing you to
+plug it in and get started quickly.
 
 This library is released under the Apache Software License, version 2, which
 should be included with the source in a file named `LICENSE`.
@@ -31,11 +35,11 @@ There are four kinds of statistics that ostrich captures:
   countable event happens, and graphing utilities usually graph the deltas
   over time. To increment a counter, use:
 
-        stats.incr("births")
+        Stats.incr("births")
 
   or
 
-        stats.incr("widgets_sold", 5)
+        Stats.incr("widgets_sold", 5)
 
 - gauges
 
@@ -44,7 +48,7 @@ There are four kinds of statistics that ostrich captures:
   you only need to take when someone asks. To define a gauge, stick this code
   somewhere in the server initialization:
 
-        stats.addGauge("current_temperature") { myThermometer.temperature }
+        Stats.addGauge("current_temperature") { myThermometer.temperature }
 
   A gauge method must always return a double.
 
@@ -53,13 +57,13 @@ There are four kinds of statistics that ostrich captures:
   A metric is tracked via distribution, and is usually used for timings, like
   so:
 
-        stats.time("translation") {
+        Stats.time("translation") {
           document.translate("de", "en")
         }
 
   But you can also add metrics directly:
 
-        stats.addMetric("query_results", results.size)
+        Stats.addMetric("query_results", results.size)
 
   Metrics are collected by tracking the count, min, max, mean (average), and a
   simple bucket-based histogram of the distribution. This distribution can be
@@ -70,16 +74,39 @@ There are four kinds of statistics that ostrich captures:
   A label is just a key/value pair of strings, usually used to report a
   subsystem's state, like "boiler=offline". They're set with:
 
-        stats.setLabel("boiler", "online")
+        Stats.setLabel("boiler", "online")
 
   They have no real statistical value, but can be used to raise flags in
   logging and monitoring.
 
 
+## RuntimeEnvironment
+
+If you build with standard-project
+<http://github.com/twitter/standard-project>, `RuntimeEnvironment` can pull
+build and environment info out of the `build.properties` file that's tucked
+into your jar. Typical use is to pass your server object (or any object from
+your jar) and any command-line arguments you haven't already parsed:
+
+    val runtime = RuntimeEnvironment(this, args)
+
+The command-line argument parsing is optional, and supports only:
+
+- `--version` to print out the jar's build info (name, version, build)
+
+- `-f <filename>` to specify a config file manually
+
+- `--validate` to validate that your config file can be compiled
+
+Your server object is used as the home jar of the `build.properties` file.
+Then the classpath is scanned to find that jar's home and the config files
+that are located nearby.
+
+
 ## Quick Start
 
-A good example server is created by the scala-build project here:
-<http://github.com/twitter/scala-build>
+A good example server is created by the scala-bootstrapper project here:
+<http://github.com/twitter/scala-bootstrapper>
 
 Define a server config class:
 
@@ -91,17 +118,18 @@ Define a server config class:
       }
     }
 
-A `ServiceConfig` class contains things you want to configure on your server, as vars,
-and an `apply` method that turns a RuntimeEnvironment into
-your server. `ServiceConfig` is actually a helper for `Config` that adds logging configuration,
-sets up the optional admin HTTP server if it was configured, and registers your service with the `ServiceTracker` so that it will be
+A `ServerConfig` class contains things you want to configure on your server,
+as vars, and an `apply` method that turns a RuntimeEnvironment into your
+server. `ServerConfig` is actually a helper for `Config` that adds logging
+configuration, sets up the optional admin HTTP server if it was configured,
+and registers your service with the `ServiceTracker` so that it will be
 shutdown when the admin port receives a shutdown command.
 
 Next, make a simple config file for development:
 
-    import com.twitter.admin.config._
     import com.twitter.conversions.time._
     import com.twitter.logging.config._
+    import com.twitter.ostrich.admin.config._
     import com.example.config._
 
     new MyServerConfig {
@@ -151,6 +179,26 @@ To log or report stats, attach a `StatsReporter` to a `StatsCollection`. A
 reports. You can attach multiple `StatsReporter`s to track independent state
 without affecting the `StatsCollection`.
 
+The simplest (and most common) pattern is to use the global singleton named
+`Stats`, like so:
+
+    import com.twitter.ostrich.stats.Stats
+
+    Stats.incr("cache_misses")
+    Stats.time("memcache_timing") {
+      memcache.set(key, value)
+    }
+
+Stat names can be any string, though conventionally they contain only letters,
+digits, underline (_), and dash (-), to make it easier for reporting.
+
+You can immediately see any reported stats on the admin web server, if you've
+activated it, through the "stats" command:
+
+    curl localhost:PPPP/stats.txt
+
+(where `PPPP` is your configured admin port)
+
 
 ## ServiceTracker
 
@@ -168,6 +216,40 @@ implement `Service`, so they can be used to build simple background tasks
 that will be automatically shutdown when the server exits.
 
 
+## Admin web service
+
+The easiest way to start the admin service is to construct an
+`AdminServiceConfig` with desired configuration, and call `apply` on it.
+
+To reduce boilerplate in the common case of configuring a server with an
+admin port and logging, a helper trait called `ServerConfig` is defined with
+both:
+
+    var loggers: List[LoggerConfig] = Nil
+    var admin = new AdminServiceConfig()
+
+The `apply` method on `ServerConfig` will create and start the admin service
+if a port is defined, and setup any configured logging.
+
+You can also build an admin service directly from its config:
+
+    val adminConfig = new AdminServiceConfig {
+      httpPort = 8888
+      statsNodes = new StatsConfig {
+        reporters = new TimeSeriesCollectorConfig
+      }
+    }
+    val runtime = RuntimeEnvironment(this, Nil)
+    val admin = adminConfig()(runtime)
+
+If `httpPort` isn't set, the admin service won't start, and `admin` will be
+`None`. Otherwise it will be an `Option[AdminHttpService]`.
+
+`statsNodes` can attach a list of reporters to named stats collections. In the
+above example, a time-series collector is added to the global `Stats` object.
+This is used to provide the web graphs described below under "Web graphs".
+
+
 ## Web/socket commands
 
 Commands over the admin interface take the form of an HTTP "get" request:
@@ -176,91 +258,71 @@ Commands over the admin interface take the form of an HTTP "get" request:
 
 which can be performed using 'curl' or 'wget':
 
-    $ curl http://localhost:9990/shutdown
+    $ curl http://localhost:PPPP/shutdown
 
 The result body may be json or plain-text, depending on <type>. The default is
 json, but you can ask for text like so:
 
-    $ curl http://localhost:9990/stats.txt
+    $ curl http://localhost:PPPP/stats.txt
 
-For simple commands like `shutdown`, the response body may simply be the JSON encoding of the string
-"ok". For others like `stats`, it may be a nested structure.
+For simple commands like `shutdown`, the response body may simply be the JSON
+encoding of the string "ok". For others like `stats`, it may be a nested
+structure.
 
 The commands are:
 
 - ping
 
-  verify that the admin interface is working; server should say "pong" back
+  Verify that the admin interface is working; server should say "pong" back.
 
 - reload
 
-  reload the server config file with `Configgy.reload()`
+  Reload the server config file for any services that support it (most do not).
 
 - shutdown
 
-  immediately shutdown the server
+  Immediately shutdown the server.
 
 - quiesce
 
-  close any listening sockets, stop accepting new connections, and shutdown the server as soon as
-  the last client connection is done
+  Close any listening sockets, stop accepting new connections, and shutdown the server as soon as
+  the last client connection is done.
 
 - stats
 
-  dump server statistics as 4 groups: counters, gauges, metrics, and labels
+  Dump server statistics as 4 groups: counters, gauges, metrics, and labels.
+
+  Normally you want to add a `namespace` argument, which will create a new listener for the given
+  name. For example, `/stats.json?namespace=ganglia` lets ganglia fetch stats using its own
+  listener. (See `src/scripts/json_stats_fetcher.rb` for an example.) If you omit a namespace, the
+  main stats object will be fetched, and metrics will be globally reset each time.
 
 - server_info
 
-  dump server info (server name, version, build, and git revision)
+  Dump server info (server name, version, build, and git revision).
 
 - threads
 
-  dump stack traces and stats about each currently running thread
+  Dump stack traces and stats about each currently running thread.
 
 - gc
 
-  force a garbage collection cycle
+  Force a garbage collection cycle.
 
 
 ## Web graphs
 
-The web interface also includes a small graph server that can be used to look at the last hour of
-data on collected stats. (See "Stats API" below for how to track stats.)
+If `TimeSeriesCollector` is attached to a stats collection, the web interface
+will include a small graph server that can be used to look at the last hour of
+data on collected stats.
 
 The url
 
     http://localhost:PPPP/graph/
 
-(where PPPP is your `admin_http_port`) will give a list of currently-collected stats, and links to
-the current hourly graph for each stat. The graphs are generated in javascript using flot.
-
-
-## Admin API
-
-The easiest way to start the admin service is to construct an `AdminServiceConfig` with desired
-configuration, and call `apply` on it.
-
-    val admin = new AdminServiceConfig {
-      httpPort = 8888
-      statsNodes = new StatsConfig {
-        reporters = new TimeSeriesCollectorConfig
-      }
-    }
-    admin()
-
-If `httpPort` isn't set, the admin server won't start.
-
-A helper trait called `ServerConfig` contains an `AdminServiceConfig` and `LoggerConfig` to reduce
-boilerplate in the common case of configuring a server.
-
-To build the admin service manually, you can do what the config classes do:
-
-    val runtime = RuntimeEnvironment(this, Nil)
-    val admin = new AdminHttpService(/* port */ 8888, /* http backlog */ 20, runtime)
-    val collector = new TimeSeriesCollector(Stats)
-    collector.registerWith(admin)
-    ServiceTracker.register(collector)
-    collector.start()
+(where PPPP is your admin `httpPort`) will give a list of currently-collected
+stats, and links to the current hourly graph for each stat. The graphs are
+generated in javascript using flot.
 
 
 ## Profiling

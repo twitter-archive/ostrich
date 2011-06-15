@@ -70,7 +70,7 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
       }
       stats.metrics.foreach { case (k, v) =>
         val data = PERCENTILES.map { percent =>
-          v.histogram.get.getPercentile(percent).toLong
+          v.histogram.getPercentile(percent).toLong
         }
         hourlyTimings.getOrElseUpdate("metric:" + k, new TimeSeries[List[Long]](60, EMPTY_TIMINGS)).add(data)
       }
@@ -100,12 +100,12 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
   def registerWith(service: AdminHttpService) {
     service.addContext("/graph/", new PageResourceHandler("/graph.html"))
     service.addContext("/graph_data", new CgiRequestHandler {
-      def handle(exchange: HttpExchange, path: List[String], parameters: List[List[String]]) {
+      def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
         if (path.size == 1) {
           render(Json.build(Map("keys" -> keys.toList)).toString + "\n", exchange)
         } else {
-          val keep = parameters.filter { _(0) == "p" }.headOption.map {
-            _(1).split(",").map { _.toInt }
+          val keep = parameters.filter { case (k, v) => k == "p" }.headOption.map { case (k, v) =>
+            v.split(",").map { _.toInt }
           }.getOrElse((0 until PERCENTILES.size).toArray)
           render(get(path.last, keep), exchange, 200, "application/json")
         }

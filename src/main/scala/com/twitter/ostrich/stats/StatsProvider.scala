@@ -17,7 +17,8 @@
 package com.twitter.ostrich.stats
 
 import scala.collection.{Map, mutable, immutable}
-import com.twitter.util.{Duration, Future}
+import com.twitter.json.Json
+import com.twitter.util.{Duration, Future, Time}
 
 /**
  * Immutable summary of counters, metrics, gauges, and labels.
@@ -27,7 +28,29 @@ case class StatsSummary(
   metrics: Map[String, Distribution],
   gauges: Map[String, Double],
   labels: Map[String, String]
-)
+) {
+  /**
+   * Dump a nested map of the stats in this collection, suitable for json output.
+   */
+  def toMap: Map[String, Any] = {
+    val jsonGauges = Map[String, Any]() ++ gauges.map { case (k, v) =>
+      if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
+    }
+    Map(
+      "counters" -> counters,
+      "metrics" -> metrics,
+      "gauges" -> jsonGauges,
+      "labels" -> labels
+    )
+  }
+
+  /**
+   * Dump a json-encoded map of the stats in this collection.
+   */
+  def toJson = {
+    Json.build(toMap).toString
+  }
+}
 
 /**
  * Trait for anything that collects counters, timings, and gauges, and can report them in
@@ -159,12 +182,37 @@ trait StatsProvider {
   }
 
   /**
-   * Records the wall-clock time until the future has a value (or failure), in milliseconds, with the given name.
+   * Runs the function f and logs that duration until the future is satisfied, in microseconds, with
+   * the given name.
+   */
+  def timeFutureMicros[T](name: String)(f: Future[T]): Future[T] = {
+    val start = Time.now
+    f.respond { _ =>
+      addMetric(name + "_usec", start.sinceNow.inMicroseconds.toInt)
+    }
+    f
+  }
+
+  /**
+   * Runs the function f and logs that duration until the future is satisfied, in milliseconds, with
+   * the given name.
    */
   def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
-    val startTime = System.currentTimeMillis
+    val start = Time.now
     f.respond { _ =>
-      addMetric(name + "_msec", (System.currentTimeMillis - startTime).toInt)
+      addMetric(name + "_msec", start.sinceNow.inMilliseconds.toInt)
+    }
+    f
+  }
+
+  /**
+   * Runs the function f and logs that duration until the future is satisfied, in nanoseconds, with
+   * the given name.
+   */
+  def timeFutureNanos[T](name: String)(f: Future[T]): Future[T] = {
+    val start = Time.now
+    f.respond { _ =>
+      addMetric(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
     }
     f
   }

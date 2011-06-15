@@ -18,7 +18,8 @@ package com.twitter.ostrich.stats
 
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.{JavaConversions, Map, mutable, immutable}
+import scala.collection.{Map, mutable, immutable}
+import com.twitter.conversions.string._
 import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Local
 
@@ -26,8 +27,10 @@ import com.twitter.util.Local
  * Concrete StatsProvider that tracks counters and timings.
  */
 class StatsCollection extends StatsProvider with JsonSerializable {
+  import scala.collection.JavaConverters._
+
   protected val counterMap = new ConcurrentHashMap[String, Counter]()
-  protected val metricMap = new ConcurrentHashMap[String, FanoutMetric]()
+  protected val metricMap = new ConcurrentHashMap[String, Metric]()
   protected val gaugeMap = new ConcurrentHashMap[String, () => Double]()
   protected val labelMap = new ConcurrentHashMap[String, String]()
 
@@ -64,7 +67,30 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     val os = ManagementFactory.getOperatingSystemMXBean()
     out += ("jvm_num_cpus" -> os.getAvailableProcessors().toLong)
 
-    out
+    var totalUsage = 0L
+    ManagementFactory.getMemoryPoolMXBeans().asScala.foreach { pool =>
+      val name = pool.getName.regexSub("""[^\w]""".r) { m => "_" }
+      Option(pool.getCollectionUsage).foreach { usage =>
+        out += ("jvm_post_gc_" + name + "_used" -> usage.getUsed)
+        totalUsage += usage.getUsed
+      }
+    }
+    out += ("jvm_post_gc_used" -> totalUsage)
+  }
+
+  def fillInJvmCounters(out: mutable.Map[String, Long]) {
+    var totalCycles = 0L
+    var totalTime = 0L
+
+    ManagementFactory.getGarbageCollectorMXBeans().asScala.foreach { gc =>
+      val name = gc.getName.regexSub("""[^\w]""".r) { m => "_" }
+      out += ("jvm_gc_" + name + "_cycles" -> gc.getCollectionCount)
+      out += ("jvm_gc_" + name + "_msec" -> gc.getCollectionTime)
+      totalCycles += gc.getCollectionCount
+      totalTime += gc.getCollectionTime
+    }
+    out += ("jvm_gc_cycles" -> totalCycles)
+    out += ("jvm_gc_msec" -> totalTime)
   }
 
   /**
@@ -74,9 +100,6 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def addListener(listener: StatsListener) {
     synchronized {
       listeners += listener
-      for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
-        metric.addFanout(listener.getMetric(key))
-      }
     }
   }
 
@@ -112,19 +135,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getMetric(name: String) = {
     var metric = metricMap.get(name)
     if (metric == null) {
-      metric = new FanoutMetric()
-      metricMap.putIfAbsent(name, newMetric(name))
+      metric = metricMap.putIfAbsent(name, newMetric(name))
       metric = metricMap.get(name)
     }
     metric
   }
 
   protected def newMetric(name: String) = {
-    val metric = new FanoutMetric()
-    synchronized {
-      listeners.foreach { listener => metric.addFanout(listener.getMetric(name)) }
-    }
-    metric
+    new Metric()
   }
 
   def getLabel(name: String) = {
@@ -139,7 +157,8 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getCounters() = {
     val counters = new mutable.HashMap[String, Long]
-    for ((key, counter) <- JavaConversions.asScalaMap(counterMap)) {
+    if (includeJvmStats) fillInJvmCounters(counters)
+    for ((key, counter) <- counterMap.asScala) {
       counters += (key -> counter())
     }
     counters
@@ -147,8 +166,8 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getMetrics() = {
     val metrics = new mutable.HashMap[String, Distribution]
-    for ((key, metric) <- JavaConversions.asScalaMap(metricMap)) {
-      metrics += (key -> metric(true))
+    for ((key, metric) <- metricMap.asScala) {
+      metrics += (key -> metric())
     }
     metrics
   }
@@ -156,14 +175,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getGauges() = {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
-    for ((key, gauge) <- JavaConversions.asScalaMap(gaugeMap)) {
+    for ((key, gauge) <- gaugeMap.asScala) {
       gauges += (key -> gauge())
     }
     gauges
   }
 
   def getLabels() = {
-    new mutable.HashMap[String, String] ++ JavaConversions.asScalaMap(labelMap)
+    new mutable.HashMap[String, String] ++ labelMap.asScala
   }
 
   def clearAll() {
@@ -174,27 +193,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     listeners.clear()
   }
 
-  /**
-   * Dump a nested map of the stats in this collection, suitable for json output.
-   */
-  def toMap: Map[String, Any] = {
-    val gauges = Map[String, Any]() ++ getGauges().map { case (k, v) =>
-      if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
-    }
-    Map(
-      "counters" -> getCounters(),
-      "metrics" -> getMetrics(),
-      "gauges" -> gauges,
-      "labels" -> getLabels()
-    )
-  }
-
-  /**
-   * Dump a json-encoded map of the stats in this collection.
-   */
-  def toJson = {
-    Json.build(toMap).toString
-  }
+  def toJson = get().toJson
 }
 
 /**
@@ -227,16 +226,19 @@ class FanoutStatsCollection(others: StatsCollection*) extends StatsCollection {
  * collection's "exception" count.
  */
 class LocalStatsCollection(collectionName: String) extends FanoutStatsCollection(Stats) {
+  import scala.collection.JavaConverters._
+
   /**
    * Flush this collection's counters and metrics into another StatsCollection, with each counter
-   * and metric name prefixed by this collection's name.
+   * and metric name prefixed by this collection's name. Counters and metrics in this collection
+   * will be cleared out. This is not an atomic operation.
    */
   def flushInto(collection: StatsProvider) {
-    JavaConversions.asScalaMap(counterMap).foreach { case (name, counter) =>
+    counterMap.asScala.foreach { case (name, counter) =>
       collection.getCounter(collectionName + "." + name).incr(counter().toInt)
     }
-    JavaConversions.asScalaMap(metricMap).foreach { case (name, metric) =>
-      collection.getMetric(collectionName + "." + name).add(metric(true))
+    metricMap.asScala.foreach { case (name, metric) =>
+      collection.getMetric(collectionName + "." + name).add(metric())
     }
     counterMap.clear()
     metricMap.clear()

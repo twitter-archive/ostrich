@@ -38,6 +38,14 @@ object StatsCollectionSpec extends Specification {
       map.keys.toList must contain("jvm_num_cpus")
       map.keys.toList must contain("jvm_heap_used")
       map.keys.toList must contain("jvm_start_time")
+      map.keys.toList must contain("jvm_post_gc_used")
+    }
+
+    "fillInJvmCounters" in {
+      val map = new mutable.HashMap[String, Long]
+      collection.fillInJvmCounters(map)
+      map.keys.toList must contain("jvm_gc_cycles")
+      map.keys.toList must contain("jvm_gc_msec")
     }
 
     "counters" in {
@@ -59,9 +67,11 @@ object StatsCollectionSpec extends Specification {
       "empty" in {
         collection.addMetric("test", 0)
         val test = collection.getMetric("test")
-        test(true) mustEqual new Distribution(1, 0, 0, 0.0)
+        test() mustEqual new Distribution(Histogram(0))
+        test() mustEqual new Distribution(Histogram(0))
         // the timings list will be empty here:
-        test(true) mustEqual new Distribution(0, 0, 0, 0.0)
+        test.clear()
+        test() mustEqual new Distribution(Histogram())
       }
 
       "basic min/max/average" in {
@@ -69,7 +79,7 @@ object StatsCollectionSpec extends Specification {
         collection.addMetric("test", 2)
         collection.addMetric("test", 3)
         val test = collection.getMetric("test")
-        test(true) mustEqual new Distribution(3, 3, 1, Some(Histogram(1, 2, 3)), 2.0)
+        test() mustEqual new Distribution(Histogram(1, 2, 3))
       }
 
       "report" in {
@@ -92,7 +102,7 @@ object StatsCollectionSpec extends Specification {
       "average of 0" in {
         collection.addMetric("test", 0)
         val test = collection.getMetric("test")
-        test(true) mustEqual new Distribution(1, 0, 0, 0.0)
+        test() mustEqual new Distribution(Histogram(0))
       }
 
       "ignore negative timings" in {
@@ -100,17 +110,17 @@ object StatsCollectionSpec extends Specification {
         collection.addMetric("test", -1)
         collection.addMetric("test", Int.MinValue)
         val test = collection.getMetric("test")
-        test(true) mustEqual new Distribution(1, 1, 1, Some(Histogram(1)), 1.0)
+        test() mustEqual new Distribution(Histogram(1))
       }
 
       "boundary timing sizes" in {
         collection.addMetric("test", Int.MaxValue)
         collection.addMetric("test", 5)
-        val sum = 5.0 + Int.MaxValue
+        val sum = 5 + Int.MaxValue
         val avg = sum / 2.0
         val test = collection.getMetric("test")
-        test(true) mustEqual
-          new Distribution(2, Int.MaxValue, 5, Some(Histogram(5, Int.MaxValue)), avg)
+        test() mustEqual
+          new Distribution(Histogram(5, Int.MaxValue))
       }
 
       "handle code blocks" in {
@@ -119,54 +129,48 @@ object StatsCollectionSpec extends Specification {
             time.advance(10.millis)
           }
           val test = collection.getMetric("test_msec")
-          test(true).average must be_>=(10.0)
+          test().average must be_>=(10.0)
         }
       }
 
       "reset when asked" in {
         var x = 0
         collection.time("hundred") { for (i <- 0 until 100) x += i }
-        collection.getMetric("hundred_msec")(false).count mustEqual 1
+        collection.getMetric("hundred_msec")().count mustEqual 1
         collection.time("hundred") { for (i <- 0 until 100) x += i }
-        collection.getMetric("hundred_msec")(false).count mustEqual 2
-        collection.getMetric("hundred_msec")(true).count mustEqual 2
+        collection.getMetric("hundred_msec")().count mustEqual 2
+        collection.getMetric("hundred_msec").clear()
         collection.time("hundred") { for (i <- 0 until 100) x += i }
-        collection.getMetric("hundred_msec")(true).count mustEqual 1
+        collection.getMetric("hundred_msec")().count mustEqual 1
       }
 
       "add bundle of timings at once" in {
-        val timingStat = new Distribution(3, 20, 10, Some(Histogram(10, 15, 20)), 15.0)
+        val timingStat = new Distribution(Histogram(10, 15, 20))
         collection.addMetric("test", timingStat)
         collection.addMetric("test", 25)
-        collection.getMetric("test")(true) mustEqual Distribution(4, 25, 10, None, 17.5)
+        collection.getMetric("test")() mustEqual Distribution(Histogram(10, 15, 20, 25))
       }
 
       "add multiple bundles of timings" in {
-        val timingStat1 = new Distribution(2, 25, 15, Some(Histogram(15, 25)), 20.0)
-        val timingStat2 = new Distribution(2, 20, 10, Some(Histogram(10, 20)), 15.0)
+        val timingStat1 = new Distribution(Histogram(15, 25))
+        val timingStat2 = new Distribution(Histogram(10, 20, 25))
         collection.addMetric("test", timingStat1)
         collection.addMetric("test", timingStat2)
-        collection.getMetric("test")(true) mustEqual Distribution(4, 25, 10, None, 17.5)
+        collection.getMetric("test")() mustEqual Distribution(Histogram(10, 15, 20, 25, 25))
       }
 
       "timing stats can be added and reflected in Stats.getMetrics" in {
-        Stats.addMetric("foobar", new Distribution(1, 0, 0, 0.0))
+        Stats.addMetric("foobar", new Distribution(Histogram(10)))
         Stats.getMetrics()("foobar").count mustEqual 1
-        Stats.addMetric("foobar", new Distribution(3, 0, 0, 0.0))
+        Stats.addMetric("foobar", new Distribution(Histogram(20, 30)))
         Stats.getMetrics()("foobar").count mustEqual 3
       }
 
       "report text in sorted order" in {
-        Stats.addMetric("alpha", new Distribution(1, 0, 0, 0.0))
+        Stats.addMetric("alpha", new Distribution(Histogram(0)))
         Stats.getMetrics()("alpha").toString mustEqual
           "(average=0, count=1, maximum=0, minimum=0, " +
-          "p25=0, p50=0, p75=0, p90=0, p99=0, p999=0, p9999=0)"
-      }
-
-      "json contains histogram buckets" in {
-        Stats.addMetric("alpha", new Distribution(1, 0, 0, 0.0))
-        val json = Stats.getMetrics()("alpha").toJson
-        json mustMatch("\"histogram\":\\[")
+          "p25=0, p50=0, p75=0, p90=0, p95=0, p99=0, p999=0, p9999=0, sum=0)"
       }
     }
 

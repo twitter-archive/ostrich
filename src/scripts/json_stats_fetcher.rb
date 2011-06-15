@@ -13,24 +13,36 @@ require 'json'
 require 'timeout'
 require 'open-uri'
 
-def report_metric(name, value, units)
+def valid_gmetric_name?(name)
+  # Determines if a gmetric name is valid.
+  #
   # Ganglia is very intolerant of metric named with non-standard characters,
   # where non-standard contains most everything other than letters, numbers and
-  # some common symbols.  We will substitute underscores for invalid characters.
-  if name.length == 0
-    $stderr.puts "Metric was empty."
-    return 
-  end
-  name = name.gsub(/[^A-Za-z0-9_\-\.]/, "_")
-
-  if $report_to_ganglia
-    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
+  # some common symbols.
+  #
+  # Returns true if the metric is a valid gmetric name, otherwise false.
+  if name =~ /^[A-Za-z0-9_\-\.]+$/
+    return true
   else
-    puts "#{$ganglia_prefix}#{name}=#{value} #{units}"
+    $stderr.puts "Metric <#{name}> contains invalid characters."
+    return false
   end
 end
 
-$ostrich3 = false
+def report_metric(name, value, units, slope=nil)
+  if not valid_gmetric_name?(name)
+    return
+  end
+
+  if $report_to_ganglia
+    slope_arg = slope ? "-s #{slope}" : ""
+    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout} #{slope_arg}")
+  else
+    puts "#{$ganglia_prefix}#{name}=#{value} #{units} #{slope}"
+  end
+end
+
+$ostrich3 = false # guessed ostrich version
 $report_to_ganglia = true
 $ganglia_prefix = ''
 $stat_timeout = 86400
@@ -99,7 +111,10 @@ File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 begin
   Timeout::timeout(60) do
     data = if use_web
-      open("http://#{hostname}:#{port}/stats.json#{'?reset=1' if $report_to_ganglia}").read
+      # Ostrich 2 uses reset
+      # Ostrich 4.2 uses namespace for similar functionality
+      # Ostrich 3 and 4.0 don't have this open and don't reset counters.
+      open("http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}").read
     else
       socket = TCPSocket.new(hostname, port)
       socket.puts("stats/json#{' reset' if $report_to_ganglia}")
@@ -109,16 +124,18 @@ begin
     stats = JSON.parse(data)
 
     # Ostrich >3 puts these in the metrics
-    if !$ostrich3
+    begin
       report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
       report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
       report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
       report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
       report_metric("jvm_uptime", (stats["jvm"]["uptime"].to_i rescue 0), "items")
+    rescue NoMethodError
+      $ostrich3 = true
     end
 
     stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-      report_metric(name, (value.to_i rescue 0), "items")
+      report_metric(name, (value.to_i rescue 0), "items", slope)
     end
 
     stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
@@ -129,7 +146,7 @@ begin
     stats[metricsKey].reject { |name, val| name =~ $pattern }.each do |name, timing|
       report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
       report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
-      [:p25, :p50, :p75, :p90, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
+      [:p25, :p50, :p75, :p90, :p95, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
         report_metric("#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec") if timing[bucket]
       end
     end

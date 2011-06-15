@@ -64,6 +64,10 @@ class RuntimeEnvironment(obj: AnyRef) {
   val jarBuildRevision = buildProperties.getProperty("build_revision", "unknown")
   val stageName = System.getProperty("stage", "production")
 
+  // require standard-project >= 0.12.4:
+  val jarBuildBranchName = buildProperties.getProperty("build_branch_name", "unknown")
+  val jarBuildLastFewCommits = buildProperties.getProperty("build_last_few_commits", "unknown")
+
   /**
    * Return the path this jar was executed from. Depends on the presence of
    * a valid `build.properties` file. Will return `None` if it couldn't
@@ -94,8 +98,7 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   /**
-   * Perform baseline command-line argument parsing. Responds to `--help`,
-   * `--version`, and `-f` (which overrides the config filename).
+   * Perform baseline command-line argument parsing.
    */
   def parseArgs(args: List[String]): Unit = {
     args match {
@@ -122,6 +125,7 @@ class RuntimeEnvironment(obj: AnyRef) {
 
   def parseSetting(arg: String, value: String) {
     arguments = arguments + (arg -> value)
+    System.setProperty(arg, value)
   }
 
   private def help() {
@@ -130,6 +134,8 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("options:")
     println("    -f <path>")
     println("        path of config files (default: %s)".format(configFile))
+    println("    -D <key>=<value>")
+    println("        set or override an optional setting")
     println("    --version")
     println("        show version information")
     println("    --validate")
