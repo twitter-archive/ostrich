@@ -166,6 +166,17 @@ object StatsCollectionSpec extends Specification {
         Stats.getMetrics()("foobar").count mustEqual 3
       }
 
+      "getMetricsNoResetIsCumulative" in {
+        Stats.addMetric("foobar", new Distribution(1, 0, 0, 0))
+        Stats.getMetrics()("foobar").count mustEqual 1
+        Stats.getMetrics()("foobar").count mustEqual 0
+
+        Stats.addMetric("foobar", new Distribution(1, 0, 0, 0))
+        Stats.getMetricsNoReset()("foobar").count mustEqual 1
+        Stats.getMetricsNoReset()("foobar").count mustEqual 1
+
+      }
+
       "report text in sorted order" in {
         Stats.addMetric("alpha", new Distribution(Histogram(0)))
         Stats.getMetrics()("alpha").toString mustEqual
