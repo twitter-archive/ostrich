@@ -24,6 +24,7 @@ import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
+import java.util.Properties
 
 /**
  * Custom handler interface for the admin web site. The standard `render` calls are implemented in
@@ -32,6 +33,8 @@ import com.twitter.util.{Duration, Time}
  */
 abstract class CustomHttpHandler extends HttpHandler {
   private val log = Logger.get(getClass)
+  private val properties = new Properties()
+  properties.load(getClass.getResourceAsStream("/ostrich.properties"))
 
   def render(body: String, exchange: HttpExchange) {
     render(body, exchange, 200)
@@ -45,6 +48,7 @@ abstract class CustomHttpHandler extends HttpHandler {
     val input: InputStream = exchange.getRequestBody()
     val output: OutputStream = exchange.getResponseBody()
     exchange.getResponseHeaders.set("Content-Type", contentType)
+    exchange.getResponseHeaders.set("X-Ostrich-Version", properties.getProperty("version"))
     val data = body.getBytes
     exchange.sendResponseHeaders(code, data.size)
     output.write(data)

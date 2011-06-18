@@ -18,6 +18,7 @@ package com.twitter.ostrich
 package admin
 
 import java.net.{Socket, SocketException, URI, URL}
+import scala.collection.JavaConverters._
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
@@ -32,6 +33,11 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   def get(path: String): String = {
     val url = new URL("http://localhost:%s%s".format(PORT, path))
     Source.fromURL(url).getLines.mkString("\n")
+  }
+
+  def getHeaders(path: String): Map[String, List[String]] = {
+    val url = new URL("http://localhost:%s%s".format(PORT, path))
+    url.openConnection().getHeaderFields.asScala.map { case (k, v) => (k, v.asScala.toList) }.toMap
   }
 
   var service: AdminHttpService = null
@@ -127,6 +133,10 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
     "not crash when fetching /" in {
       get("/") must beMatching("ostrich")
+    }
+
+    "tell us its ostrich version in the headers" in {
+      getHeaders("/").get("X-ostrich-version") must beSome[List[String]]
     }
 
     "server info" in {
