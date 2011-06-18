@@ -18,6 +18,7 @@ package com.twitter.ostrich
 package admin
 
 import java.net.{Socket, SocketException, URI, URL}
+import scala.collection.Map
 import scala.collection.JavaConverters._
 import scala.io.Source
 import com.twitter.json.Json
@@ -37,7 +38,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
   def getHeaders(path: String): Map[String, List[String]] = {
     val url = new URL("http://localhost:%s%s".format(PORT, path))
-    url.openConnection().getHeaderFields.asScala.map { case (k, v) => (k, v.asScala.toList) }.toMap
+    url.openConnection().getHeaderFields.asScala.mapValues { _.asScala.toList }
   }
 
   var service: AdminHttpService = null
