@@ -25,7 +25,7 @@ import org.specs.Specification
 import org.specs.util.DataTables
 import stats.Stats
 
-object AdminHttpServiceSpec extends Specification with DataTables {
+object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   val PORT = 9996
   val BACKLOG = 20
 
@@ -38,8 +38,6 @@ object AdminHttpServiceSpec extends Specification with DataTables {
 
   "AdminHttpService" should {
     doBefore {
-      Logger.reset()
-      Logger.get("").setLevel(Level.OFF)
       service = new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass))
       service.start()
     }
@@ -125,6 +123,10 @@ object AdminHttpServiceSpec extends Specification with DataTables {
 
     "return 404 for a missing command" in {
       get("/bullshit.json") must throwA[java.io.FileNotFoundException]
+    }
+
+    "not crash when fetching /" in {
+      get("/") must beMatching("ostrich")
     }
 
     "server info" in {

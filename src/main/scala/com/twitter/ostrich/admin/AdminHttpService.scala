@@ -198,6 +198,11 @@ class HeapResourceHandler extends CgiRequestHandler {
 
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+    if (path == Nil) {
+      render(loadResource("/index.html"), exchange)
+      return
+    }
+
     val command = path.last.split('.').head
     val format: Format = path.last.split('.').last match {
       case "txt" => Format.PlainText
@@ -219,7 +224,8 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
       val contentType = if (format == Format.PlainText) "text/plain" else "application/json"
       render(response, exchange, 200, contentType)
     } catch {
-      case e: UnknownCommandError => render("no such command", exchange, 404)
+      case e: UnknownCommandError =>
+        render("no such command", exchange, 404)
       case unknownException =>
         render("error processing command: " + unknownException, exchange, 500)
         unknownException.printStackTrace()
