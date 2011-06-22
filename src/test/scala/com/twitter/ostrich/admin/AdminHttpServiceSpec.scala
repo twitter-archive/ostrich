@@ -18,6 +18,8 @@ package com.twitter.ostrich
 package admin
 
 import java.net.{Socket, SocketException, URI, URL}
+import scala.collection.Map
+import scala.collection.JavaConverters._
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
@@ -25,7 +27,7 @@ import org.specs.Specification
 import org.specs.util.DataTables
 import stats.Stats
 
-object AdminHttpServiceSpec extends Specification with DataTables {
+object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   val PORT = 9996
   val BACKLOG = 20
 
@@ -34,12 +36,15 @@ object AdminHttpServiceSpec extends Specification with DataTables {
     Source.fromURL(url).getLines.mkString("\n")
   }
 
+  def getHeaders(path: String): Map[String, List[String]] = {
+    val url = new URL("http://localhost:%s%s".format(PORT, path))
+    url.openConnection().getHeaderFields.asScala.mapValues { _.asScala.toList }
+  }
+
   var service: AdminHttpService = null
 
   "AdminHttpService" should {
     doBefore {
-      Logger.reset()
-      Logger.get("").setLevel(Level.OFF)
       service = new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass))
       service.start()
     }
@@ -125,6 +130,14 @@ object AdminHttpServiceSpec extends Specification with DataTables {
 
     "return 404 for a missing command" in {
       get("/bullshit.json") must throwA[java.io.FileNotFoundException]
+    }
+
+    "not crash when fetching /" in {
+      get("/") must beMatching("ostrich")
+    }
+
+    "tell us its ostrich version in the headers" in {
+      getHeaders("/").get("X-ostrich-version") must beSome[List[String]]
     }
 
     "server info" in {

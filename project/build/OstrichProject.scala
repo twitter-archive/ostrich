@@ -1,3 +1,5 @@
+import java.io.FileWriter
+import java.util.Properties
 import sbt._
 import com.twitter.sbt._
 
@@ -32,6 +34,19 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
         <distribution>repo</distribution>
       </license>
     </licenses>
+
+  def ostrichPropertiesPath = (mainResourcesOutputPath ##) / "ostrich.properties"
+  lazy val makeOstrichProperties = task {
+    val properties = new Properties
+    properties.setProperty("version", version.toString)
+    properties.setProperty("asu", (System.nanoTime >> 16 & 0xfff).toString)
+    val fileWriter = new FileWriter(ostrichPropertiesPath.asFile)
+    properties.store(fileWriter, "")
+    fileWriter.close()
+    None
+  }
+  override def copyResourcesAction = super.copyResourcesAction && makeOstrichProperties
+  override def packagePaths = super.packagePaths +++ ostrichPropertiesPath
 
   override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
 }

@@ -88,8 +88,8 @@ object StatsCollectionSpec extends Specification {
         val timings = collection.getMetrics()
         timings.keys.toList mustEqual List("hundred_msec")
         timings("hundred_msec").count mustEqual 1
-        timings("hundred_msec").minimum mustEqual timings("hundred_msec").average
-        timings("hundred_msec").maximum mustEqual timings("hundred_msec").average
+        timings("hundred_msec").minimum must be_>(0)
+        timings("hundred_msec").maximum must be_>(0)
       }
 
       "time future" in {
