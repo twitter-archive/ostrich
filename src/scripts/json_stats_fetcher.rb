@@ -29,16 +29,15 @@ def valid_gmetric_name?(name)
   end
 end
 
-def report_metric(name, value, units, slope=nil)
+def report_metric(name, value, units)
   if not valid_gmetric_name?(name)
     return
   end
 
   if $report_to_ganglia
-    slope_arg = slope ? "-s #{slope}" : ""
-    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout} #{slope_arg}")
+    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
   else
-    puts "#{$ganglia_prefix}#{name}=#{value} #{units} #{slope}"
+    puts "#{$ganglia_prefix}#{name}=#{value}"
   end
 end
 
@@ -114,6 +113,7 @@ begin
       # Ostrich 2 uses reset
       # Ostrich 4.2 uses namespace for similar functionality
       # Ostrich 3 and 4.0 don't have this open and don't reset counters.
+      puts "http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}"
       open("http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}").read
     else
       socket = TCPSocket.new(hostname, port)
@@ -136,7 +136,7 @@ begin
 
     begin
       stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-        report_metric(name, (value.to_i rescue 0), "items", slope)
+        report_metric(name, (value.to_i rescue 0), "items")
       end
     rescue NoMethodError
     end
