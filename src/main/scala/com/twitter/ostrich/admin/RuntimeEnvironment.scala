@@ -146,7 +146,9 @@ class RuntimeEnvironment(obj: AnyRef) {
 
   private def validate() {
     try {
-      Eval[Any](configFile)
+      val eval = new Eval
+      val config = eval[Config[_]](configFile)
+      config.validate()
       println("Config file %s compiles. :)".format(configFile))
       System.exit(0)
     } catch {
@@ -154,16 +156,32 @@ class RuntimeEnvironment(obj: AnyRef) {
         println("Error in config file %s:".format(configFile))
         println(e.messages.flatten.mkString("\n"))
         System.exit(1)
+      case e: Config.RequiredValuesMissing =>
+        println("Required values missing in config file %s:".format(configFile))
+        println(e.getMessage)
+        System.exit(1)
     }
   }
 
   def loadConfig[T](): T = {
     try {
-      Eval[Config[T]](configFile)()
+      val eval = new Eval
+      val config = eval[Config[T]](configFile)
+      config.validate()
+      config()
     } catch {
       case e: Eval.CompilerException =>
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         Logger.get("").fatal(e.messages.flatten.mkString("\n"))
+        System.exit(1)
+        throw new Exception("which will never execute because of the System.exit above me.")
+      case e: Config.RequiredValuesMissing =>
+        Logger.get("").fatal("Required values missing in config file %s:".format(configFile))
+        Logger.get("").fatal(e.getMessage)
+        System.exit(1)
+        throw new Exception("which will never execute because of the System.exit above me.")
+      case e =>
+        Logger.get("").fatal(e, "Error in config file: %s", configFile)
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
     }
