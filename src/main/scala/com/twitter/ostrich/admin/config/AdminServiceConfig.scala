@@ -94,6 +94,9 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
   var extraHandlers: Map[String, CustomHttpHandler] = new mutable.HashMap[String, CustomHttpHandler]
 
   def apply() = { (runtime: RuntimeEnvironment) =>
+    // allow the adminPort to be overridden on the command line:
+    httpPort = runtime.arguments.get("adminPort").map { _.toInt }.orElse(httpPort)
+
     httpPort.map { port =>
       val admin = new AdminHttpService(port, httpBacklog, runtime)
       statsNodes.foreach { config =>
