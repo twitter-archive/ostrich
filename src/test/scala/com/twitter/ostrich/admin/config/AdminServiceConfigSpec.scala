@@ -41,6 +41,10 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
     }
 
     "start up" in {
+      expect {
+        one(runtime).arguments willReturn Map.empty[String, String]
+      }
+
       new Socket("localhost", port) must throwA[SocketException]
       val config = new AdminServiceConfig {
         httpPort = 9990
@@ -52,6 +56,10 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
     }
 
     "configure a json stats logger" in {
+      expect {
+        one(runtime).arguments willReturn Map.empty[String, String]
+      }
+
       val config = new AdminServiceConfig {
         httpPort = 9990
         statsNodes = new StatsConfig {
@@ -72,6 +80,10 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
     }
 
     "configure a w3c stats logger" in {
+      expect {
+        one(runtime).arguments willReturn Map.empty[String, String]
+      }
+
       val config = new AdminServiceConfig {
         httpPort = 9990
         statsNodes = new StatsConfig {
