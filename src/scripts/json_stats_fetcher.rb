@@ -14,6 +14,9 @@ require 'timeout'
 require 'open-uri'
 
 def report_metric(name, value, units)
+  # Ganglia is very intolerant of metric named with non-standard characters,
+  # where non-standard contains most everything other than letters, numbers and
+  # some common symbols.
   name = name.gsub(/[^A-Za-z0-9_\-\.]/, "_")
 
   if $report_to_ganglia
@@ -95,7 +98,6 @@ begin
       # Ostrich 2 uses reset
       # Ostrich 4.2 uses namespace for similar functionality
       # Ostrich 3 and 4.0 don't have this open and don't reset counters.
-      puts "http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}"
       open("http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}").read
     else
       socket = TCPSocket.new(hostname, port)
