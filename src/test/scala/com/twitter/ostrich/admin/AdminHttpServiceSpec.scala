@@ -136,7 +136,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
     }
 
     "not crash when fetching /" in {
-      get("/") must beMatching("ostrich")
+      get("/") must notBeEmpty
     }
 
     "tell us its ostrich version in the headers" in {

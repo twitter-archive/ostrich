@@ -1,3 +1,10 @@
+4.5.0
+-----
+
+- Requires util 1.9.0, which introduces the validate() method on Config.
+- validate() on Configs is called automatically in RuntimeEnvironment when loading a config.
+
+
 4.4.1
 -----
 
