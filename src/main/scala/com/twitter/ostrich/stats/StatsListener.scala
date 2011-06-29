@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich.stats
+package com.twitter.ostrich
+package stats
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.json.{Json, JsonSerializable}
+import com.twitter.util.Duration
+import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
   val listeners = new mutable.HashMap[String, StatsListener]
@@ -80,4 +83,34 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
   def get(): StatsSummary = {
     StatsSummary(getCounters(), getMetrics(), collection.getGauges(), collection.getLabels())
   }
+}
+
+class LatchedStatsListener(collection: StatsCollection, period: Duration, startClean: Boolean)
+extends StatsListener(collection, startClean) {
+  def this(collection: StatsCollection, period: Duration) = this(collection, period, true)
+
+  private var counters = new mutable.HashMap[String, Long]
+  private var metrics = new mutable.HashMap[String, Distribution]
+
+  override def getCounters() = synchronized { counters }
+  override def getMetrics() = synchronized { metrics }
+
+  override def get() = synchronized {
+    StatsSummary(counters, metrics, collection.getGauges(), collection.getLabels())
+  }
+
+  def nextLatch() {
+    synchronized {
+      counters = super.getCounters()
+      metrics = super.getMetrics()
+    }
+  }
+
+  val service = new PeriodicBackgroundProcess("LatchedStatsListener", period) {
+    def periodic() {
+      nextLatch()
+    }
+  }
+
+  ServiceTracker.register(service)
 }

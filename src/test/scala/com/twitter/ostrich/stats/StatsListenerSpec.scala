@@ -110,6 +110,18 @@ object StatsListenerSpec extends Specification {
             "rice" -> new Distribution(Histogram()))
     }
 
+    "latch to the top of a minute" in {
+      collection = new StatsCollection()
+      val listener = new LatchedStatsListener(collection, 1.minute)
+
+      collection.incr("a", 5)
+      listener.getCounters() mustEqual Map()
+      listener.nextLatch()
+      listener.getCounters() mustEqual Map("a" -> 5)
+      collection.incr("a", 5)
+      listener.getCounters() mustEqual Map("a" -> 5)
+    }
+
     "named" in {
       collection.incr("a", 5)
       StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
