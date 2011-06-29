@@ -13,32 +13,16 @@ require 'json'
 require 'timeout'
 require 'open-uri'
 
-def valid_gmetric_name?(name)
-  # Determines if a gmetric name is valid.
-  #
+def report_metric(name, value, units)
   # Ganglia is very intolerant of metric named with non-standard characters,
   # where non-standard contains most everything other than letters, numbers and
   # some common symbols.
-  #
-  # Returns true if the metric is a valid gmetric name, otherwise false.
-  if name =~ /^[A-Za-z0-9_\-\.]+$/
-    return true
-  else
-    $stderr.puts "Metric <#{name}> contains invalid characters."
-    return false
-  end
-end
-
-def report_metric(name, value, units, slope=nil)
-  if not valid_gmetric_name?(name)
-    return
-  end
+  name = name.gsub(/[^A-Za-z0-9_\-\.]/, "_")
 
   if $report_to_ganglia
-    slope_arg = slope ? "-s #{slope}" : ""
-    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout} #{slope_arg}")
+    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
   else
-    puts "#{$ganglia_prefix}#{name}=#{value} #{units} #{slope}"
+    puts "#{$ganglia_prefix}#{name}=#{value}"
   end
 end
 
@@ -136,7 +120,7 @@ begin
 
     begin
       stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-        report_metric(name, (value.to_i rescue 0), "items", slope)
+        report_metric(name, (value.to_i rescue 0), "items")
       end
     rescue NoMethodError
     end

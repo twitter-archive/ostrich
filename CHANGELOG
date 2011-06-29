@@ -1,12 +1,19 @@
+
+4.5.2
+-----
+release: 28 June 2011
+
+- Let the admin HTTP port be defined/overridden by the command line.
+
+
 4.5.0
 -----
+release: 28 June 2011
 
 - Requires util 1.9.0, which introduces the validate() method on Config.
-- validate() on Configs is called automatically in RuntimeEnvironment when loading a config.
 
-
-4.4.1
------
+- validate() on Configs is called automatically in RuntimeEnvironment when
+  loading a config.
 
 - Fixed admin port "/" path, and added an "X-Ostrich-Version" header to all
   responses.

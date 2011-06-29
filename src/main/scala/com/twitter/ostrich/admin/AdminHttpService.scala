@@ -268,7 +268,7 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
   def start() = {
     ServiceTracker.register(this)
     httpServer.start()
-    log.info("Admin HTTP interface started on port %d.", port)
+    log.info("Admin HTTP interface started on port %d.", address.getPort)
   }
 
   override def shutdown() = httpServer.stop(0) // argument is in seconds

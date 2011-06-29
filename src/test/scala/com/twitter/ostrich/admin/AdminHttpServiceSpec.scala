@@ -28,16 +28,15 @@ import org.specs.util.DataTables
 import stats.Stats
 
 object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
-  val PORT = 9996
-  val BACKLOG = 20
-
   def get(path: String): String = {
-    val url = new URL("http://localhost:%s%s".format(PORT, path))
-    Source.fromURL(url).getLines.mkString("\n")
+    val port = service.address.getPort
+    val url = new URL("http://localhost:%s%s".format(port, path))
+    Source.fromURL(url).getLines().mkString("\n")
   }
 
   def getHeaders(path: String): Map[String, List[String]] = {
-    val url = new URL("http://localhost:%s%s".format(PORT, path))
+    val port = service.address.getPort
+    val url = new URL("http://localhost:%s%s".format(port, path))
     url.openConnection().getHeaderFields.asScala.mapValues { _.asScala.toList }
   }
 
@@ -45,7 +44,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
   "AdminHttpService" should {
     doBefore {
-      service = new AdminHttpService(PORT, BACKLOG, new RuntimeEnvironment(getClass))
+      service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))
       service.start()
     }
 
@@ -97,27 +96,31 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
     }
 
     "start and stop" in {
-      new Socket("localhost", PORT) must notBeNull
+      val port = service.address.getPort
+      new Socket("localhost", port) must notBeNull
       service.shutdown()
-      new Socket("localhost", PORT) must throwA[SocketException]
+      new Socket("localhost", port) must throwA[SocketException]
     }
 
     "answer pings" in {
-      val socket = new Socket("localhost", PORT)
+      val port = service.address.getPort
+      val socket = new Socket("localhost", port)
       get("/ping.json").trim mustEqual """{"response":"pong"}"""
 
       service.shutdown()
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      new Socket("localhost", port) must eventually(throwA[SocketException])
     }
 
     "shutdown" in {
+      val port = service.address.getPort
       get("/shutdown.json")
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      new Socket("localhost", port) must eventually(throwA[SocketException])
     }
 
     "quiesce" in {
+      val port = service.address.getPort
       get("/quiesce.json")
-      new Socket("localhost", PORT) must eventually(throwA[SocketException])
+      new Socket("localhost", port) must eventually(throwA[SocketException])
     }
 
     "get a proper web page back for the report URL" in {
@@ -133,7 +136,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
     }
 
     "not crash when fetching /" in {
-      get("/") must notBeEmpty
+      get("/") must beMatching("ostrich")
     }
 
     "tell us its ostrich version in the headers" in {
