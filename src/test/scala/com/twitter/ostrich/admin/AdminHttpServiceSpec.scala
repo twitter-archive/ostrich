@@ -190,7 +190,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
         Stats.incr("apples", 6)
         val stats2 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats2("counters")("apples") mustEqual 6
+        stats2("counters")("apples") mustEqual 10
         val stats3 = Json.parse(get("/stats.json?namespace=vex")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats3("counters")("apples") mustEqual 16
       }

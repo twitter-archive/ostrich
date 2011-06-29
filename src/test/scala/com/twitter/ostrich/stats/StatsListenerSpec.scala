@@ -126,7 +126,7 @@ object StatsListenerSpec extends Specification {
       collection.incr("a", 5)
       StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
       collection.incr("a", 4)
-      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 4)
+      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
       StatsListener("king", collection).getCounters() mustEqual Map("a" -> 9)
     }
   }
