@@ -99,6 +99,12 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
   }
 }
 
+/**
+ * A StatsListener that cycles over a given period, and once each period, grabs a snapshot of the
+ * given StatsCollection and computes deltas since the previous timeslice. For example, for a
+ * one-minute period, it grabs a snapshot of stats at the top of each minute, and for the rest of
+ * the minute, reports these "latched" stats.
+ */
 class LatchedStatsListener(collection: StatsCollection, period: Duration, startClean: Boolean)
 extends StatsListener(collection, startClean) {
   def this(collection: StatsCollection, period: Duration) = this(collection, period, true)
@@ -121,7 +127,8 @@ extends StatsListener(collection, startClean) {
     }
   }
 
-  val service = new PeriodicBackgroundProcess("LatchedStatsListener", period) {
+  // lazy to allow a subclass to override it
+  lazy val service = new PeriodicBackgroundProcess("LatchedStatsListener", period) {
     def periodic() {
       nextLatch()
     }
