@@ -17,6 +17,7 @@
 package com.twitter.ostrich
 package stats
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
 import com.twitter.conversions.time._
 import com.twitter.json.{Json, JsonSerializable}
@@ -24,10 +25,10 @@ import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
-  val listeners = new mutable.HashMap[(Duration, StatsCollection), LatchedStatsListener]
+  val listeners = new ConcurrentHashMap[(Duration, StatsCollection), LatchedStatsListener]
 
   // make sure there's always at least a 1-minute collector.
-  listeners((1.minute, Stats)) = new LatchedStatsListener(Stats, 1.minute, false)
+  listeners.put((1.minute, Stats), new LatchedStatsListener(Stats, 1.minute, false))
 
   def clearAll() {
     listeners.clear()
@@ -38,7 +39,13 @@ object StatsListener {
    * over the given duration, creating it if it doesn't already exist.
    */
   def apply(period: Duration, collection: StatsCollection): StatsListener = {
-    listeners.getOrElseUpdate((period, collection), new LatchedStatsListener(collection, period, false))
+    Option {
+      listeners.get((period, collection))
+    }.getOrElse {
+      val x = new LatchedStatsListener(collection, period, false)
+      listeners.putIfAbsent((period, collection), x)
+      listeners.get((period, collection))
+    }
   }
 
   /**
