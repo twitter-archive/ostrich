@@ -24,21 +24,28 @@ import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
-  val listeners = new mutable.HashMap[String, StatsListener]
+  val listeners = new mutable.HashMap[(Duration, StatsCollection), LatchedStatsListener]
 
-  /**
-   * Get a named StatsListener that's attached to a specified stats collection, creating it if it
-   * doesn't already exist.
-   */
-  def apply(name: String, collection: StatsCollection): StatsListener = {
-    listeners.getOrElseUpdate(name, new LatchedStatsListener(collection, 1.minute, false))
+  // make sure there's always at least a 1-minute collector.
+  listeners((1.minute, Stats)) = new LatchedStatsListener(Stats, 1.minute, false)
+
+  def clearAll() {
+    listeners.clear()
   }
 
   /**
-   * Get a named StatsListener that's attached to the global stats collection, creating it if it
-   * doesn't already exist.
+   * Get a StatsListener that's attached to a specified stats collection and tracks periodic stats
+   * over the given duration, creating it if it doesn't already exist.
    */
-  def apply(name: String): StatsListener = apply(name, Stats)
+  def apply(period: Duration, collection: StatsCollection): StatsListener = {
+    listeners.getOrElseUpdate((period, collection), new LatchedStatsListener(collection, period, false))
+  }
+
+  /**
+   * Get a StatsListener that's attached to the global stats collection and tracks periodic stats
+   * over the given duration, creating it if it doesn't already exist.
+   */
+  def apply(period: Duration): StatsListener = apply(period, Stats)
 }
 
 /**

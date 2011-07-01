@@ -118,16 +118,10 @@ object StatsListenerSpec extends Specification {
       listener.getCounters() mustEqual Map()
       listener.nextLatch()
       listener.getCounters() mustEqual Map("a" -> 5)
-      collection.incr("a", 5)
+      collection.incr("a", 3)
       listener.getCounters() mustEqual Map("a" -> 5)
-    }
-
-    "named" in {
-      collection.incr("a", 5)
-      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
-      collection.incr("a", 4)
-      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
-      StatsListener("king", collection).getCounters() mustEqual Map("a" -> 9)
+      listener.nextLatch()
+      listener.getCounters() mustEqual Map("a" -> 3)
     }
   }
 }
