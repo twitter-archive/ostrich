@@ -19,6 +19,7 @@ package com.twitter.ostrich.stats
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
 import com.twitter.util.{Duration, Future, Time}
+import com.twitter.ostrich.admin.ServiceTracker
 
 /**
  * Immutable summary of counters, metrics, gauges, and labels.
