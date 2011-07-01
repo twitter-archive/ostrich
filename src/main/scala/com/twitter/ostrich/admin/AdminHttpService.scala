@@ -203,7 +203,7 @@ class HeapResourceHandler extends CgiRequestHandler {
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     if (path == Nil) {
-      render(loadResource("/index.html"), exchange)
+      render(loadResource("/static/index.html"), exchange)
       return
     }
 
@@ -265,7 +265,7 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
 
   def handleRequest(socket: Socket) { }
 
-  def start() = {
+  def start() {
     ServiceTracker.register(this)
     httpServer.start()
     log.info("Admin HTTP interface started on port %d.", address.getPort)
