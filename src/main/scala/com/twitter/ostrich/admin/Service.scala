@@ -46,4 +46,9 @@ trait Service {
   def reload() {
     // default is to do nothing.
   }
+
+  var remote: Remote = new RemoteNoop
+
+  def timeRemote(name: String, value: Int) =  remote.time(name, value)
+
 }

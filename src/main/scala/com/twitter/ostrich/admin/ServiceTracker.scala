@@ -53,4 +53,8 @@ object ServiceTracker {
   def reload() {
     synchronized { services.toList }.foreach { _.reload() }
   }
+
+  def timeRemote(name: String, value: Int) = {
+    synchronized { services.toList }.foreach { _.timeRemote(name, value) }
+  }
 }
