@@ -9,12 +9,12 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with PublishSourcesAndJavadocs
   with PublishSite
 {
-  val util = "com.twitter" % "util-core" % "1.8.5"
-  val eval = "com.twitter" % "util-eval" % "1.8.5"
-  val logging = "com.twitter" % "util-logging" % "1.8.5"
+  val utilVersion = "1.9.1"
+  val util = "com.twitter" % "util-core" % utilVersion
+  val eval = "com.twitter" % "util-eval" % utilVersion
+  val logging = "com.twitter" % "util-logging" % utilVersion
   val json = "com.twitter" % "json_2.8.1" % "2.1.6"
   val scalaCompiler = "org.scala-lang" % "scala-compiler" % "2.8.1" % "compile"
-  val netty = "org.jboss.netty" % "netty" % "3.2.3.Final"
   val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
   val commonsLang = "commons-lang" % "commons-lang" % "2.2"
 

@@ -84,7 +84,7 @@ object StatsCollectionSpec extends Specification {
 
       "report" in {
         var x = 0
-        collection.time("hundred") { for (i <- 0 until 100) x += i }
+        collection.time("hundred") { Thread.sleep(10) }
         val timings = collection.getMetrics()
         timings.keys.toList mustEqual List("hundred_msec")
         timings("hundred_msec").count mustEqual 1
