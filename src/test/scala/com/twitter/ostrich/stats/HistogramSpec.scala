@@ -92,7 +92,17 @@ object HistogramSpec extends Specification {
 
     "handle a very large timing" in {
       histogram.add(100000000)
+      histogram.getPercentile(0.0) mustEqual 0
+      histogram.getPercentile(0.1) mustEqual Int.MaxValue
+      histogram.getPercentile(0.9) mustEqual Int.MaxValue
       histogram.getPercentile(1.0) mustEqual Int.MaxValue
+    }
+
+    "handle an empty histogram" in {
+      histogram.getPercentile(0.0) mustEqual 0
+      histogram.getPercentile(0.1) mustEqual 0
+      histogram.getPercentile(0.9) mustEqual 0
+      histogram.getPercentile(1.0) mustEqual 0
     }
 
     "track count and sum" in {
