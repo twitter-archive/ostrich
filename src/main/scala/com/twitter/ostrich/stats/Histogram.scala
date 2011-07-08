@@ -159,7 +159,7 @@ class Histogram {
   /**
    * Get an immutable snapshot of this histogram.
    */
-  def apply(): Distribution = synchronized { new Distribution(clone()) }
+  def apply(): Distribution = new Distribution(clone())
 
   override def equals(other: Any) = other match {
     case h: Histogram =>

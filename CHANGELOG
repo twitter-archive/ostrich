@@ -1,9 +1,18 @@
 
+4.5.4
+-----
+release: 7 July 2011
+
+- Fix a potential race in histogram reporting.
+
+
 4.5.2
 -----
-release: 28 June 2011
+release: 6 July 2011
 
 - Let the admin HTTP port be defined/overridden by the command line.
+
+- Fix timeFuture* API to return positive values.
 
 
 4.5.0

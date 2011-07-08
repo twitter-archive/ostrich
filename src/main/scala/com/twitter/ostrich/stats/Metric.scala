@@ -31,8 +31,10 @@ class Metric {
   /**
    * Resets the state of this Metric. Clears all data points collected so far.
    */
-  def clear() = synchronized {
-    histogram.clear()
+  def clear() {
+    synchronized {
+      histogram.clear()
+    }
   }
 
   /**
@@ -66,7 +68,7 @@ class Metric {
   /**
    * Returns a Distribution for this Metric.
    */
-  def apply(): Distribution = histogram()
+  def apply(): Distribution = synchronized { histogram() }
 }
 
 class FanoutMetric(others: Metric*) extends Metric {
