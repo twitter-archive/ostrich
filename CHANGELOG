@@ -1,4 +1,11 @@
 
+4.5.4
+-----
+release: 7 July 2011
+
+- Fix a potential race in histogram reporting.
+
+
 4.5.2
 -----
 release: 6 July 2011
