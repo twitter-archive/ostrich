@@ -1,9 +1,12 @@
 
-4.5.4
+4.6.0
 -----
 release: 7 July 2011
 
 - Fix a potential race in histogram reporting.
+
+- Use latched StatsListeners by default, so multiple listeners on the same
+  time frequency get the same deltas.
 
 
 4.5.2
