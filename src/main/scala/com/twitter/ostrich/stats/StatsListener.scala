@@ -25,7 +25,7 @@ import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
-  val listeners = new ConcurrentHashMap[(Duration, StatsCollection), LatchedStatsListener]
+  val listeners = new ConcurrentHashMap[(Duration, StatsCollection), StatsListener]
 
   // make sure there's always at least a 1-minute collector.
   listeners.put((1.minute, Stats), new LatchedStatsListener(Stats, 1.minute, false))
@@ -76,7 +76,7 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     }
   }
 
-  def getCounters() = synchronized {
+  def getCounters(): Map[String, Long] = synchronized {
     val deltas = new mutable.HashMap[String, Long]
     for ((key, newValue) <- collection.getCounters()) {
       deltas(key) = Stats.delta(lastCounterMap.getOrElse(key, 0), newValue)
@@ -85,7 +85,7 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     deltas
   }
 
-  def getMetrics() = synchronized {
+  def getMetrics(): Map[String, Distribution] = synchronized {
     val deltas = new mutable.HashMap[String, Distribution]
     for ((key, newValue) <- collection.getMetrics()) {
       deltas(key) = newValue - lastMetricMap.getOrElse(key, new Distribution())
@@ -109,8 +109,8 @@ class LatchedStatsListener(collection: StatsCollection, period: Duration, startC
 extends StatsListener(collection, startClean) {
   def this(collection: StatsCollection, period: Duration) = this(collection, period, true)
 
-  private var counters = new mutable.HashMap[String, Long]
-  private var metrics = new mutable.HashMap[String, Distribution]
+  @volatile private var counters: Map[String, Long] = Map()
+  @volatile private var metrics: Map[String, Distribution] = Map()
   nextLatch()
 
   override def getCounters() = synchronized { counters }
@@ -121,10 +121,8 @@ extends StatsListener(collection, startClean) {
   }
 
   def nextLatch() {
-    synchronized {
-      counters = super.getCounters()
-      metrics = super.getMetrics()
-    }
+    counters = super.getCounters()
+    metrics = super.getMetrics()
   }
 
   // lazy to allow a subclass to override it
