@@ -14,9 +14,6 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   val eval = "com.twitter" % "util-eval" % utilVersion
   val logging = "com.twitter" % "util-logging" % utilVersion
   val json = "com.twitter" % "json_2.8.1" % "2.1.6"
-  val scalaCompiler = "org.scala-lang" % "scala-compiler" % "2.8.1" % "compile"
-  val commonsLogging = "commons-logging" % "commons-logging" % "1.1"
-  val commonsLang = "commons-lang" % "commons-lang" % "2.2"
 
   // for tests:
   val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"

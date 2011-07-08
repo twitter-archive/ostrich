@@ -22,6 +22,7 @@ import java.lang.management.ManagementFactory
 import java.util.Date
 import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
+import com.twitter.conversions.time._
 import com.twitter.json.Json
 import stats.{StatsListener, Stats}
 
@@ -93,10 +94,9 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         }
         "ok"
       case "stats" =>
-        (parameters.get("namespace") match {
-          case None => Stats.get()
-          case Some(namespace) => StatsListener(namespace, Stats).get()
-        }).toMap
+        // ignore old namespace parameter
+        val period = parameters.get("period").map(_.toInt).getOrElse(60).seconds
+        StatsListener(period, Stats).get().toMap
       case "server_info" =>
         val mxRuntime = ManagementFactory.getRuntimeMXBean()
         immutable.Map(

@@ -25,7 +25,7 @@ import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 import org.specs.util.DataTables
-import stats.Stats
+import stats.{Stats, StatsListener}
 
 object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   def get(path: String): String = {
@@ -50,6 +50,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
     doAfter {
       Stats.clearAll()
+      StatsListener.clearAll()
       service.shutdown()
     }
 
@@ -184,20 +185,23 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         Stats.incr("apples", 10)
         Stats.addMetric("oranges", 5)
 
-        val stats1 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats1 = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats1("counters")("apples") mustEqual 10
         stats1("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
 
         Stats.incr("apples", 6)
-        val stats2 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats2("counters")("apples") mustEqual 6
-        val stats3 = Json.parse(get("/stats.json?namespace=vex")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        val stats2 = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        stats2("counters")("apples") mustEqual 16
+        stats2("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        val stats3 = Json.parse(get("/stats.json?period=120")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats3("counters")("apples") mustEqual 16
+        stats3("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
       }
 
       "in json, with histograms" in {
         // make some statsy things happen
         Stats.clearAll()
+        get("/stats.json")
         Stats.addMetric("kangaroo_time", 1)
         Stats.addMetric("kangaroo_time", 2)
         Stats.addMetric("kangaroo_time", 3)
