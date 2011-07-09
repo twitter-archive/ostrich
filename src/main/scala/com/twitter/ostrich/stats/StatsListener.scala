@@ -113,10 +113,10 @@ extends StatsListener(collection, startClean) {
   @volatile private var metrics: Map[String, Distribution] = Map()
   nextLatch()
 
-  override def getCounters() = synchronized { counters }
-  override def getMetrics() = synchronized { metrics }
+  override def getCounters() = counters
+  override def getMetrics() = metrics
 
-  override def get() = synchronized {
+  override def get() = {
     StatsSummary(counters, metrics, collection.getGauges(), collection.getLabels())
   }
 
