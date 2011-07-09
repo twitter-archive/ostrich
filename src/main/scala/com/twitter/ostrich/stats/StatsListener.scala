@@ -28,6 +28,7 @@ object StatsListener {
   val listeners = new ConcurrentHashMap[(Duration, StatsCollection), StatsListener]
 
   // make sure there's always at least a 1-minute collector.
+  // XXX clearAll invalidates this -- is this really useful if it will be created on first request?
   listeners.put((1.minute, Stats), new LatchedStatsListener(Stats, 1.minute, false))
 
   def clearAll() {
@@ -115,10 +116,6 @@ extends StatsListener(collection, startClean) {
 
   override def getCounters() = counters
   override def getMetrics() = metrics
-
-  override def get() = {
-    StatsSummary(counters, metrics, collection.getGauges(), collection.getLabels())
-  }
 
   def nextLatch() {
     counters = super.getCounters()

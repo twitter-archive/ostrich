@@ -32,6 +32,42 @@ object StatsListenerSpec extends Specification {
       listener2 = new StatsListener(collection)
     }
 
+    "companion object returns" in {
+      doBefore {
+        StatsListener.clearAll()
+      }
+
+      "latched listeners" in {
+        Time.withCurrentTimeFrozen { time =>
+          listener = StatsListener(1.minute, collection)
+          collection.addMetric("toot", 1)
+          val m0 = Map("toot" -> Distribution(Histogram()))
+          // empty until the next minute
+          listener.getMetrics() mustEqual m0
+          StatsListener(1.minute, collection).getMetrics() mustEqual m0
+          time.advance(61.seconds)
+          // then that value will be stable for the next minute
+          collection.addMetric("toot", 2)
+          collection.addMetric("toot", 3)
+          val m1 = Map("toot" -> Distribution(Histogram(1)))
+          listener.getMetrics() mustEqual m1
+          StatsListener(1.minute, collection).getMetrics() mustEqual m1
+          time.advance(60.seconds)
+          val m2 = Map("toot" -> Distribution(Histogram(2, 3)))
+          listener.getMetrics() mustEqual m2
+          StatsListener(1.minute, collection).getMetrics() mustEqual m2
+        }
+      }
+
+      "the same listener for a period" in {
+        StatsListener(1.minute, collection) must be(StatsListener(1.minute, collection))
+      }
+
+      "different listeners for different periods" in {
+        StatsListener(500.millis, collection) mustNot be(StatsListener(750.millis, collection))
+      }
+    }
+
     "reports basic stats" in {
       "counters" in {
         collection.incr("a", 3)
