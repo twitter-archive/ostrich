@@ -113,5 +113,17 @@ object HistogramSpec extends Specification {
       histogram.count mustEqual 4
       histogram.sum mustEqual 65
     }
+
+    "equals" in {
+      histogram must beEqual(histogram2)
+      histogram.add(10)
+      histogram must not(beEqual(histogram2))
+      histogram2.add(10)
+      histogram must beEqual(histogram2)
+      histogram.add(5)
+      histogram.add(10)
+      histogram2.add(15)
+      histogram must not(beEqual(histogram2))
+    }
   }
 }
