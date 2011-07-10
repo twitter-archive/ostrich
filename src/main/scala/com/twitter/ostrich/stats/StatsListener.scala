@@ -27,10 +27,6 @@ import admin.{ServiceTracker, PeriodicBackgroundProcess}
 object StatsListener {
   val listeners = new ConcurrentHashMap[(Long, StatsCollection), StatsListener]
 
-  // make sure there's always at least a 1-minute collector.
-  // XXX clearAll invalidates this, is this okay?
-  listeners.put((1.minute, Stats), new LatchedStatsListener(Stats, 1.minute, false))
-
   def clearAll() {
     listeners.clear()
   }
