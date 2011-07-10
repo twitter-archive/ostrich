@@ -18,6 +18,7 @@ object JsonStatsFetcherSpec extends Specification {
   if (hasRuby) {
     "json_stats_fetcher.rb" should {
       var service: AdminHttpService = null
+      val script = "./src/scripts/json_stats_fetcher.rb"
 
       doBefore {
         Stats.clearAll()
@@ -30,13 +31,15 @@ object JsonStatsFetcherSpec extends Specification {
         Stats.clearAll()
       }
 
-      "work" in {
-        val port = service.address.getPort
-        Stats.incr("bugs")
-        val process = exec("./src/scripts/json_stats_fetcher.rb", "-w", "-p", port.toString, "-n")
+      def getStats = {
+        val process = exec(script, "-w", "-p", service.address.getPort.toString, "-n")
         process.waitFor()
-        val lines = Source.fromInputStream(process.getInputStream).mkString.split("\n")
-        lines must contain("bugs=1")
+        Source.fromInputStream(process.getInputStream).mkString.split("\n")
+      }
+
+      "fetch a stat" in {
+        Stats.incr("bugs")
+        getStats must contain("bugs=1").eventually
       }
     }
   }
