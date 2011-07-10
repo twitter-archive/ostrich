@@ -39,7 +39,8 @@ object JsonStatsFetcherSpec extends Specification {
 
       "fetch a stat" in {
         Stats.incr("bugs")
-        getStats must contain("bugs=1").eventually
+        import org.specs.util.TimeConversions._
+        getStats must contain("bugs=1").eventually(60, 1.second)
       }
     }
   }
