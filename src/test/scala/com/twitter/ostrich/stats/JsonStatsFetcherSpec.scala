@@ -1,7 +1,6 @@
 package com.twitter.ostrich.stats
 
 import scala.io.Source
-import com.twitter.json.Json
 import com.twitter.ostrich.admin._
 import org.specs.Specification
 
@@ -38,9 +37,8 @@ object JsonStatsFetcherSpec extends Specification {
       }
 
       "fetch a stat" in {
-        Stats.incr("bugs")
-        import org.specs.util.TimeConversions._
-        getStats must contain("bugs=1").eventually(60, 1.second)
+        Stats.addGauge("bugs") { 1 }
+        getStats must contain("bugs=1")
       }
     }
   }
