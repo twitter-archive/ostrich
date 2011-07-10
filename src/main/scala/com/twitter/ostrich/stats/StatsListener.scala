@@ -25,10 +25,10 @@ import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
-  val listeners = new ConcurrentHashMap[(Duration, StatsCollection), StatsListener]
+  val listeners = new ConcurrentHashMap[(Long, StatsCollection), StatsListener]
 
   // make sure there's always at least a 1-minute collector.
-  // XXX clearAll invalidates this -- is this really useful if it will be created on first request?
+  // XXX clearAll invalidates this, is this okay?
   listeners.put((1.minute, Stats), new LatchedStatsListener(Stats, 1.minute, false))
 
   def clearAll() {
@@ -41,11 +41,11 @@ object StatsListener {
    */
   def apply(period: Duration, collection: StatsCollection): StatsListener = {
     Option {
-      listeners.get((period, collection))
+      listeners.get((period.inMillis, collection))
     }.getOrElse {
       val x = new LatchedStatsListener(collection, period, false)
-      listeners.putIfAbsent((period, collection), x)
-      listeners.get((period, collection))
+      listeners.putIfAbsent((period.inMillis, collection), x)
+      listeners.get((period.inMillis, collection))
     }
   }
 

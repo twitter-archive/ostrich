@@ -30,42 +30,22 @@ object StatsListenerSpec extends Specification {
       collection = new StatsCollection()
       listener = new StatsListener(collection)
       listener2 = new StatsListener(collection)
+      StatsListener.clearAll()
     }
 
-    "companion object returns" in {
-      doBefore {
-        StatsListener.clearAll()
-      }
+    "companion object returns the same listener for a period" in {
+      StatsListener.listeners.size() mustEqual 0
+      listener = StatsListener(1.minute, collection)
+      listener2 = StatsListener(1.minute, collection)
+      listener must be(listener2)
+      StatsListener.listeners.size() mustEqual 1
+      val key = (1.minute.inMillis, collection)
+      StatsListener.listeners.containsKey(key) must beTrue
+      StatsListener.listeners.get(key) mustEqual listener
+    }
 
-      "latched listeners" in {
-        Time.withCurrentTimeFrozen { time =>
-          listener = StatsListener(1.minute, collection)
-          collection.addMetric("toot", 1)
-          val m0 = Map("toot" -> Distribution(Histogram()))
-          // empty until the next minute
-          listener.getMetrics() mustEqual m0
-          StatsListener(1.minute, collection).getMetrics() mustEqual m0
-          time.advance(61.seconds)
-          // then that value will be stable for the next minute
-          collection.addMetric("toot", 2)
-          collection.addMetric("toot", 3)
-          val m1 = Map("toot" -> Distribution(Histogram(1)))
-          listener.getMetrics() mustEqual m1
-          StatsListener(1.minute, collection).getMetrics() mustEqual m1
-          time.advance(60.seconds)
-          val m2 = Map("toot" -> Distribution(Histogram(2, 3)))
-          listener.getMetrics() mustEqual m2
-          StatsListener(1.minute, collection).getMetrics() mustEqual m2
-        }
-      }
-
-      "the same listener for a period" in {
-        StatsListener(1.minute, collection) must be(StatsListener(1.minute, collection))
-      }
-
-      "different listeners for different periods" in {
-        StatsListener(500.millis, collection) mustNot be(StatsListener(750.millis, collection))
-      }
+    "companion object returns different listeners for different periods" in {
+      StatsListener(500.millis, collection) mustNot be(StatsListener(750.millis, collection))
     }
 
     "reports basic stats" in {
