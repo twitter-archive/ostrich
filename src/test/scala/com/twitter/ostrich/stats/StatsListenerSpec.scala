@@ -126,18 +126,41 @@ object StatsListenerSpec extends Specification {
             "rice" -> new Distribution(Histogram()))
     }
 
-    "latch to the top of a minute" in {
+    "latch to the top of a period" in {
       collection = new StatsCollection()
       val listener = new LatchedStatsListener(collection, 1.minute)
 
-      collection.incr("a", 5)
+      var gauge = 0
+      collection.incr("counter", 5)
+      collection.addGauge("gauge") { synchronized { gauge } }
+      collection.setLabel("label", "HIMYNAMEISBRAK")
+      collection.addMetric("metric", Distribution(Histogram(1, 2)))
+
       listener.getCounters() mustEqual Map()
+      listener.getGauges() mustEqual Map()
+      listener.getLabels() mustEqual Map()
+      listener.getMetrics() mustEqual Map()
+
       listener.nextLatch()
-      listener.getCounters() mustEqual Map("a" -> 5)
-      collection.incr("a", 3)
-      listener.getCounters() mustEqual Map("a" -> 5)
+      listener.getCounters() mustEqual Map("counter" -> 5)
+      listener.getGauges() mustEqual Map("gauge" -> 0)
+      listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
+      listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
+
+      collection.incr("counter", 3)
+      synchronized { gauge = 37 }
+      collection.setLabel("label", "EEPEEPIAMAMONKEY")
+      collection.addMetric("metric", Distribution(Histogram(3, 4, 5)))
+      listener.getCounters() mustEqual Map("counter" -> 5)
+      listener.getGauges() mustEqual Map("gauge" -> 0)
+      listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
+      listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
+
       listener.nextLatch()
-      listener.getCounters() mustEqual Map("a" -> 3)
+      listener.getCounters() mustEqual Map("counter" -> 3)
+      listener.getGauges() mustEqual Map("gauge" -> 37)
+      listener.getLabels() mustEqual Map("label" -> "EEPEEPIAMAMONKEY")
+      listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(3, 4, 5)))
     }
   }
 }

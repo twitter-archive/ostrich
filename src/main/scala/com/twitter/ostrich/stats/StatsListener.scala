@@ -82,6 +82,10 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     deltas
   }
 
+  def getGauges(): Map[String, Double] = collection.getGauges()
+
+  def getLabels(): Map[String, String] = collection.getLabels()
+
   def getMetrics(): Map[String, Distribution] = synchronized {
     val deltas = new mutable.HashMap[String, Distribution]
     for ((key, newValue) <- collection.getMetrics()) {
@@ -91,9 +95,7 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     deltas
   }
 
-  def get(): StatsSummary = {
-    StatsSummary(getCounters(), getMetrics(), collection.getGauges(), collection.getLabels())
-  }
+  def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges(), getLabels())
 }
 
 /**
@@ -107,14 +109,20 @@ extends StatsListener(collection, startClean) {
   def this(collection: StatsCollection, period: Duration) = this(collection, period, true)
 
   @volatile private var counters: Map[String, Long] = Map()
+  @volatile private var gauges: Map[String, Double] = Map()
+  @volatile private var labels: Map[String, String] = Map()
   @volatile private var metrics: Map[String, Distribution] = Map()
   nextLatch()
 
   override def getCounters() = counters
+  override def getGauges() = gauges
+  override def getLabels() = labels
   override def getMetrics() = metrics
 
   def nextLatch() {
     counters = super.getCounters()
+    gauges = super.getGauges()
+    labels = super.getLabels()
     metrics = super.getMetrics()
   }
 
