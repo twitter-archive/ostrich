@@ -1,8 +1,10 @@
 package com.twitter.ostrich.stats
 
 import scala.io.Source
+import com.twitter.conversions.time._
 import com.twitter.ostrich.admin._
 import org.specs.Specification
+import com.twitter.util.Duration
 
 object JsonStatsFetcherSpec extends Specification {
   def exec(args: String*) = Runtime.getRuntime.exec(args.toArray)
@@ -31,13 +33,13 @@ object JsonStatsFetcherSpec extends Specification {
       }
 
       def getStats = {
-        val process = exec(script, "-w", "-p", service.address.getPort.toString, "-n")
+        val process = exec(script, "-w", "-t", "1", "-p", service.address.getPort.toString, "-n")
         process.waitFor()
         Source.fromInputStream(process.getInputStream).mkString.split("\n")
       }
 
       "fetch a stat" in {
-        Stats.addGauge("bugs") { 1 }
+        Stats.incr("bugs")
         getStats must contain("bugs=1")
       }
     }
