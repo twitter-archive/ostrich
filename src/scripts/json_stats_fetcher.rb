@@ -98,7 +98,7 @@ end
 File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 
 begin
-  Timeout::timeout(60) do
+  Timeout::timeout(55) do
     data = if use_web
       # Ostrich 4.5+ are latched on a time period
       args = "period=#{period}"
