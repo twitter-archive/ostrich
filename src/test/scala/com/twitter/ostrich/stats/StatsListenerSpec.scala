@@ -17,11 +17,35 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
-import com.twitter.util.Time
 import org.specs.Specification
+import org.specs.util.Duration
 
 object StatsListenerSpec extends Specification {
-  "StatsListener" should {
+  "StatsListener object" should {
+    var collection: StatsCollection = null
+
+    doBefore {
+      collection = new StatsCollection()
+      StatsListener.clearAll()
+    }
+
+    "uses only one listener per period" in {
+      StatsListener.listeners.size() mustEqual 0
+      val listener = StatsListener(1.minute, collection)
+      val listener2 = StatsListener(1.minute, collection)
+      listener must be(listener2)
+      StatsListener.listeners.size() mustEqual 1
+      val key = (1.minute.inMillis, collection)
+      StatsListener.listeners.containsKey(key) must beTrue
+      StatsListener.listeners.get(key) mustEqual listener
+    }
+
+    "uses different listeners for different periods" in {
+      StatsListener(500.millis, collection) mustNot be(StatsListener(750.millis, collection))
+    }
+  }
+
+  "StatsListener instance" should {
     var collection: StatsCollection = null
     var listener: StatsListener = null
     var listener2: StatsListener = null
@@ -33,25 +57,11 @@ object StatsListenerSpec extends Specification {
       StatsListener.clearAll()
     }
 
-    "companion object returns the same listener for a period" in {
-      StatsListener.listeners.size() mustEqual 0
-      listener = StatsListener(1.minute, collection)
-      listener2 = StatsListener(1.minute, collection)
-      listener must be(listener2)
-      StatsListener.listeners.size() mustEqual 1
-      val key = (1.minute.inMillis, collection)
-      StatsListener.listeners.containsKey(key) must beTrue
-      StatsListener.listeners.get(key) mustEqual listener
-    }
-
-    "companion object returns different listeners for different periods" in {
-      StatsListener(500.millis, collection) mustNot be(StatsListener(750.millis, collection))
-    }
 
     "reports basic stats" in {
-      "counters" in {
+      "counters" in {        collection.incr("b", 4)
         collection.incr("a", 3)
-        collection.incr("b", 4)
+
         listener.getCounters() mustEqual Map("a" -> 3, "b" -> 4)
         collection.incr("a", 2)
         listener.getCounters() mustEqual Map("a" -> 2, "b" -> 0)
@@ -125,10 +135,13 @@ object StatsListenerSpec extends Specification {
         Map("beans" -> new Distribution(Histogram(3)),
             "rice" -> new Distribution(Histogram()))
     }
+  }
 
+  "LatchedStatsListener instance" should {
     "latch to the top of a period" in {
-      collection = new StatsCollection()
-      val listener = new LatchedStatsListener(collection, 1.minute)
+      val collection = new StatsCollection()
+      val listener = new LatchedStatsListener(collection, 1.second)
+      val wait = new Duration(500)
 
       var gauge = 0
       collection.incr("counter", 5)
@@ -141,8 +154,7 @@ object StatsListenerSpec extends Specification {
       listener.getLabels() mustEqual Map()
       listener.getMetrics() mustEqual Map()
 
-      listener.nextLatch()
-      listener.getCounters() mustEqual Map("counter" -> 5)
+      listener.getCounters() must eventually(3, wait)(beEqualTo(Map("counter" -> 5)))
       listener.getGauges() mustEqual Map("gauge" -> 0)
       listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
       listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
@@ -156,8 +168,7 @@ object StatsListenerSpec extends Specification {
       listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
       listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
 
-      listener.nextLatch()
-      listener.getCounters() mustEqual Map("counter" -> 3)
+      listener.getCounters() must eventually(3, wait)(beEqualTo(Map("counter" -> 3)))
       listener.getGauges() mustEqual Map("gauge" -> 37)
       listener.getLabels() mustEqual Map("label" -> "EEPEEPIAMAMONKEY")
       listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(3, 4, 5)))

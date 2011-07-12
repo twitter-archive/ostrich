@@ -1,10 +1,9 @@
 package com.twitter.ostrich.stats
 
 import scala.io.Source
-import com.twitter.conversions.time._
 import com.twitter.ostrich.admin._
 import org.specs.Specification
-import com.twitter.util.Duration
+import org.specs.util.TimeConversions._
 
 object JsonStatsFetcherSpec extends Specification {
   def exec(args: String*) = Runtime.getRuntime.exec(args.toArray)
@@ -23,6 +22,7 @@ object JsonStatsFetcherSpec extends Specification {
 
       doBefore {
         Stats.clearAll()
+        StatsListener.clearAll()
         service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))
         service.start()
       }
@@ -41,6 +41,8 @@ object JsonStatsFetcherSpec extends Specification {
       "fetch a stat" in {
         Stats.incr("bugs")
         getStats must contain("bugs=1")
+        Stats.incr("bugs", 37)
+        getStats must contain("bugs=37").eventually(3,  500.milliseconds)
       }
     }
   }

@@ -126,6 +126,7 @@ extends StatsListener(collection, startClean) {
     metrics = super.getMetrics()
   }
 
+  // XXX this would be more efficient as a Timer for all LatchedStatsListeners?
   // lazy to allow a subclass to override it
   lazy val service = new PeriodicBackgroundProcess("LatchedStatsListener", period) {
     def periodic() {
@@ -134,4 +135,5 @@ extends StatsListener(collection, startClean) {
   }
 
   ServiceTracker.register(service)
+  service.start()
 }
