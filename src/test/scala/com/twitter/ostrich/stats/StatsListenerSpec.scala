@@ -59,7 +59,8 @@ object StatsListenerSpec extends Specification {
 
 
     "reports basic stats" in {
-      "counters" in {        collection.incr("b", 4)
+      "counters" in {
+        collection.incr("b", 4)
         collection.incr("a", 3)
 
         listener.getCounters() mustEqual Map("a" -> 3, "b" -> 4)
