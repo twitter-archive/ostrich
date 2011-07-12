@@ -25,10 +25,7 @@ import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
-  val listeners = new ConcurrentHashMap[(Duration, StatsCollection), StatsListener]
-
-  // make sure there's always at least a 1-minute collector.
-  listeners.put((1.minute, Stats), new LatchedStatsListener(Stats, 1.minute, false))
+  val listeners = new ConcurrentHashMap[(Long, StatsCollection), StatsListener]
 
   def clearAll() {
     listeners.clear()
@@ -40,11 +37,11 @@ object StatsListener {
    */
   def apply(period: Duration, collection: StatsCollection): StatsListener = {
     Option {
-      listeners.get((period, collection))
+      listeners.get((period.inMillis, collection))
     }.getOrElse {
       val x = new LatchedStatsListener(collection, period, false)
-      listeners.putIfAbsent((period, collection), x)
-      listeners.get((period, collection))
+      listeners.putIfAbsent((period.inMillis, collection), x)
+      listeners.get((period.inMillis, collection))
     }
   }
 
@@ -85,6 +82,10 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     deltas
   }
 
+  def getGauges(): Map[String, Double] = collection.getGauges()
+
+  def getLabels(): Map[String, String] = collection.getLabels()
+
   def getMetrics(): Map[String, Distribution] = synchronized {
     val deltas = new mutable.HashMap[String, Distribution]
     for ((key, newValue) <- collection.getMetrics()) {
@@ -94,9 +95,7 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
     deltas
   }
 
-  def get(): StatsSummary = {
-    StatsSummary(getCounters(), getMetrics(), collection.getGauges(), collection.getLabels())
-  }
+  def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges(), getLabels())
 }
 
 /**
@@ -110,18 +109,20 @@ extends StatsListener(collection, startClean) {
   def this(collection: StatsCollection, period: Duration) = this(collection, period, true)
 
   @volatile private var counters: Map[String, Long] = Map()
+  @volatile private var gauges: Map[String, Double] = Map()
+  @volatile private var labels: Map[String, String] = Map()
   @volatile private var metrics: Map[String, Distribution] = Map()
   nextLatch()
 
-  override def getCounters() = synchronized { counters }
-  override def getMetrics() = synchronized { metrics }
-
-  override def get() = synchronized {
-    StatsSummary(counters, metrics, collection.getGauges(), collection.getLabels())
-  }
+  override def getCounters() = counters
+  override def getGauges() = gauges
+  override def getLabels() = labels
+  override def getMetrics() = metrics
 
   def nextLatch() {
     counters = super.getCounters()
+    gauges = super.getGauges()
+    labels = super.getLabels()
     metrics = super.getMetrics()
   }
 

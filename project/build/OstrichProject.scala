@@ -9,7 +9,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with PublishSourcesAndJavadocs
   with PublishSite
 {
-  val utilVersion = "1.9.1"
+  val utilVersion = "1.10.1"
   val util = "com.twitter" % "util-core" % utilVersion
   val eval = "com.twitter" % "util-eval" % utilVersion
   val logging = "com.twitter" % "util-logging" % utilVersion

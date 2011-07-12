@@ -191,8 +191,9 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
         Stats.incr("apples", 6)
         val stats2 = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats2("counters")("apples") mustEqual 16
+        stats2("counters")("apples") mustEqual 10
         stats2("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+
         val stats3 = Json.parse(get("/stats.json?period=120")).asInstanceOf[Map[String, Map[String, AnyRef]]]
         stats3("counters")("apples") mustEqual 16
         stats3("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
@@ -209,7 +210,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         Stats.addMetric("kangaroo_time", 5)
         Stats.addMetric("kangaroo_time", 6)
 
-        val stats = get("/stats.json")
+        val stats = get("/stats.json?period=30")
         val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
         val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 

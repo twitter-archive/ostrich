@@ -34,6 +34,7 @@ $pattern = /^x-/
 
 hostname = "localhost"
 port = 9989
+period = 60
 use_web = false
 
 def usage(port)
@@ -46,6 +47,7 @@ def usage(port)
   puts "    -i <pattern>    ignore all stats matching pattern (default: #{$pattern.inspect})"
   puts "    -p <port>       connect to another port (default: #{port})"
   puts "    -P <prefix>     optional prefix for ganglia names"
+  puts "    -t <period>     optional latch period (Ostrich-4.5+)"
   puts
 end
 
@@ -56,6 +58,7 @@ opts = GetoptLong.new(
   [ '-i', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-p', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-P', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '-t', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-w', GetoptLong::NO_ARGUMENT ]
   )
 
@@ -74,6 +77,8 @@ opts.each do |opt, arg|
     port = arg.to_i
   when '-P'
     $ganglia_prefix = arg
+  when '-t'
+    period = arg.to_i
   when '-w'
     port = 9990
     use_web = true
@@ -95,10 +100,16 @@ File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 begin
   Timeout::timeout(60) do
     data = if use_web
-      # Ostrich 2 uses reset
-      # Ostrich 4.2 uses namespace for similar functionality
-      # Ostrich 3 and 4.0 don't have this open and don't reset counters.
-      open("http://#{hostname}:#{port}/stats.json#{'?reset=1&namespace=ganglia' if $report_to_ganglia}").read
+      # Ostrich 4.5+ are latched on a time period
+      args = "period=#{period}"
+      # Ostrich 3 and 4.0 don't reset counters.
+      if $report_to_gangia then
+        # Ostrich 2 uses reset
+        # Ostrich 4.2 uses namespace for similar functionality
+        args += "&reset=1&namespace=ganglia"
+      end
+      url = "http://#{hostname}:#{port}/stats.json?#{args}"
+      open(url).read
     else
       socket = TCPSocket.new(hostname, port)
       socket.puts("stats/json#{' reset' if $report_to_ganglia}")

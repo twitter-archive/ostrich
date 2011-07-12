@@ -93,15 +93,26 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
    */
   var extraHandlers: Map[String, CustomHttpHandler] = new mutable.HashMap[String, CustomHttpHandler]
 
+  /**
+   * Default LatchedStatsListener intervals
+   */
+  var defaultLatchIntervals: List[Duration] = 1.minute :: Nil
+
+  def configureStatsListeners(collection: StatsCollection) = {
+    defaultLatchIntervals.map { StatsListener(_, collection) }
+  }
+
   def apply() = { (runtime: RuntimeEnvironment) =>
+    configureStatsListeners(Stats)
+
     // allow the adminPort to be overridden on the command line:
     httpPort = runtime.arguments.get("adminPort").map { _.toInt }.orElse(httpPort)
 
     httpPort.map { port =>
       val admin = new AdminHttpService(port, httpBacklog, runtime)
-      statsNodes.foreach { config =>
+      statsNodes.map { config =>
         config()(admin)
-      }
+      }.foreach(configureStatsListeners)
 
       admin.start()
 
