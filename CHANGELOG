@@ -1,3 +1,20 @@
+4.7.0
+-----
+release: 11 July 2011
+
+- Fix LatchedStatsListener caching so that a new listener is not created for
+  each request (effectively causing unlatched absolute-counter behavior)
+
+- Move default latch intervals into AdminServiceConfig
+
+- Latch gauges and labels
+
+- Add interval support to json_stats_fetcher.rb (for tests, mostly)
+
+- Remove unnecessary synchronizations
+
+- Upgrade to util-1.10
+
 
 4.6.0
 -----
