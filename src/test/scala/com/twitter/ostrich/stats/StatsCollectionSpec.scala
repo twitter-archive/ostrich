@@ -93,10 +93,14 @@ object StatsCollectionSpec extends Specification {
       }
 
       "time future" in {
-        val stat = "latency"
         val future = Future({ Thread.sleep(10); 100 })
 
-        collection.timeFutureMillis(stat)(future)() mustEqual 100
+        collection.timeFutureMillis("latency")(future)() mustEqual 100
+
+        val timings = collection.getMetrics()
+        timings("latency_msec").count mustEqual 1
+        timings("latency_msec").minimum must be_>(0)
+        timings("latency_msec").minimum must be_>(0)
       }
 
       "average of 0" in {

@@ -190,7 +190,7 @@ trait StatsProvider {
   def timeFutureMicros[T](name: String)(f: Future[T]): Future[T] = {
     val start = Time.now
     f.respond { _ =>
-      addMetric(name + "_usec", start.sinceNow.inMicroseconds.toInt)
+      addMetric(name + "_usec", start.untilNow.inMicroseconds.toInt)
       ServiceTracker.hookTime(name + "_usec", start.sinceNow.inMicroseconds.toInt)
     }
     f
@@ -203,7 +203,7 @@ trait StatsProvider {
   def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
     val start = Time.now
     f.respond { _ =>
-      addMetric(name + "_msec", start.sinceNow.inMilliseconds.toInt)
+      addMetric(name + "_msec", start.untilNow.inMilliseconds.toInt)
       ServiceTracker.hookTime(name + "_msec", start.sinceNow.inMilliseconds.toInt)
     }
     f
@@ -216,7 +216,7 @@ trait StatsProvider {
   def timeFutureNanos[T](name: String)(f: Future[T]): Future[T] = {
     val start = Time.now
     f.respond { _ =>
-      addMetric(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
+      addMetric(name + "_nsec", start.untilNow.inNanoseconds.toInt)
       ServiceTracker.hookTime(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
     }
     f
