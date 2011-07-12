@@ -55,6 +55,6 @@ object ServiceTracker {
   }
 
   def hookTime(name: String, value: Int) = {
-    synchronized { services.toList }.foreach { _.time(name, value) }
+    synchronized { services.toList }.foreach { _.hookTime(name, value) }
   }
 }

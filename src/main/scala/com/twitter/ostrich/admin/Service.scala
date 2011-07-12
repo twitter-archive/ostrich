@@ -49,6 +49,6 @@ trait Service {
 
   var timeListener: TimeListener = new TimeListenerNoop 
 
-  def time(name: String, value: Int) =  timeListener.time(name, value)
+  def hookTime(name: String, value: Int) =  timeListener.time(name, value)
 
 }
