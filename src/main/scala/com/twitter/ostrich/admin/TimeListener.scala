@@ -1,12 +1,12 @@
 package com.twitter.ostrich.admin
 
-trait Remote {
+trait TimeListener {
 
   def time(name: String, value: Int) 
 
 }
 
-class RemoteNoop extends Remote {
+class TimeListenerNoop extends TimeListener {
 
   override def time(name: String, value: Int) = {
     // does nothing

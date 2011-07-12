@@ -179,7 +179,7 @@ trait StatsProvider {
   def time[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inMilliseconds(f)
     addMetric(name + "_msec", duration.inMilliseconds.toInt)
-    ServiceTracker.timeRemote(name + "_msec", duration.inMilliseconds.toInt)
+    ServiceTracker.hookTime(name + "_msec", duration.inMilliseconds.toInt)
     rv
   }
 
@@ -191,7 +191,7 @@ trait StatsProvider {
     val start = Time.now
     f.respond { _ =>
       addMetric(name + "_usec", start.sinceNow.inMicroseconds.toInt)
-      ServiceTracker.timeRemote(name + "_usec", start.sinceNow.inMicroseconds.toInt)
+      ServiceTracker.hookTime(name + "_usec", start.sinceNow.inMicroseconds.toInt)
     }
     f
   }
@@ -204,7 +204,7 @@ trait StatsProvider {
     val start = Time.now
     f.respond { _ =>
       addMetric(name + "_msec", start.sinceNow.inMilliseconds.toInt)
-      ServiceTracker.timeRemote(name + "_msec", start.sinceNow.inMilliseconds.toInt)
+      ServiceTracker.hookTime(name + "_msec", start.sinceNow.inMilliseconds.toInt)
     }
     f
   }
@@ -217,7 +217,7 @@ trait StatsProvider {
     val start = Time.now
     f.respond { _ =>
       addMetric(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
-      ServiceTracker.timeRemote(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
+      ServiceTracker.hookTime(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
     }
     f
   }
@@ -228,7 +228,7 @@ trait StatsProvider {
   def timeMicros[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inNanoseconds(f)
     addMetric(name + "_usec", duration.inMicroseconds.toInt)
-    ServiceTracker.timeRemote(name + "_usec", duration.inMicroseconds.toInt)
+    ServiceTracker.hookTime(name + "_usec", duration.inMicroseconds.toInt)
     rv
   }
 
@@ -238,7 +238,7 @@ trait StatsProvider {
   def timeNanos[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inNanoseconds(f)
     addMetric(name + "_nsec", duration.inNanoseconds.toInt)
-    ServiceTracker.timeRemote(name + "_nsec", duration.inNanoseconds.toInt)
+    ServiceTracker.hookTime(name + "_nsec", duration.inNanoseconds.toInt)
     rv
   }
 }

@@ -47,8 +47,8 @@ trait Service {
     // default is to do nothing.
   }
 
-  var remote: Remote = new RemoteNoop
+  var timeListener: TimeListener = new TimeListenerNoop 
 
-  def timeRemote(name: String, value: Int) =  remote.time(name, value)
+  def time(name: String, value: Int) =  timeListener.time(name, value)
 
 }
