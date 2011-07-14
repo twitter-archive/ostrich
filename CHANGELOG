@@ -1,3 +1,10 @@
+4.7.2
+-----
+release: 14 July 2011
+
+- [OBSERVE-289] Support both namespaced and period-latched stats listeners on
+  the admin service.
+
 4.7.1
 -----
 release: 12 July 2011
