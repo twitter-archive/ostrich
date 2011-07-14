@@ -185,18 +185,36 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         Stats.incr("apples", 10)
         Stats.addMetric("oranges", 5)
 
-        val stats1 = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats1("counters")("apples") mustEqual 10
-        stats1("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        var absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        absStats("counters")("apples") mustEqual 10
+        absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        var namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
+                                 .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        namespaceStats("counters")("apples") mustEqual 10
+        namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        var periodicStats = Json.parse(get("/stats.json?period=30"))
+                                .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        periodicStats("counters")("apples") mustEqual 10
+        periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
 
         Stats.incr("apples", 6)
-        val stats2 = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats2("counters")("apples") mustEqual 10
-        stats2("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        Stats.addMetric("oranges", 3)
+        absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        absStats("counters")("apples") mustEqual 16
+        absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 2
+        namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
+                             .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        namespaceStats("counters")("apples") mustEqual 6
+        namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        periodicStats = Json.parse(get("/stats.json?period=30"))
+                            .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        periodicStats("counters")("apples") mustEqual 10
+        periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
 
-        val stats3 = Json.parse(get("/stats.json?period=120")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats3("counters")("apples") mustEqual 16
-        stats3("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
+                             .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        namespaceStats("counters")("apples") mustEqual 0
+        namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 0
       }
 
       "in json, with histograms" in {

@@ -29,19 +29,23 @@ object StatsListenerSpec extends Specification {
       StatsListener.clearAll()
     }
 
-    "uses only one listener per period" in {
+    "track latched listeners" in {
       StatsListener.listeners.size() mustEqual 0
       val listener = StatsListener(1.minute, collection)
       val listener2 = StatsListener(1.minute, collection)
       listener must be(listener2)
       StatsListener.listeners.size() mustEqual 1
+      StatsListener(500.millis, collection) mustNot be(listener)
+      StatsListener.listeners.size() mustEqual 2
       val key = (1.minute.inMillis, collection)
       StatsListener.listeners.containsKey(key) must beTrue
       StatsListener.listeners.get(key) mustEqual listener
     }
 
-    "uses different listeners for different periods" in {
-      StatsListener(500.millis, collection) mustNot be(StatsListener(750.millis, collection))
+    "tracks named listeners" in {
+      val monkeyListener = StatsListener("monkey", collection)
+      StatsListener("donkey", collection) mustNot be(monkeyListener)
+      StatsListener("monkey", collection) must be(monkeyListener)
     }
   }
 

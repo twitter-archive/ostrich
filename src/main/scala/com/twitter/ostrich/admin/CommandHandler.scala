@@ -95,11 +95,18 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         "ok"
       case "stats" =>
         // ignore old namespace parameter
-        val period = parameters.get("period").map(_.toInt).getOrElse(60).seconds
-        StatsListener(period, Stats).get().toMap
-      case "server_info" =>
-        val mxRuntime = ManagementFactory.getRuntimeMXBean()
-        immutable.Map(
+        parameters.get("period").map { period =>
+          StatsListener(period.toInt.seconds, Stats).get()
+        }.orElse {
+          parameters.get("namespace").map { namespace =>
+            StatsListener(namespace, Stats).get()
+          }
+        }.getOrElse {
+          Stats.get()
+        }.toMap
+    case "server_info" =>
+      val mxRuntime = ManagementFactory.getRuntimeMXBean()
+      immutable.Map(
           "name" -> runtime.jarName,
           "version" -> runtime.jarVersion,
           "build" -> runtime.jarBuild,
