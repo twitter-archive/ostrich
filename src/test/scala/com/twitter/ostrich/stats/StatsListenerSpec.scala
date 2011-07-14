@@ -37,7 +37,7 @@ object StatsListenerSpec extends Specification {
       StatsListener.listeners.size() mustEqual 1
       StatsListener(500.millis, collection) mustNot be(listener)
       StatsListener.listeners.size() mustEqual 2
-      val key = (1.minute.inMillis, collection)
+      val key = ("period:%d".format(1.minute.inMillis), collection)
       StatsListener.listeners.containsKey(key) must beTrue
       StatsListener.listeners.get(key) mustEqual listener
     }

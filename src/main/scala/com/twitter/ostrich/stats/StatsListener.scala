@@ -25,13 +25,13 @@ import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 
 object StatsListener {
-  val listeners = new ConcurrentHashMap[(Int, StatsCollection), StatsListener]
+  val listeners = new ConcurrentHashMap[(String, StatsCollection), StatsListener]
 
   def clearAll() {
     listeners.clear()
   }
 
-  def getOrRegister(id: Int, collection: StatsCollection, listener: => StatsListener) = {
+  def getOrRegister(id: String, collection: StatsCollection, listener: => StatsListener) = {
     val key = (id, collection)
     Option {
       listeners.get(key)
@@ -46,7 +46,7 @@ object StatsListener {
    * creating it if it doesn't already exist.
    */
   def apply(name: String, collection: StatsCollection): StatsListener = {
-    getOrRegister(name.hashCode(), collection, new StatsListener(collection, false))
+    getOrRegister("ns:%s".format(name), collection, new StatsListener(collection, false))
   }
 
   /**
@@ -54,7 +54,7 @@ object StatsListener {
    * over the given duration, creating it if it doesn't already exist.
    */
   def apply(period: Duration, collection: StatsCollection): StatsListener = {
-    getOrRegister(period.inMillis.hashCode(), collection,
+    getOrRegister("period:%d".format(period.inMillis.hashCode), collection,
       new LatchedStatsListener(collection, period, false))
   }
 
