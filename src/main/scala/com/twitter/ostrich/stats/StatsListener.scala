@@ -54,7 +54,7 @@ object StatsListener {
    * over the given duration, creating it if it doesn't already exist.
    */
   def apply(period: Duration, collection: StatsCollection): StatsListener = {
-    getOrRegister("period:%d".format(period.inMillis.hashCode), collection,
+    getOrRegister("period:%d".format(period.inMillis), collection,
       new LatchedStatsListener(collection, period, false))
   }
 
