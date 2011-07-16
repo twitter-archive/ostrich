@@ -290,12 +290,21 @@ The commands are:
 
 - stats
 
-  Dump server statistics as 4 groups: counters, gauges, metrics, and labels.
+  Dump server statistics as 4 groups: `counters`, `gauges`, `metrics`, and `labels`.
 
-  Normally you want to add a `namespace` argument, which will create a new listener for the given
-  name. For example, `/stats.json?namespace=ganglia` lets ganglia fetch stats using its own
-  listener. (See `src/scripts/json_stats_fetcher.rb` for an example.) If you omit a namespace, the
-  main stats object will be fetched, and metrics will be globally reset each time.
+  - If the `period` query parameter is specified (e.g. `/stats.json?period=10`),
+    a StatsListener is acquired for that time period, and all requests with this
+    period value will receive the same stats values throughout a single time
+    period.
+  - Otherwise, if the `namespace` argument is provided (e.g. `/stats.json?namespace=ganglia`),
+    a StatsListener is acquired for that namespace, and each request with this
+    namespace value will reset the stats listener, effectively returning the
+    delta since any prior request with that namespace.
+    listener for the given name.  (See `src/scripts/json_stats_fetcher.rb` for
+    an example.)
+  - If neither `period` nor `namespace` parameters are specified, the main stats
+    object will be fetched, returning non-differerential counters and metrics
+    over the life-time of the process.
 
 - server_info
 
@@ -348,6 +357,7 @@ them. Major contributers include, in alphabetical order:
 - John Kalucki
 - Marius Eriksen
 - Nick Kallen
+- Oliver Gould
 - Pankaj Gupta
 - Robey Pointer
 - Steve Jenson
