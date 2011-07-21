@@ -66,10 +66,12 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
     val os = ManagementFactory.getOperatingSystemMXBean()
     out += ("jvm_num_cpus" -> os.getAvailableProcessors().toLong)
-
-    val unix = os.asInstanceOf[com.sun.management.UnixOperatingSystemMXBean]
-    out += ("jvm_fd_count" -> unix.getOpenFileDescriptorCount())
-    out += ("jvm_fd_limit" -> unix.getMaxFileDescriptorCount())
+    os match {
+      case unix: com.sun.management.UnixOperatingSystemMXBean =>
+        out += ("jvm_fd_count" -> unix.getOpenFileDescriptorCount)
+        out += ("jvm_fd_limit" -> unix.getMaxFileDescriptorCount)
+      case _ =>   // ew, Windows... or something
+    }
 
     var totalUsage = 0L
     ManagementFactory.getMemoryPoolMXBeans().asScala.foreach { pool =>
