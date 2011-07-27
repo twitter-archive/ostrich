@@ -29,7 +29,7 @@ end
 $ostrich3 = false # guessed ostrich version
 $report_to_ganglia = true
 $ganglia_prefix = ''
-$stat_timeout = 86400
+$stat_timeout = 5*60
 $pattern = /^x-/
 
 hostname = "localhost"
