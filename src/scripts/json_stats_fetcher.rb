@@ -162,7 +162,6 @@ begin
     cmd = metrics.map do |name, value, units|
       "gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}"
     end.join("\n")
-    puts cmd
     system cmd
   else # print a report to stdout
     report = metrics.map do |name, value, units|
