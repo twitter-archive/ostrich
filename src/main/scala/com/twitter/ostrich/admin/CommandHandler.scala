@@ -94,19 +94,21 @@ class CommandHandler(runtime: RuntimeEnvironment) {
         }
         "ok"
       case "stats" =>
-        // ignore old namespace parameter
         parameters.get("period").map { period =>
+          // listener for a given period
           StatsListener(period.toInt.seconds, Stats).get()
         }.orElse {
+          // (archaic, deprecated) named listener
           parameters.get("namespace").map { namespace =>
             StatsListener(namespace, Stats).get()
           }
         }.getOrElse {
+          // raw, un-delta'd data
           Stats.get()
         }.toMap
-    case "server_info" =>
-      val mxRuntime = ManagementFactory.getRuntimeMXBean()
-      immutable.Map(
+      case "server_info" =>
+        val mxRuntime = ManagementFactory.getRuntimeMXBean()
+        immutable.Map(
           "name" -> runtime.jarName,
           "version" -> runtime.jarVersion,
           "build" -> runtime.jarBuild,
