@@ -1,3 +1,10 @@
+4.7.3
+-----
+release: 20 July 2011
+
+- Include file descriptor statistics
+
+
 4.7.2
 -----
 release: 14 July 2011

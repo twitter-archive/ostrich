@@ -13,23 +13,10 @@ require 'json'
 require 'timeout'
 require 'open-uri'
 
-def report_metric(name, value, units)
-  # Ganglia is very intolerant of metric named with non-standard characters,
-  # where non-standard contains most everything other than letters, numbers and
-  # some common symbols.
-  name = name.gsub(/[^A-Za-z0-9_\-\.]/, "_")
-
-  if $report_to_ganglia
-    system("gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}")
-  else
-    puts "#{$ganglia_prefix}#{name}=#{value}"
-  end
-end
-
 $ostrich3 = false # guessed ostrich version
 $report_to_ganglia = true
 $ganglia_prefix = ''
-$stat_timeout = 86400
+$stat_timeout = 5*60
 $pattern = /^x-/
 
 hostname = "localhost"
@@ -97,6 +84,9 @@ if File.exist?(singleton_file)
 end
 File.open(singleton_file, "w") { |f| f.write("i am running.\n") }
 
+## we will accumulate all our metrics in here
+metrics = []
+
 begin
   Timeout::timeout(55) do
     data = if use_web
@@ -120,25 +110,25 @@ begin
 
     # Ostrich >3 puts these in the metrics
     begin
-      report_metric("jvm_threads", stats["jvm"]["thread_count"], "threads")
-      report_metric("jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads")
-      report_metric("jvm_heap_used", stats["jvm"]["heap_used"], "bytes")
-      report_metric("jvm_heap_max", stats["jvm"]["heap_max"], "bytes")
-      report_metric("jvm_uptime", (stats["jvm"]["uptime"].to_i rescue 0), "items")
+      metrics << ["jvm_threads", stats["jvm"]["thread_count"], "threads"]
+      metrics << ["jvm_daemon_threads", stats["jvm"]["thread_daemon_count"], "threads"]
+      metrics << ["jvm_heap_used", stats["jvm"]["heap_used"], "bytes"]
+      metrics << ["jvm_heap_max", stats["jvm"]["heap_max"], "bytes"]
+      metrics << ["jvm_uptime", (stats["jvm"]["uptime"].to_i rescue 0), "items"]
     rescue NoMethodError
       $ostrich3 = true
     end
 
     begin
       stats["counters"].reject { |name, val| name =~ $pattern }.each do |name, value|
-        report_metric(name, (value.to_i rescue 0), "items")
+        metrics << [name, (value.to_i rescue 0), "items"]
       end
     rescue NoMethodError
     end
 
     begin
       stats["gauges"].reject { |name, val| name =~ $pattern }.each do |name, value|
-        report_metric(name, value, "value")
+        metrics << [name, value, "value"]
       end
     rescue NoMethodError
     end
@@ -146,15 +136,38 @@ begin
     begin
       metricsKey = ($ostrich3) ? "metrics" : "timings"
       stats[metricsKey].reject { |name, val| name =~ $pattern }.each do |name, timing|
-        report_metric(name, (timing["average"] || 0).to_f / 1000.0, "sec")
-        report_metric("#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec")
+        metrics << [name, (timing["average"] || 0).to_f / 1000.0, "sec"]
+        metrics << ["#{name}_stddev", (timing["standard_deviation"] || 0).to_f / 1000.0, "sec"]
         [:p25, :p50, :p75, :p90, :p95, :p99, :p999, :p9999].map(&:to_s).each do |bucket|
-          report_metric("#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec") if timing[bucket]
+          metrics << ["#{name}_#{bucket}", (timing[bucket] || 0).to_f / 1000.0, "sec"] if timing[bucket]
         end
       end
     rescue NoMethodError
     end
+  end
 
+  ## do stuff with the metrics we've accumulated
+
+  ## first, munge metric names
+  metrics = metrics.map do |name, value, units|
+    # Ganglia is very intolerant of metric named with non-standard characters,
+    # where non-standard contains most everything other than letters, numbers and
+    # some common symbols.
+    name = name.gsub(/[^A-Za-z0-9_\-\.]/, "_")
+    [name, value, units]
+  end
+
+  ## now, send to ganglia or print to $stdout
+  if $report_to_ganglia # call gmetric for each metric
+    cmd = metrics.map do |name, value, units|
+      "gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}"
+    end.join("\n")
+    system cmd
+  else # print a report to stdout
+    report = metrics.map do |name, value, units|
+      "#{$ganglia_prefix}#{name}=#{value}"
+    end.join("\n")
+    puts report
   end
 ensure
   File.unlink(singleton_file)
