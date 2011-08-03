@@ -158,11 +158,16 @@ begin
   end
 
   ## now, send to ganglia or print to $stdout
-  if $report_to_ganglia # call gmetric for each metric
-    cmd = metrics.map do |name, value, units|
-      "gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}"
-    end.join("\n")
-    system cmd
+  if $report_to_ganglia # call gmetric for metrics
+    metrics.each_slice(100) do |some_metrics|
+      cmd = some_metrics.map do |name, value, units|
+        "gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}"
+      end.join("\n")
+      res = system cmd
+      unless res
+        STDERR.puts "system(gmetric) failed: status:#{$?.exitstatus}"
+      end
+    end
   else # print a report to stdout
     report = metrics.map do |name, value, units|
       "#{$ganglia_prefix}#{name}=#{value}"
