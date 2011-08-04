@@ -93,7 +93,7 @@ begin
       # Ostrich 4.5+ are latched on a time period
       args = "period=#{period}"
       # Ostrich 3 and 4.0 don't reset counters.
-      if $report_to_gangia then
+      if $report_to_ganglia then
         # Ostrich 2 uses reset
         # Ostrich 4.2 uses namespace for similar functionality
         args += "&reset=1&namespace=ganglia"
