@@ -23,7 +23,7 @@ object JsonStatsFetcherSpec extends Specification {
       doBefore {
         Stats.clearAll()
         StatsListener.clearAll()
-        service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))
+        service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass))
         service.start()
       }
 

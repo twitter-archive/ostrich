@@ -24,7 +24,7 @@ import scala.collection.{JavaConversions, Map}
 import scala.collection.immutable
 import com.twitter.conversions.time._
 import com.twitter.json.Json
-import stats.{StatsListener, Stats}
+import stats.{StatsListener, Stats, StatsCollection}
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 
@@ -34,7 +34,7 @@ object Format {
   case object Json extends Format
 }
 
-class CommandHandler(runtime: RuntimeEnvironment) {
+class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollection) {
   private def build(obj: Any): List[String] = {
     obj match {
       case m: Map[_, _] =>
@@ -96,13 +96,13 @@ class CommandHandler(runtime: RuntimeEnvironment) {
       case "stats" =>
         // ignore old namespace parameter
         parameters.get("period").map { period =>
-          StatsListener(period.toInt.seconds, Stats).get()
+          StatsListener(period.toInt.seconds, statsCollection).get()
         }.orElse {
           parameters.get("namespace").map { namespace =>
-            StatsListener(namespace, Stats).get()
+            StatsListener(namespace, statsCollection).get()
           }
         }.getOrElse {
-          Stats.get()
+          statsCollection.get()
         }.toMap
     case "server_info" =>
       val mxRuntime = ManagementFactory.getRuntimeMXBean()

@@ -25,6 +25,7 @@ import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 import java.util.Properties
+import stats.StatsCollection
 
 /**
  * Custom handler interface for the admin web site. The standard `render` calls are implemented in
@@ -237,10 +238,12 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
   }
 }
 
-class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) extends Service {
+class AdminHttpService(
+  port: Int, backlog: Int, statsCollection: StatsCollection, runtime: RuntimeEnvironment
+) extends Service {
   val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
-  val commandHandler = new CommandHandler(runtime)
+  val commandHandler = new CommandHandler(runtime, statsCollection)
 
   def address = httpServer.getAddress
 
