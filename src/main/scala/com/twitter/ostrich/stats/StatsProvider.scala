@@ -19,6 +19,7 @@ package com.twitter.ostrich.stats
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
 import com.twitter.util.{Duration, Future, Time}
+import com.twitter.logging.Logger
 
 /**
  * Immutable summary of counters, metrics, gauges, and labels.
@@ -67,11 +68,17 @@ case class StatsSummary(
  * - label: an instantaneous informational string for debugging or status checking
  */
 trait StatsProvider {
+  val log = Logger.get(getClass.getName)
+
   /**
    * Adds a value to a named metric, which tracks min, max, mean, and a histogram.
    */
   def addMetric(name: String, value: Int) {
-    getMetric(name).add(value)
+    if (value >= 0) {
+      getMetric(name).add(value)
+    } else {
+      log.warning("Tried to add a negative data point: %s", name)
+    }
   }
 
   /**
