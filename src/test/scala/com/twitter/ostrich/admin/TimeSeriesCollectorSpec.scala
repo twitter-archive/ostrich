@@ -136,11 +136,11 @@ object TimeSeriesCollectorSpec extends Specification {
         val port = service.address.getPort
         try {
           var data = getJson(port, "/graph_data/metric:run").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 6, 10, 17, 23, 23, 23, 23, 23)
+          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 5, 10, 15, 19, 19, 19, 19, 19)
           data = getJson(port, "/graph_data/metric:run?p=0,2").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 6, 17)
+          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 5, 15)
           data = getJson(port, "/graph_data/metric:run?p=1,7").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 10, 23)
+          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 10, 19)
         } finally {
           service.shutdown()
         }

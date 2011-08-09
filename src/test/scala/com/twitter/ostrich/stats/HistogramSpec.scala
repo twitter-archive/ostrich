@@ -35,13 +35,32 @@ object HistogramSpec extends Specification {
       histogram.add(9999999)
       histogram.get(true).last mustEqual 1
       histogram.add(1)
-      histogram.get(true)(1) mustEqual 1
+      histogram.get(true)(1) mustEqual 1 // offset 2
       histogram.add(2)
-      histogram.get(true)(2) mustEqual 1
+      histogram.get(true)(2) mustEqual 1 // offset 3
+      histogram.add(10)
       histogram.add(11)
-      histogram.add(12)
-      histogram.add(13)
-      histogram.get(true)(8) mustEqual 3
+      histogram.get(true)(10) mustEqual 2 // offset 12
+    }
+
+    "add value buckets.last" in {
+      histogram.add(Histogram.BUCKET_OFFSETS.last)
+      histogram.get(true).last mustEqual 1
+    }
+
+    "add value buckets.last+1" in {
+      histogram.add(Histogram.BUCKET_OFFSETS.last + 1)
+      histogram.get(true).last mustEqual 1
+    }
+
+    "add value Int.MaxValue" in {
+      histogram.add(Int.MaxValue)
+      histogram.get(true).last mustEqual 1
+    }
+
+    "add value Int.MinValue" in {
+      histogram.add(Int.MinValue)
+      histogram.get(true).head mustEqual 1
     }
 
     "find histogram cutoffs for various percentages" in {
@@ -60,7 +79,7 @@ object HistogramSpec extends Specification {
       histogram.getPercentile(0.0) must shareABucketWith(0)
       histogram.getPercentile(0.5) must shareABucketWith(500)
       histogram.getPercentile(0.9) must shareABucketWith(900)
-      histogram.getPercentile(0.99) must shareABucketWith(999)
+      histogram.getPercentile(0.99) must shareABucketWith(998) // 999 is a boundary
       histogram.getPercentile(1.0) must shareABucketWith(1000)
     }
 
@@ -92,7 +111,7 @@ object HistogramSpec extends Specification {
 
     "handle a very large timing" in {
       histogram.add(100000000)
-      histogram.getPercentile(0.0) mustEqual 0
+      histogram.getPercentile(0.0) mustEqual Int.MaxValue
       histogram.getPercentile(0.1) mustEqual Int.MaxValue
       histogram.getPercentile(0.9) mustEqual Int.MaxValue
       histogram.getPercentile(1.0) mustEqual Int.MaxValue
@@ -112,6 +131,53 @@ object HistogramSpec extends Specification {
       histogram.add(20)
       histogram.count mustEqual 4
       histogram.sum mustEqual 65
+    }
+
+    "getPercentile" in {
+      histogram.add(95)
+      // bucket covers [91, 99], midpoint is 95
+      histogram.getPercentile(0.0) mustEqual 95
+      histogram.getPercentile(0.5) mustEqual 95
+      histogram.getPercentile(1.0) mustEqual 95
+    }
+
+    "getPercentile with no values" in {
+      histogram.getPercentile(0.0) mustEqual 0
+      histogram.getPercentile(0.5) mustEqual 0
+      histogram.getPercentile(1.0) mustEqual 0
+    }
+
+    "getPercentile with infinity" in {
+      histogram.add(Int.MaxValue)
+      histogram.getPercentile(0.5) mustEqual Int.MaxValue
+    }
+
+    "minimum" in {
+      histogram.add(95)
+      histogram.minimum mustEqual 95
+    }
+
+    "minimum with no values" in {
+      histogram.minimum mustEqual 0
+    }
+
+    "minimum with infinity" in {
+      histogram.add(Int.MaxValue)
+      histogram.minimum mustEqual Int.MaxValue
+    }
+
+    "maximum" in {
+      histogram.add(95)
+      histogram.minimum mustEqual 95
+    }
+
+    "maximum with no values" in {
+      histogram.maximum mustEqual 0
+    }
+
+    "maximum with infinity" in {
+      histogram.add(Int.MaxValue)
+      histogram.maximum mustEqual Int.MaxValue
     }
 
     "equals" in {

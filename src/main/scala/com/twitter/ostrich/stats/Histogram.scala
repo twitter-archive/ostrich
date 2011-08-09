@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Twitter, Inc.
+ * Copyright 2010-2011 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -19,12 +19,25 @@ package com.twitter.ostrich.stats
 import scala.annotation.tailrec
 
 object Histogram {
-  // (0..53).map { |n| (1.3 ** n).to_i + 1 }.uniq
+  /*
+   * The midpoint of each bucket is +/- 5% from the boundaries.
+   *   (0..139).map { |n| (1.10526315 ** n).to_i + 1 }.uniq
+   * Bucket i is the range from BUCKET_OFFSETS(i-1) (inclusive) to
+   * BUCKET_OFFSETS(i) (exclusive).
+   * The last bucket (the "infinity" bucket) is from 1100858 to infinity.
+   */
   val BUCKET_OFFSETS =
-    Array(1, 2, 3, 4, 5, 7, 9, 11, 14, 18, 24, 31, 40, 52, 67, 87, 113, 147, 191, 248,
-          322, 418, 543, 706, 918, 1193, 1551, 2016, 2620, 3406, 4428, 5757, 7483,
-          9728, 12647, 16441, 21373, 27784, 36119, 46955, 61041, 79354, 103160, 134107,
-          174339, 226641, 294633, 383023, 497930, 647308, 841501, 1093951)
+    Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 17, 19, 21, 23, 25, 28,
+          31, 34, 37, 41, 45, 50, 55, 61, 67, 74, 82, 91, 100, 111, 122, 135,
+          150, 165, 183, 202, 223, 246, 272, 301, 332, 367, 406, 449, 496, 548,
+          606, 669, 740, 817, 903, 999, 1104, 1220, 1348, 1490, 1647, 1820, 2011,
+          2223, 2457, 2716, 3001, 3317, 3666, 4052, 4479, 4950, 5471, 6047, 6684,
+          7387, 8165, 9024, 9974, 11024, 12184, 13467, 14884, 16451, 18182, 20096,
+          22212, 24550, 27134, 29990, 33147, 36636, 40492, 44754, 49465, 54672,
+          60427, 66787, 73818, 81588, 90176, 99668, 110160, 121755, 134572,
+          148737, 164393, 181698, 200824, 221963, 245328, 271152, 299694, 331240,
+          366108, 404645, 447240, 494317, 546351, 603861, 667426, 737681, 815331,
+          901156, 996014, 1100858)
   val bucketOffsetSize = BUCKET_OFFSETS.size
 
   def bucketIndex(key: Int): Int = binarySearch(key)
@@ -98,7 +111,14 @@ class Histogram {
     rv
   }
 
+  /**
+   * Percentile within 5%, but:
+   *   0 if no values
+   *   Int.MaxValue if percentile is out of range
+   */
   def getPercentile(percentile: Double): Int = {
+    if (percentile == 0.0)
+      return minimum
     var total = 0L
     var index = 0
     while (total < percentile * count) {
@@ -110,30 +130,60 @@ class Histogram {
     } else if (index - 1 >= Histogram.BUCKET_OFFSETS.size) {
       Int.MaxValue
     } else {
-      Histogram.BUCKET_OFFSETS(index - 1) - 1
+      midpoint(index - 1)
     }
   }
 
+  /**
+   * Maximum value within 5%, but:
+   *    0 if no values
+   *    Int.MaxValue if any value is infinity
+   */
   def maximum: Int = {
     if (buckets(buckets.size - 1) > 0) {
+      // Infinity bucket has a value
       Int.MaxValue
     } else if (count == 0) {
+      // No values
       0
     } else {
       var index = Histogram.BUCKET_OFFSETS.size - 1
-      while (index >= 0 && buckets(index) == 0) index -= 1
-      if (index < 0) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+      while (index >= 0 && buckets(index) == 0)
+        index -= 1
+      if (index < 0)
+        0
+      else
+        midpoint(index)
     }
   }
 
+  /**
+   * Minimum value within 5%, but:
+   *    0 if no values
+   *    Int.MaxValue if all values are infinity
+   */
   def minimum: Int = {
     if (count == 0) {
       0
     } else {
       var index = 0
-      while (index < Histogram.BUCKET_OFFSETS.size && buckets(index) == 0) index += 1
-      if (index >= Histogram.BUCKET_OFFSETS.size) 0 else Histogram.BUCKET_OFFSETS(index) - 1
+      while (index < Histogram.BUCKET_OFFSETS.size && buckets(index) == 0)
+        index += 1
+      if (index >= Histogram.BUCKET_OFFSETS.size)
+        Int.MaxValue
+      else
+        midpoint(index)
     }
+  }
+
+  // Get midpoint of bucket
+  protected def midpoint(index: Int): Int = {
+    if (index == 0)
+      0
+    else if (index - 1 >= Histogram.BUCKET_OFFSETS.size)
+      Int.MaxValue
+    else
+      (Histogram.BUCKET_OFFSETS(index - 1) + Histogram.BUCKET_OFFSETS(index) - 1) / 2
   }
 
   def merge(other: Histogram) {

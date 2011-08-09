@@ -1,3 +1,19 @@
+
+4.8.0
+-----
+release: 8 August 2011
+
+- Histogram improvements (used for percentiles)
+    Use 3x more buckets
+    getPercentile/minimum/maximum now returns midpoint of bucket, not
+     upper boundary
+    With the above two changes, getPercentile/minimum/maximum return
+      an estimated value within 5% of the actual value.  Before, the
+      estimated values was up to 23% higher than the actual value.
+    Fix: getPercentile(0.0) now returns the minimum (was 0)
+    Fix: minimum of a histogram containing only infinity is infinity
+
+
 4.7.3
 -----
 release: 20 July 2011
@@ -11,6 +27,7 @@ release: 14 July 2011
 
 - [OBSERVE-289] Support both namespaced and period-latched stats listeners on
   the admin service.
+
 
 4.7.1
 -----

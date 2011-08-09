@@ -245,7 +245,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         timings("p50") mustEqual 3
 
         timings must haveKey("p75")
-        timings("p75")  mustEqual 6
+        timings("p75")  mustEqual 5
 
         timings must haveKey("p99")
         timings("p99") mustEqual 6
@@ -285,7 +285,7 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         timings("p50") mustEqual 3
 
         timings must haveKey("p75")
-        timings("p75")  mustEqual 6
+        timings("p75")  mustEqual 5
 
         timings must haveKey("p95")
         timings("p95") mustEqual 6

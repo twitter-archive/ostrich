@@ -62,7 +62,7 @@ object W3CStatsLoggerSpec extends Specification {
         statsLogger.periodic()
         getLines() mustEqual List(
           "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum zzz_msec_sum",
-          "1176525931 15 2 23 10 30"
+          "1176525931 15 2 19 10 30"
         )
       }
     }
@@ -79,7 +79,7 @@ object W3CStatsLoggerSpec extends Specification {
         getLines() mustEqual List(
           "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum zzz_msec_sum",
           "2826312472 1 3 10 1 10 10 10",
-          "2826312472 1 0 20 1 23 23 20"
+          "2826312472 1 0 20 1 19 19 20"
         )
       }
     }
