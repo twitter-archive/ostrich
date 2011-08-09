@@ -19,3 +19,6 @@ src_managed
 project/plugins/project
 ostrich.tmproj
 .ivyjars
+.classpath
+.project
+.scala_dependencies

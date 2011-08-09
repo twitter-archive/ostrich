@@ -134,9 +134,10 @@ extends StatsListener(collection, startClean) {
 
   def nextLatch() {
     counters = super.getCounters()
-    gauges = super.getGauges()
     labels = super.getLabels()
     metrics = super.getMetrics()
+    // do gauges last since they might be constructed using the others.
+    gauges = super.getGauges()
   }
 
   // FIXME this would be more efficient as a Timer for all LatchedStatsListeners?
