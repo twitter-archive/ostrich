@@ -90,7 +90,7 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
   /**
    * The name of the stats collection to use. The default is "" which is the name for Stats.
    */
-  var statsCollectionName: String = ""
+  var statsCollectionName: Option[String] = None
 
   /**
    * Extra handlers for the admin web interface.
@@ -115,7 +115,7 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
     httpPort = runtime.arguments.get("adminPort").map { _.toInt }.orElse(httpPort)
 
     httpPort.map { port =>
-      val statsCollection = Stats.make(statsCollectionName)
+      val statsCollection = statsCollectionName.map { Stats.make(_) }.getOrElse(Stats)
       val admin = new AdminHttpService(port, httpBacklog, statsCollection, runtime)
       statsNodes.map { config =>
         config()(admin)
