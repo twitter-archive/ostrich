@@ -1,5 +1,10 @@
-
 - Allow a BackgroundProcess to ask not to be interrupted.
+
+4.8.2
+-----
+Changes:
+
+- supports configuration which StatsCollection to report for a given AdminHttpService
 
 4.8.0
 -----
