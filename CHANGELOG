@@ -1,4 +1,10 @@
+4.8.3
+-----
+release: 12 August 2011
+
 - Allow a BackgroundProcess to ask not to be interrupted.
+- Allow a BackgroundProcess to be stopped without joining its underlying
+  thread.
 
 4.8.2
 -----
