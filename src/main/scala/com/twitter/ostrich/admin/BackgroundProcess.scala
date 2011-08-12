@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2009 - 2011 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -98,8 +98,12 @@ abstract class BackgroundProcess(name: String, interruptable: Boolean) extends S
     }
   }
 
-  def shutdown() {
+  def stop() {
     running = false
+  }
+
+  def shutdown() {
+    stop()
     try {
       if (interruptable) thread.interrupt()
       thread.join()
