@@ -6,10 +6,12 @@ import org.specs.Specification
 import org.specs.util.TimeConversions._
 
 object JsonStatsFetcherSpec extends Specification {
+  val script = "./src/scripts/json_stats_fetcher.rb"
+
   def exec(args: String*) = Runtime.getRuntime.exec(args.toArray)
 
   val hasRuby = try {
-    exec("ruby", "--version")
+    exec(script, "--help")
     true
   } catch {
     case e: Throwable => false
@@ -18,7 +20,6 @@ object JsonStatsFetcherSpec extends Specification {
   if (hasRuby) {
     "json_stats_fetcher.rb" should {
       var service: AdminHttpService = null
-      val script = "./src/scripts/json_stats_fetcher.rb"
 
       doBefore {
         Stats.clearAll()
