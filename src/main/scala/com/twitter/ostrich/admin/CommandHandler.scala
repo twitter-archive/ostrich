@@ -94,13 +94,14 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
         }
         "ok"
       case "stats" =>
+        val filtered = parameters.get("filtered").isDefined
         parameters.get("period").map { period =>
           // listener for a given period
-          StatsListener(period.toInt.seconds, statsCollection).get()
+          StatsListener(period.toInt.seconds, statsCollection).get(filtered)
         }.orElse {
           // (archaic, deprecated) named listener
           parameters.get("namespace").map { namespace =>
-            StatsListener(namespace, statsCollection).get()
+            StatsListener(namespace, statsCollection).get(filtered)
           }
         }.getOrElse {
           // raw, un-delta'd data

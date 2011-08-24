@@ -48,6 +48,19 @@ object StatsCollectionSpec extends Specification {
       map.keys.toList must contain("jvm_gc_msec")
     }
 
+    "StatsSummary filtering" in {
+      val summary = StatsSummary(
+        Map("apples" -> 10, "oranges" -> 13, "appliances" -> 4, "bad_oranges" -> 1),
+        Map(),
+        Map(),
+        Map()
+      )
+
+      summary.filterOut("""app.*""".r).counters mustEqual Map("oranges" -> 13, "bad_oranges" -> 1)
+      summary.filterOut("""xyz.*""".r).counters mustEqual summary.counters
+      summary.filterOut(""".*oranges""".r).counters mustEqual Map("apples" -> 10, "appliances" -> 4)
+    }
+
     "counters" in {
       "basic" in {
         collection.incr("widgets", 1)

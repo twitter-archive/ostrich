@@ -19,11 +19,13 @@ package admin
 package config
 
 import java.net.{Socket, SocketException, URL}
+import scala.io.Source
 import com.twitter.conversions.time._
+import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import org.specs.Specification
 import org.specs.mock.{ClassMocker, JMocker}
-import stats.{JsonStatsLogger, Stats, W3CStatsLogger}
+import stats.{JsonStatsLogger, Stats, StatsListener, W3CStatsLogger}
 
 class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker {
   val port = 9990
@@ -76,6 +78,34 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
       }
       ServiceTracker.peek must exist { s =>
         s.isInstanceOf[TimeSeriesCollector]
+      }
+    }
+
+    "configure filtered stats" in {
+      Stats.clearAll()
+      Stats.incr("apples", 10)
+      Stats.addMetric("oranges", 5)
+      StatsListener.clearAll()
+
+      expect {
+        one(runtime).arguments willReturn Map.empty[String, String]
+      }
+
+      val config = new AdminServiceConfig {
+        httpPort = 0
+        statsFilters = List("a.*", "jvm_.*")
+      }
+      val service = config()(runtime).get
+
+      try {
+        val port = service.address.getPort
+        val path = "/stats.json?period=60&filtered=1"
+        val url = new URL("http://localhost:%s%s".format(port, path))
+        val data = Source.fromURL(url).getLines().mkString("\n")
+        val json = Json.parse(data).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        json("counters") mustEqual Map()
+      } finally {
+        service.shutdown()
       }
     }
 
