@@ -20,6 +20,7 @@ package config
 
 import scala.collection.Map
 import scala.collection.mutable
+import scala.util.matching.Regex
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Config, Duration}
@@ -96,7 +97,7 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
    * This is useful if you know a bunch of stats are being reported that aren't interesting to
    * graph right now.
    */
-  var statsFilters: List[String] = Nil
+  var statsFilters: List[Regex] = Nil
 
   /**
    * Extra handlers for the admin web interface.

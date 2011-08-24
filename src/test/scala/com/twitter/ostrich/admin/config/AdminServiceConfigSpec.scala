@@ -91,7 +91,7 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
 
       val config = new AdminServiceConfig {
         httpPort = 0
-        statsFilters = List("a.*", "jvm_.*")
+        statsFilters = List("a.*".r, "jvm_.*".r)
       }
       val service = config()(runtime).get
 

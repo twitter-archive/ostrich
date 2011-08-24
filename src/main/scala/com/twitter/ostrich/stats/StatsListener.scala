@@ -19,6 +19,7 @@ package stats
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
+import scala.util.matching.Regex
 import com.twitter.conversions.time._
 import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Duration
@@ -62,7 +63,7 @@ object StatsListener {
    * Get a StatsListener that's attached to a specified stats collection and tracks periodic stats
    * over the given duration, creating it if it doesn't already exist.
    */
-  def apply(period: Duration, collection: StatsCollection, filters: List[String]): StatsListener = {
+  def apply(period: Duration, collection: StatsCollection, filters: List[Regex]): StatsListener = {
     getOrRegister("period:%d".format(period.inMillis), collection,
       new LatchedStatsListener(collection, period, false, filters))
   }
@@ -79,7 +80,7 @@ object StatsListener {
  * Each report resets state, so counters are reported as deltas, and metrics distributions are
  * only tracked since the last report.
  */
-class StatsListener(collection: StatsCollection, startClean: Boolean, filters: List[String]) {
+class StatsListener(collection: StatsCollection, startClean: Boolean, filters: List[Regex]) {
   def this(collection: StatsCollection, startClean: Boolean) = this(collection, startClean, Nil)
   def this(collection: StatsCollection) = this(collection, true, Nil)
 
@@ -139,7 +140,7 @@ class LatchedStatsListener(
   collection: StatsCollection,
   period: Duration,
   startClean: Boolean,
-  filters: List[String]
+  filters: List[Regex]
 ) extends StatsListener(collection, startClean, filters) {
   def this(collection: StatsCollection, period: Duration, startClean: Boolean) = this(collection, period, startClean, Nil)
   def this(collection: StatsCollection, period: Duration) = this(collection, period, true, Nil)
