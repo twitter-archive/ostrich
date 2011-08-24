@@ -94,7 +94,7 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
         }
         "ok"
       case "stats" =>
-        val filtered = parameters.get("filtered").isDefined
+        val filtered = parameters.get("filtered").getOrElse("0") == "1"
         parameters.get("period").map { period =>
           // listener for a given period
           StatsListener(period.toInt.seconds, statsCollection).get(filtered)
