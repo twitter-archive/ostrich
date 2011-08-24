@@ -83,8 +83,6 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
 
     "configure filtered stats" in {
       Stats.clearAll()
-      Stats.incr("apples", 10)
-      Stats.addMetric("oranges", 5)
       StatsListener.clearAll()
 
       expect {
@@ -98,6 +96,9 @@ class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker
       val service = config()(runtime).get
 
       try {
+        Stats.incr("apples", 10)
+        Stats.addMetric("oranges", 5)
+
         val port = service.address.getPort
         val path = "/stats.json?period=60&filtered=1"
         val url = new URL("http://localhost:%s%s".format(port, path))
