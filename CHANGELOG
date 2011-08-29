@@ -1,3 +1,11 @@
+4.9.0
+-----
+release: 29 August 2011
+
+- Add 'statsFilters' and "?filtered=1" to the stats command on the admin
+  port.
+
+
 4.8.3
 -----
 release: 12 August 2011
@@ -6,11 +14,13 @@ release: 12 August 2011
 - Allow a BackgroundProcess to be stopped without joining its underlying
   thread.
 
+
 4.8.2
 -----
 Changes:
 
 - supports configuration which StatsCollection to report for a given AdminHttpService
+
 
 4.8.0
 -----
