@@ -16,6 +16,7 @@
 
 package com.twitter.ostrich.stats
 
+import scala.util.matching.Regex
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
 import com.twitter.util.{Duration, Future, Time}
@@ -50,6 +51,15 @@ case class StatsSummary(
    */
   def toJson = {
     Json.build(toMap).toString
+  }
+
+  def filterOut(regex: Regex) = {
+    StatsSummary(
+      counters.filterKeys { !regex.pattern.matcher(_).matches },
+      metrics.filterKeys { !regex.pattern.matcher(_).matches },
+      gauges.filterKeys { !regex.pattern.matcher(_).matches },
+      labels.filterKeys { !regex.pattern.matcher(_).matches }
+    )
   }
 }
 

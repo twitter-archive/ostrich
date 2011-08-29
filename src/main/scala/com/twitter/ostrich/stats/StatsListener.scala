@@ -19,6 +19,7 @@ package stats
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.{JavaConversions, Map, mutable, immutable}
+import scala.util.matching.Regex
 import com.twitter.conversions.time._
 import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Duration
@@ -59,6 +60,15 @@ object StatsListener {
   }
 
   /**
+   * Get a StatsListener that's attached to a specified stats collection and tracks periodic stats
+   * over the given duration, creating it if it doesn't already exist.
+   */
+  def apply(period: Duration, collection: StatsCollection, filters: List[Regex]): StatsListener = {
+    getOrRegister("period:%d".format(period.inMillis), collection,
+      new LatchedStatsListener(collection, period, false, filters))
+  }
+
+  /**
    * Get a StatsListener that's attached to the global stats collection and tracks periodic stats
    * over the given duration, creating it if it doesn't already exist.
    */
@@ -70,11 +80,14 @@ object StatsListener {
  * Each report resets state, so counters are reported as deltas, and metrics distributions are
  * only tracked since the last report.
  */
-class StatsListener(collection: StatsCollection, startClean: Boolean) {
-  def this(collection: StatsCollection) = this(collection, true)
+class StatsListener(collection: StatsCollection, startClean: Boolean, filters: List[Regex]) {
+  def this(collection: StatsCollection, startClean: Boolean) = this(collection, startClean, Nil)
+  def this(collection: StatsCollection) = this(collection, true, Nil)
 
   private val lastCounterMap = new mutable.HashMap[String, Long]()
   private val lastMetricMap = new mutable.HashMap[String, Distribution]()
+
+  private val filterRegex = filters.mkString("(", ")|(", ")").r
 
   collection.addListener(this)
   if (startClean) {
@@ -109,6 +122,12 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
   }
 
   def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges(), getLabels())
+
+  def get(filtered: Boolean): StatsSummary = if (filtered) getFiltered() else get()
+
+  def getFiltered(): StatsSummary = {
+    get().filterOut(filterRegex)
+  }
 }
 
 /**
@@ -117,9 +136,14 @@ class StatsListener(collection: StatsCollection, startClean: Boolean) {
  * one-minute period, it grabs a snapshot of stats at the top of each minute, and for the rest of
  * the minute, reports these "latched" stats.
  */
-class LatchedStatsListener(collection: StatsCollection, period: Duration, startClean: Boolean)
-extends StatsListener(collection, startClean) {
-  def this(collection: StatsCollection, period: Duration) = this(collection, period, true)
+class LatchedStatsListener(
+  collection: StatsCollection,
+  period: Duration,
+  startClean: Boolean,
+  filters: List[Regex]
+) extends StatsListener(collection, startClean, filters) {
+  def this(collection: StatsCollection, period: Duration, startClean: Boolean) = this(collection, period, startClean, Nil)
+  def this(collection: StatsCollection, period: Duration) = this(collection, period, true, Nil)
 
   @volatile private var counters: Map[String, Long] = Map()
   @volatile private var gauges: Map[String, Double] = Map()

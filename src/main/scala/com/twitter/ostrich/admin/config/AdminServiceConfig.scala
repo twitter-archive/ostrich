@@ -20,6 +20,7 @@ package config
 
 import scala.collection.Map
 import scala.collection.mutable
+import scala.util.matching.Regex
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.util.{Config, Duration}
@@ -86,11 +87,17 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
    */
   var statsNodes: List[StatsConfig] = Nil
 
-
   /**
    * The name of the stats collection to use. The default is "" which is the name for Stats.
    */
   var statsCollectionName: Option[String] = None
+
+  /**
+   * A list of regex patterns to filter out of reported stats when the "filtered" option is given.
+   * This is useful if you know a bunch of stats are being reported that aren't interesting to
+   * graph right now.
+   */
+  var statsFilters: List[Regex] = Nil
 
   /**
    * Extra handlers for the admin web interface.
@@ -105,7 +112,7 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
   var defaultLatchIntervals: List[Duration] = 1.minute :: Nil
 
   def configureStatsListeners(collection: StatsCollection) = {
-    defaultLatchIntervals.map { StatsListener(_, collection) }
+    defaultLatchIntervals.map { StatsListener(_, collection, statsFilters) }
   }
 
   def apply() = { (runtime: RuntimeEnvironment) =>
