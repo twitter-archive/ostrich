@@ -58,7 +58,7 @@ function clickLog() {
 
 // turn an [x, y1, y2...] into [[x, y1], [x, y2], ...]
 function inflateY(vector) {
-  var x = vector.shift();
+  var x = vector.shift() * 1000;
   return vector.map(function(y) { return [x, y]; });
 }
 
@@ -113,11 +113,11 @@ function drawContent() {
 function getData() {
   if ($fake) {
     var rawData = [
-      [ 1283818430000, 12, 14, 20, ],
-      [ 1283818490000, 11, 13, 21, ],
-      [ 1283818550000, 10, 13, 25, ],
-      [ 1283818610000, 13, 15, 23, ],
-      [ 1283818660000, 10, 18, 26, ],
+      [ 1283818430, 12, 14, 20, ],
+      [ 1283818490, 11, 13, 21, ],
+      [ 1283818550, 10, 13, 25, ],
+      [ 1283818610, 13, 15, 23, ],
+      [ 1283818660, 10, 18, 26, ],
     ];
     drawChart(rawData);
   } else {
