@@ -107,7 +107,7 @@ class TimeSeriesCollector(collection: StatsCollection) extends Service {
           val keep = parameters.filter { case (k, v) => k == "p" }.headOption.map { case (k, v) =>
             v.split(",").map { _.toInt }
           }.getOrElse((0 until PERCENTILES.size).toArray)
-          render(get(path.last, keep), exchange, 200, "application/json")
+          render(get(path.drop(1).mkString("/"), keep), exchange, 200, "application/json")
         }
       }
     })
