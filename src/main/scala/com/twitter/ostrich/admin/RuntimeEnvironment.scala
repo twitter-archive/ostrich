@@ -76,7 +76,9 @@ class RuntimeEnvironment(obj: AnyRef) {
   lazy val jarPath: Option[String] = {
     val paths = System.getProperty("java.class.path").split(System.getProperty("path.separator"))
     findCandidateJar(paths, jarName, jarVersion).flatMap { path =>
-      val parent = new File(path).getParentFile
+      val file = new File(path);
+      var parent = file.getParentFile
+      if (parent == null) parent = file.getAbsoluteFile.getParentFile
       if (parent == null) None else Some(parent.getCanonicalPath)
     }
   }
