@@ -134,8 +134,8 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     counter
   }
 
-  def clearCounter(name: String) = {
-      counterMap.remove(name);
+  def removeCounter(name: String) {
+    counterMap.remove(name)
   }
 
   protected def newCounter(name: String) = {
