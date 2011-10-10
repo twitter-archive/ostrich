@@ -16,15 +16,15 @@ package com.twitter.ostrich.stats
  * {{{
  * val c = Stats.getCounter("my_runnable_thread_deaths")
  * val exHandler = new DeathRattleExceptionHandler(c)
- * val myThread = new Thread(myRunnable, "my_runnable")
- * myThread.setExceptionHandler(exHandler)
+ * val myThread = new Thread(myRunnable, "MyRunnable")
+ * myThread.setUncaughtExceptionHandler(exHandler)
  * }}}
  *
  * Setting the global default exception handler should be done first, like so:
  * {{{
  * val c = Stats.getCounter("unhandled_thread_deaths")
  * val ohNoIDidntKnowAboutThis = new DeathRattleExceptionHandler(c)
- * Thread.setDefaultExceptionHandler(ohNoIDidntKnowAboutThis)
+ * Thread.setDefaultUncaughtExceptionHandler(ohNoIDidntKnowAboutThis)
  * }}}
  */
 class DeathRattleExceptionHandler(deathRattle: Counter) extends Thread.UncaughtExceptionHandler {
