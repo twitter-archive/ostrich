@@ -201,6 +201,43 @@ class HeapResourceHandler extends CgiRequestHandler {
   }
 }
 
+/**
+ * Can turn trace recording on and off for the entire service.
+ */
+class TracingHandler extends CgiRequestHandler {
+  private val log = Logger(getClass.getName)
+
+  def handle(exchange: HttpExchange, path: List[String], params: List[(String, String)]) {
+    try {
+      if (!FinagleTracing.instance.isDefined) {
+        render("Finagle tracing not found!", exchange)
+        return
+      }
+    } catch {
+      case _ =>
+        render("Could not initialize Finagle tracing classes. Possibly old version of Finagle.",
+          exchange)
+        return
+    }
+
+    val tracing = FinagleTracing.instance.get
+    val paramsMap = params.toMap
+    val msg = if (paramsMap.get("enable").equals(Some("true"))) {
+      tracing.enable()
+      "Enabled Finagle tracing"
+    } else if (paramsMap.get("disable").equals(Some("true"))) {
+      tracing.disable()
+      "Disabling Finagle tracing"
+    } else {
+      "Could not figure out what you wanted to do with tracing. " +
+        "Either enable or disable it. This is what we got: " + params
+    }
+
+    log.info(msg)
+    render(msg, exchange)
+  }
+}
+
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     if (path == Nil) {
@@ -255,6 +292,7 @@ class AdminHttpService(
   addContext("/favicon.ico", new MissingFileHandler())
   addContext("/static", new FolderResourceHandler("/static"))
   addContext("/pprof/heap", new HeapResourceHandler)
+  addContext("/tracing", new TracingHandler)
 
   httpServer.setExecutor(null)
 
