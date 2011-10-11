@@ -130,8 +130,9 @@ extends BackgroundProcess(name, interruptable) {
   def nextRun: Duration = {
     val t = Time.now + period
     // truncate to nearest round multiple of the desired repeat in seconds.
-    if (period >= 1.second) {
-      Time.fromSeconds((t.inSeconds / period.inSeconds) * period.inSeconds) - Time.now
+    if (period > 1.second) {
+      // add 1 second because we rounded off the seconds.
+      Time.fromSeconds((t.inSeconds / period.inSeconds) * period.inSeconds + 1) - Time.now
     } else {
       t - Time.now
     }
