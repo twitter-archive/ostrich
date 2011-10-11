@@ -5,6 +5,7 @@ release: ???
 - Enable or disable Finagle tracing from the admin http interface.
 - Fix PeriodicBackgroundProcess to delay up to a second, preventing it
   from running at the 59th second of a minute by accident.
+- Add more histogram buckets, to track metrics > 1M.
 
 
 4.9.3
