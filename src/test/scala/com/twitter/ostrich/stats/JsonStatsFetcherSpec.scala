@@ -22,7 +22,6 @@ object JsonStatsFetcherSpec extends Specification {
       val script = TempFile.fromResourcePath("/json_stats_fetcher.rb").getAbsolutePath
 
       doBefore {
-        exec("chmod", "+x", script)
         Stats.clearAll()
         StatsListener.clearAll()
         service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass))
@@ -35,7 +34,7 @@ object JsonStatsFetcherSpec extends Specification {
       }
 
       def getStats = {
-        val process = exec(script, "-w", "-t", "1", "-p", service.address.getPort.toString, "-n")
+        val process = exec("ruby", script, "-w", "-t", "1", "-p", service.address.getPort.toString, "-n")
         process.waitFor()
         Source.fromInputStream(process.getInputStream).mkString.split("\n")
       }
