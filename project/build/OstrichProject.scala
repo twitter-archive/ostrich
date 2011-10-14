@@ -50,7 +50,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
 
   override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
 
-  // We depend on the stuff in the config directory to run tests in a
+  // We depend on the stuff in the scripts directory to run tests in an
   // invocation-path independent manner.
   override def testResources =
     descendents(testResourcesPath ##, "*") +++
