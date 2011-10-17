@@ -6,13 +6,16 @@ import com.twitter.sbt._
 class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with SubversionPublisher
   with DefaultRepos
+  with ProjectDependencies
   with PublishSourcesAndJavadocs
   with PublishSite
 {
-  val utilVersion = "1.10.2"
-  val util = "com.twitter" % "util-core" % utilVersion
-  val eval = "com.twitter" % "util-eval" % utilVersion
-  val logging = "com.twitter" % "util-logging" % utilVersion
+  projectDependencies(
+    "util"     ~ "util-core",
+    "util"     ~ "util-eval",
+    "util"     ~ "util-logging"
+  )
+
   val json = "com.twitter" % "json_2.8.1" % "2.1.6"
 
   // for tests:
@@ -46,4 +49,10 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   override def packagePaths = super.packagePaths +++ ostrichPropertiesPath
 
   override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
+
+  // We depend on the stuff in the scripts directory to run tests in an
+  // invocation-path independent manner.
+  override def testResources =
+    descendents(testResourcesPath ##, "*") +++
+    descendents(sourcePath / "scripts" ##, "*")
 }
