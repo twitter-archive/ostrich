@@ -145,6 +145,11 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("options:")
     println("    -f <path>")
     println("        path of config files (default: %s)".format(configFile))
+    println("    --no-config-compile")
+    println("        don't compile configs to disk (recompile on every process start)")
+    println("    --config-target <path>")
+    println("        use the specified path as the target for config compilation")
+    println("        note: this is relative to the directory containing the config file")
     println("    -D <key>=<value>")
     println("        set or override an optional setting")
     println("    --version")
@@ -156,7 +161,7 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   private def getConfigTarget(): Option[File] = {
-    configTarget flatMap {fileName =>
+    configTarget flatMap { fileName =>
       // if we have a config file, try to make the target dir a subdirectory
       // of the directory the config file lives in (e.g. <my-app>/config/target)
       val targetFile = if (configFile.exists && configFile.getParentFile != null) {
