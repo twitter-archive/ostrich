@@ -42,5 +42,12 @@ class RuntimeEnvironmentSpec extends Specification {
       System.getProperty("foo") mustEqual "bar"
       System.clearProperty("foo")  // allow this test to be run multiple times
     }
+
+    "load a config" in {
+      val runtime = new RuntimeEnvironment(classOf[Object])
+      runtime.parseArgs(List("-f", "src/test/resources/config.scala"))
+      val res: String = runtime.loadConfig()
+      res mustEqual "foo"
+    }
   }
 }
