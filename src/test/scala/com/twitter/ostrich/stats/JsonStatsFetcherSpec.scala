@@ -1,6 +1,7 @@
 package com.twitter.ostrich.stats
 
 import scala.io.Source
+import com.twitter.io.TempFile
 import com.twitter.ostrich.admin._
 import org.specs.Specification
 import org.specs.util.TimeConversions._
@@ -18,9 +19,10 @@ object JsonStatsFetcherSpec extends Specification {
   if (hasRuby) {
     "json_stats_fetcher.rb" should {
       var service: AdminHttpService = null
-      val script = "./src/scripts/json_stats_fetcher.rb"
+      val script = TempFile.fromResourcePath("/json_stats_fetcher.rb").getAbsolutePath
 
       doBefore {
+        exec("chmod", "+x", script)
         Stats.clearAll()
         StatsListener.clearAll()
         service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass))
