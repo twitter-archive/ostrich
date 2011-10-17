@@ -1,3 +1,11 @@
+4.9.5
+-----
+release: 17 October 2011
+- Histograms can be over 1M items
+- Enable/disable finagle tracing from admin interface
+- Fix Time.now rounding
+- Compile configs loaded by RuntimeEnvironment to a directory
+
 4.9.4
 -----
 release: ???
