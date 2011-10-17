@@ -175,6 +175,7 @@ class RuntimeEnvironment(obj: AnyRef) {
         if (targetFile.mkdirs()) {
           Some(targetFile)
         } else {
+          Logger.get("").warning("couldn't make directory %s. will not cache configs", targetFile)
           None
         }
       } else if (!targetFile.isDirectory) {
