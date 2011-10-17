@@ -114,7 +114,7 @@ class RuntimeEnvironment(obj: AnyRef) {
       case "-f" :: filename :: xs =>
         configFile = new File(filename)
         parseArgs(xs)
-      case "--no-config-compile" :: xs =>
+      case "--no-config-cache" :: xs =>
         configTarget = None
         parseArgs(xs)
       case "--config-target" :: filename :: xs =>
@@ -145,7 +145,7 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("options:")
     println("    -f <path>")
     println("        path of config files (default: %s)".format(configFile))
-    println("    --no-config-compile")
+    println("    --no-config-cache")
     println("        don't compile configs to disk (recompile on every process start)")
     println("    --config-target <path>")
     println("        use the specified path as the target for config compilation")
@@ -172,8 +172,11 @@ class RuntimeEnvironment(obj: AnyRef) {
 
       // make sure we can get an actual directory, otherwise fail and return None
       if (!targetFile.exists) {
-        targetFile.mkdirs()
-        Some(targetFile)
+        if (targetFile.mkdirs()) {
+          Some(targetFile)
+        } else {
+          None
+        }
       } else if (!targetFile.isDirectory) {
         throw new IllegalArgumentException("specified target directory %s exists and is not a directory".
                                            format(fileName))
