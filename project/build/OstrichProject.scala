@@ -48,7 +48,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   override def copyResourcesAction = super.copyResourcesAction && makeOstrichProperties
   override def packagePaths = super.packagePaths +++ ostrichPropertiesPath
 
-  override def subversionRepository = Some("http://svn.local.twitter.com/maven-public")
+  override def subversionRepository = Some("http://svn.twitter.biz/maven-public")
 
   // We depend on the stuff in the scripts directory to run tests in an
   // invocation-path independent manner.
