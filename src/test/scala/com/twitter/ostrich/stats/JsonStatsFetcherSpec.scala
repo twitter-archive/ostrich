@@ -16,7 +16,7 @@ object JsonStatsFetcherSpec extends Specification {
     case e: Throwable => false
   }
 
-  if (hasRuby && false /* temporarily disabled */) {
+  if (hasRuby) {
     "json_stats_fetcher.rb" should {
       var service: AdminHttpService = null
       val script = TempFile.fromResourcePath("/json_stats_fetcher.rb").getAbsolutePath

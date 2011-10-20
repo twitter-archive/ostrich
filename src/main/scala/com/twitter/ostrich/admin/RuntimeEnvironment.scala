@@ -22,6 +22,7 @@ import java.util.Properties
 import scala.collection.mutable
 import com.twitter.conversions.string._
 import com.twitter.logging.Logger
+import com.twitter.logging.config._
 import com.twitter.util.{Config, Eval}
 
 object RuntimeEnvironment {
@@ -50,6 +51,8 @@ object RuntimeEnvironment {
  */
 class RuntimeEnvironment(obj: AnyRef) {
   private val buildProperties = new Properties
+  /** the directory in which we'll try to compile configs */
+  private var configTarget: Option[String] = Some("target")
   var arguments: Map[String, String] = Map()
 
   try {
@@ -111,6 +114,12 @@ class RuntimeEnvironment(obj: AnyRef) {
       case "-f" :: filename :: xs =>
         configFile = new File(filename)
         parseArgs(xs)
+      case "--no-config-cache" :: xs =>
+        configTarget = None
+        parseArgs(xs)
+      case "--config-target" :: filename :: xs =>
+        configTarget = Some(filename)
+        parseArgs(xs)
       case "--help" :: xs =>
         help()
       case "--version" :: xs =>
@@ -136,6 +145,11 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("options:")
     println("    -f <path>")
     println("        path of config files (default: %s)".format(configFile))
+    println("    --no-config-cache")
+    println("        don't compile configs to disk (recompile on every process start)")
+    println("    --config-target <path>")
+    println("        use the specified path as the target for config compilation")
+    println("        note: this is relative to the directory containing the config file")
     println("    -D <key>=<value>")
     println("        set or override an optional setting")
     println("    --version")
@@ -146,9 +160,57 @@ class RuntimeEnvironment(obj: AnyRef) {
     System.exit(0)
   }
 
+  private def getConfigTarget(): Option[File] = {
+    configTarget flatMap { fileName =>
+      // if we have a config file, try to make the target dir a subdirectory
+      // of the directory the config file lives in (e.g. <my-app>/config/target)
+      val targetFile = if (configFile.exists && configFile.getParentFile != null) {
+        new File(configFile.getParentFile, fileName)
+      } else {
+        new File(fileName)
+      }
+
+      // make sure we can get an actual directory, otherwise fail and return None
+      if (!targetFile.exists) {
+        if (targetFile.mkdirs()) {
+          Some(targetFile)
+        } else {
+          Logger.get("").warning("couldn't make directory %s. will not cache configs", targetFile)
+          None
+        }
+      } else if (!targetFile.isDirectory) {
+        throw new IllegalArgumentException("specified target directory %s exists and is not a directory".
+                                           format(fileName))
+        None
+      } else {
+        Some(targetFile)
+      }
+    }
+  }
+
+  /**
+   * if we don't have any loggers configured, try to get at least
+   * console output setup. In all likelihood the eval'd config
+   * is going to set this to something more robust, but we at least
+   * need to see errors encountered while processing the config
+   */
+  def initLogs() {
+    if (Logger.get("").getHandlers == null ||
+        Logger.get("").getHandlers.length == 0) {
+      // todo: eventually this should just call Logger.reset()
+      // however for now that's broked
+      val loggerConf = new LoggerConfig {
+        level = Level.ALL
+        handlers = new ConsoleHandlerConfig :: Nil
+      } :: Nil
+      Logger.configure(loggerConf)
+    }
+  }
+
   private def validate() {
+    initLogs()
     try {
-      val eval = new Eval
+      val eval = new Eval(getConfigTarget)
       val config = eval[Config[_]](configFile)
       config.validate()
       println("Config file %s compiles. :)".format(configFile))
@@ -166,8 +228,9 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   def loadConfig[T](): T = {
+    initLogs()
     try {
-      val eval = new Eval
+      val eval = new Eval(getConfigTarget)
       val config = eval[Config[T]](configFile)
       config.validate()
       config()

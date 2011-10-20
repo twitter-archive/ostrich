@@ -1,7 +1,8 @@
 4.9.4
 -----
-release: ???
+release: 17 October 2011
 
+- Compile configs loaded by RuntimeEnvironment to a directory
 - Enable or disable Finagle tracing from the admin http interface.
 - Fix PeriodicBackgroundProcess to delay up to a second, preventing it
   from running at the 59th second of a minute by accident.
