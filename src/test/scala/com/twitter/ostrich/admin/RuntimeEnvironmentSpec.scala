@@ -17,10 +17,13 @@
 package com.twitter.ostrich
 package admin
 
+import com.twitter.io.TempFile
 import org.specs.Specification
 import stats.Histogram
 
 class RuntimeEnvironmentSpec extends Specification {
+  val config = TempFile.fromResourcePath("/config.scala").getAbsolutePath
+
   "RuntimeEnvironment" should {
     "find executable jar path" in {
       val runtime = new RuntimeEnvironment(classOf[Histogram])
@@ -45,7 +48,7 @@ class RuntimeEnvironmentSpec extends Specification {
 
     "load a config" in {
       val runtime = new RuntimeEnvironment(classOf[Object])
-      runtime.parseArgs(List("-f", "src/test/resources/config.scala"))
+      runtime.parseArgs(List("-f", config))
       val res: String = runtime.loadConfig()
       res mustEqual "foo"
     }
