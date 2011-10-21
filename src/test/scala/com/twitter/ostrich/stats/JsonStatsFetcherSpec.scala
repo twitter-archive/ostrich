@@ -11,7 +11,7 @@ object JsonStatsFetcherSpec extends Specification {
 
   val hasRuby = try {
     exec("ruby", "--version")
-    false // <-- change back to true when this works on hudson
+    true
   } catch {
     case e: Throwable => false
   }
