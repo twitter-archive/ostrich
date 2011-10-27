@@ -162,14 +162,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getGauge(name: String) = {
     val gauge = gaugeMap.get(name)
-    if (gauge == null) None else {
+    if (gauge != null) {
       try {
         Some(gauge())
       } catch { case e =>
         log.error(e, "Gauge error: %s", name)
         None
       }
-    }
+    } else None
   }
 
   def getCounters() = {
