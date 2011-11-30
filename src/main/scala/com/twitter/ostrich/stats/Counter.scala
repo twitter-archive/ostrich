@@ -24,7 +24,7 @@ import scala.collection.mutable
  * All operations are atomic and thread-safe.
  */
 class Counter {
-  private val value = new AtomicLong()
+  protected val value = new AtomicLong()
 
   /**
    * Increment the counter by one.

@@ -16,12 +16,13 @@
 
 package com.twitter.ostrich.stats
 
-import java.lang.management._
-import java.util.concurrent.ConcurrentHashMap
-import scala.collection.{Map, mutable, immutable}
 import com.twitter.conversions.string._
 import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Local
+import java.lang.management._
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
+import scala.collection.{Map, mutable, immutable}
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
@@ -125,13 +126,19 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     labelMap.remove(name)
   }
 
-  def getCounter(name: String) = {
+  private[this] def getCounter(name: String, f: => Counter): Counter = {
     var counter = counterMap.get(name)
     while (counter == null) {
-      counter = counterMap.putIfAbsent(name, newCounter(name))
+      counter = counterMap.putIfAbsent(name, f)
       counter = counterMap.get(name)
     }
     counter
+  }
+
+  def getCounter(name: String): Counter = getCounter(name, newCounter(name))
+
+  def makeCounter(name: String, atomic: AtomicLong): Counter = {
+    getCounter(name, new Counter { override val value = atomic })
   }
 
   def removeCounter(name: String) {
