@@ -128,7 +128,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   private[this] def getCounter(name: String, f: => Counter): Counter = {
     var counter = counterMap.get(name)
-    while (counter == null) {
+    if (counter == null) {
       counter = counterMap.putIfAbsent(name, f)
       counter = counterMap.get(name)
     }
@@ -138,7 +138,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getCounter(name: String): Counter = getCounter(name, newCounter(name))
 
   def makeCounter(name: String, atomic: AtomicLong): Counter = {
-    getCounter(name, new Counter { override val value = atomic })
+    getCounter(name, new Counter(atomic))
   }
 
   def removeCounter(name: String) {

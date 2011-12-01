@@ -23,8 +23,8 @@ import scala.collection.mutable
  * A Counter simply keeps track of how many times an event occurred.
  * All operations are atomic and thread-safe.
  */
-class Counter {
-  protected val value = new AtomicLong()
+class Counter(value: AtomicLong) {
+  def this() = this(new AtomicLong())
 
   /**
    * Increment the counter by one.
