@@ -11,9 +11,9 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with PublishSite
 {
   projectDependencies(
-    "util"     ~ "util-core",
-    "util"     ~ "util-eval",
-    "util"     ~ "util-logging"
+    "util"     ~ "util-core_2.9.1",
+    "util"     ~ "util-eval_2.9.1",
+    "util"     ~ "util-logging_2.9.1"
   )
 
   val json = "com.twitter" % "json_2.8.1" % "2.1.6"
