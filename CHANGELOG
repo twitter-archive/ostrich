@@ -1,3 +1,10 @@
+4.10.1
+------
+release: XXX
+
+- Allow counters to be generated out of AtomicLong objects.
+
+
 4.10.0
 ------
 release: 20 October 2011
