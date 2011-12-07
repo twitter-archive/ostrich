@@ -20,7 +20,8 @@ package com.twitter.ostrich.stats
  * myThread.setUncaughtExceptionHandler(exHandler)
  * }}}
  *
- * Setting the global default exception handler should be done first, like so:
+ * Setting the global default exception handler is handled for you if you use RuntimeEnvironment config loading, but
+ * can also be done by yourself like so:
  * {{{
  * val c = Stats.getCounter("unhandled_thread_deaths")
  * val ohNoIDidntKnowAboutThis = new DeathRattleExceptionHandler(c)
