@@ -162,6 +162,10 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     new Metric()
   }
 
+  def removeMetric(name: String): Option[Metric] = {
+    Option(metricMap.remove(name))
+  }
+
   def getLabel(name: String) = {
     val value = labelMap.get(name)
     if (value == null) None else Some(value)
