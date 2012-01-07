@@ -169,7 +169,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getGauge(name: String) = {
     val gauge = gaugeMap.get(name)
-    if (gauge == null) None else Some(gauge())
+    if (gauge != null) {
+      try {
+        Some(gauge())
+      } catch { case e =>
+        log.error(e, "Gauge error: %s", name)
+        None
+      }
+    } else None
   }
 
   def getCounters() = {
@@ -193,7 +200,11 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
     for ((key, gauge) <- gaugeMap.asScala) {
-      gauges += (key -> gauge())
+      try {
+        gauges += (key -> gauge())
+      } catch { case e =>
+        log.error(e, "Gauge error: %s", key)
+      }
     }
     gauges
   }

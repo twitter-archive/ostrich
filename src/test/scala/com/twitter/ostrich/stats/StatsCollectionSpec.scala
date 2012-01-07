@@ -217,6 +217,12 @@ object StatsCollectionSpec extends Specification {
         collection.getGauges() mustEqual Map("stew" -> 11.0)
       }
 
+      "swallow exceptions" in {
+        collection.addGauge("YIKES") { throw new RuntimeException("YIKES") }
+        collection.getGauges() mustEqual Map.empty[String, Double]
+        collection.getGauge("YIKES") mustEqual None
+      }
+
       "clearGauge" in {
         collection.setGauge("stew", 11.0)
         collection.clearGauge("stew")
