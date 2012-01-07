@@ -1,3 +1,8 @@
+4.10.2-SNAPSHOT XXX
+------
+- Handle errors in gauges.
+- Use a configurable separator when flattening metric names.
+
 4.10.1
 ------
 release: XXX
