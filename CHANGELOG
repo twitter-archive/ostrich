@@ -1,8 +1,19 @@
+4.10.3-SNAPSHOT XXX
+------
+- Handle errors in gauges.
+- Use a configurable separator when flattening metric names.
+
 4.10.2
 ------
 release: 20 October 2011
 
 - Compiled against util 1.12.9
+
+4.10.1
+------
+release: XXX
+
+- Allow counters to be generated out of AtomicLong objects.
 
 4.10.0
 ------

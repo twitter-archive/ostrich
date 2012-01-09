@@ -29,7 +29,7 @@ import admin.PeriodicBackgroundProcess
  * Log all collected stats as a json line to a java logger at a regular interval.
  */
 class JsonStatsLogger(val logger: Logger, val period: Duration, val serviceName: Option[String],
-                      collection: StatsCollection)
+                      collection: StatsCollection, separator: String = "_")
 extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
   def this(logger: Logger, period: Duration) = this(logger, period, None, Stats)
 
@@ -45,7 +45,7 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
       } ++
       stats.metrics.flatMap { case (key, distribution) =>
         distribution.toMap.map { case (subkey, value) =>
-          (key + "_" + subkey, value)
+          (key + separator + subkey, value)
         }
       } ++
       Map(

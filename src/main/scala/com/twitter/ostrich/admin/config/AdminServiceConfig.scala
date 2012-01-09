@@ -32,9 +32,10 @@ class JsonStatsLoggerConfig extends StatsReporterConfig {
   var loggerName: String = "stats"
   var period: Duration = 1.minute
   var serviceName: Option[String] = None
+  var separator = "_"
 
   def apply() = { (collection: StatsCollection, admin: AdminHttpService) =>
-    new JsonStatsLogger(Logger.get(loggerName), period, serviceName, collection)
+    new JsonStatsLogger(Logger.get(loggerName), period, serviceName, collection, separator)
   }
 }
 
