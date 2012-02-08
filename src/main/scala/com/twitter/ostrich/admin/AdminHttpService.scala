@@ -257,7 +257,13 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
         val commandResponse = commandHandler(command, parameterMap, format)
 
         if (parameterMap.keySet.contains("callback") && (format == Format.Json)) {
-          "ostrichCallback(%s)".format(commandResponse)
+          val callbackName = parameterMap.get("callback") match {
+              case Some("true") => "ostrichCallback"
+              case Some("") => "ostrichCallback" // Just in case callback= shows up
+              case Some(x) => x
+              case None => "ostrichCallBack" // This shouldn't happen
+          }
+          "%s(%s)".format(callbackName,commandResponse)
         } else {
           commandResponse
         }
