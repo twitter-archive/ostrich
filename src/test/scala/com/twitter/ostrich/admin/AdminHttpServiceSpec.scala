@@ -306,6 +306,18 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         stats.endsWith(")") mustBe true
       }
 
+      "in json, with named callback" in {
+        val stats = get("/stats.json?callback=My.Awesome.Callback")
+        stats.startsWith("My.Awesome.Callback(") mustBe true
+        stats.endsWith(")") mustBe true
+      }
+
+      "in json, with empty callback" in {
+        val stats = get("/stats.json?callback=")
+        stats.startsWith("ostrichCallback(") mustBe true
+        stats.endsWith(")") mustBe true
+      }
+
       "in text" in {
         // make some statsy things happen
         Stats.clearAll()
