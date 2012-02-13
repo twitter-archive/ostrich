@@ -1,4 +1,6 @@
-4.10.3-SNAPSHOT XXX
+4.10.5-SNAPSHOT  XXX
+
+4.10.4
 ------
 - Handle errors in gauges.
 - Use a configurable separator when flattening metric names.
