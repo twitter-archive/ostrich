@@ -1,9 +1,21 @@
-4.10.5-SNAPSHOT  XXX
-
-4.10.4
+4.10.6
 ------
-- Handle errors in gauges.
+release: XXX
+
+- Build for both scala 2.8.1 and scala 2.9.1.
+- Add support for named JSONP callbacks. [gphat]
+- Add support for exporting to graphite. [ewhauser]
+
+
+4.10.3
+------
+release: 24 January 2012
+
+- Allow counters to be generated out of AtomicLong objects.
+- Add the ability to remove a metric.
+- Handle exceptions thrown by gauges.
 - Use a configurable separator when flattening metric names.
+
 
 4.10.2
 ------
@@ -11,11 +23,6 @@ release: 20 October 2011
 
 - Compiled against util 1.12.9
 
-4.10.1
-------
-release: XXX
-
-- Allow counters to be generated out of AtomicLong objects.
 
 4.10.0
 ------
