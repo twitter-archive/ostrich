@@ -11,15 +11,15 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with PublishSite
 {
   projectDependencies(
-    "util"     ~ "util-core",
-    "util"     ~ "util-eval",
-    "util"     ~ "util-logging"
+    "util"     ~ "util-core_2.9.1",
+    "util"     ~ "util-eval_2.9.1",
+    "util"     ~ "util-logging_2.9.1"
   )
 
   val json = "com.twitter" % "json_2.8.1" % "2.1.6"
 
   // for tests:
-  val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"
+  val specs = "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
   val cglib = "cglib" % "cglib" % "2.1_3" % "test"
   val asm = "asm" % "asm" % "1.5.3" % "test"
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
