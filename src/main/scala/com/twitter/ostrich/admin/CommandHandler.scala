@@ -20,7 +20,8 @@ package admin
 import java.io._
 import java.lang.management.ManagementFactory
 import java.util.Date
-import scala.collection.{JavaConversions, Map}
+import scala.collection.JavaConverters._
+import scala.collection.Map
 import scala.collection.immutable
 import com.twitter.conversions.time._
 import com.twitter.json.Json
@@ -130,7 +131,7 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
   }
 
   private def getThreadStacks(): Map[String, Map[String, Map[String, Any]]] = {
-    val stacks = JavaConversions.asScalaMap(Thread.getAllStackTraces()).map { case (thread, stack) =>
+    val stacks = Thread.getAllStackTraces().asScala.map { case (thread, stack) =>
       (thread.getId().toString, immutable.Map("thread" -> thread.getName(),
                                               "daemon" -> thread.isDaemon(),
                                               "state" -> thread.getState(),
