@@ -10,16 +10,30 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with PublishSourcesAndJavadocs
   with PublishSite
 {
-  projectDependencies(
-    "util"     ~ "util-core",
-    "util"     ~ "util-eval",
-    "util"     ~ "util-logging"
-  )
+  buildScalaVersion match {
+    case "2.8.1" => {
+      projectDependencies(
+        "util"     ~ "util-core",
+        "util"     ~ "util-eval",
+        "util"     ~ "util-logging"
+      )
+    }
+    case "2.9.1" => {
+      projectDependencies(
+        "util"     ~ "util-core_2.9.1",
+        "util"     ~ "util-eval_2.9.1",
+        "util"     ~ "util-logging_2.9.1"
+      )
+    }
+  }
 
-  val json = "com.twitter" % "json_2.8.1" % "2.1.6"
+  val json = "com.twitter" %% "json" % "2.1.7"
 
   // for tests:
-  val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"
+  val specs = buildScalaVersion match {
+    case "2.8.1" => "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"
+    case "2.9.1" => "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
+  }
   val cglib = "cglib" % "cglib" % "2.1_3" % "test"
   val asm = "asm" % "asm" % "1.5.3" % "test"
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
@@ -34,6 +48,9 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
         <distribution>repo</distribution>
       </license>
     </licenses>
+
+  // use "ostrich_<scalaversion>" as the published name:
+  override def disableCrossPaths = false
 
   def ostrichPropertiesPath = (mainResourcesOutputPath ##) / "ostrich.properties"
   lazy val makeOstrichProperties = task {
