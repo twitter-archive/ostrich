@@ -52,7 +52,7 @@ object GraphiteStatsLoggerSpec extends Specification with JMocker with ClassMock
       collection.incr("cats")
       collection.incr("dogs", 3)
       statsLogger.write(socket)
-      val lines = getLines()
+      val lines = getLines().sorted
       lines(0) must beMatching("server_pool.unknown.cats 1.00 [0-9]+")
       lines(1) must beMatching("server_pool.unknown.dogs 3.00 [0-9]+")
     }
@@ -62,9 +62,9 @@ object GraphiteStatsLoggerSpec extends Specification with JMocker with ClassMock
         collection.time("zzz") { time advance 10.milliseconds }
         collection.time("zzz") { time advance 20.milliseconds }
         statsLogger.write(socket)
-        val lines = getLines()
+        val lines = getLines().sorted
         lines(0) must beMatching("server_pool.unknown.zzz_msec_average 15.00 [0-9]+")
-        lines(1) must beMatching("server_pool.unknown.zzz_msec_p99 19.00 [0-9]+")
+        lines(9) must beMatching("server_pool.unknown.zzz_msec_p99 19.00 [0-9]+")
       }
     }
 
@@ -72,9 +72,9 @@ object GraphiteStatsLoggerSpec extends Specification with JMocker with ClassMock
       collection.setGauge("horse", 3.5)
       collection.setGauge("cow", 123456789.0)
       statsLogger.write(socket)
-      val lines = getLines()
-      lines(0) must beMatching("server_pool.unknown.horse 3.50 [0-9]+")
-      lines(1) must beMatching("server_pool.unknown.cow 123456789.00 [0-9]+")
+      val lines = getLines().sorted
+      lines(0) must beMatching("server_pool.unknown.cow 123456789.00 [0-9]+")
+      lines(1) must beMatching("server_pool.unknown.horse 3.50 [0-9]+")
     }
   }
 }

@@ -17,6 +17,7 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
+import com.twitter.ostrich.admin.PeriodicBackgroundProcess
 import org.specs.Specification
 import org.specs.util.Duration
 
@@ -145,8 +146,11 @@ object StatsListenerSpec extends Specification {
   "LatchedStatsListener instance" should {
     "latch to the top of a period" in {
       val collection = new StatsCollection()
-      val listener = new LatchedStatsListener(collection, 1.second)
-      val wait = new Duration(500)
+      val listener = new LatchedStatsListener(collection, 1.second) {
+        override lazy val service = new PeriodicBackgroundProcess("", 1.second) {
+          def periodic() { }
+        }
+      }
 
       var gauge = 0
       collection.incr("counter", 5)
@@ -159,7 +163,9 @@ object StatsListenerSpec extends Specification {
       listener.getLabels() mustEqual Map()
       listener.getMetrics() mustEqual Map()
 
-      listener.getCounters() must eventually(3, wait)(beEqualTo(Map("counter" -> 5)))
+      listener.nextLatch()
+
+      listener.getCounters() mustEqual Map("counter" -> 5)
       listener.getGauges() mustEqual Map("gauge" -> 0)
       listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
       listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
@@ -168,12 +174,15 @@ object StatsListenerSpec extends Specification {
       synchronized { gauge = 37 }
       collection.setLabel("label", "EEPEEPIAMAMONKEY")
       collection.addMetric("metric", Distribution(Histogram(3, 4, 5)))
+
       listener.getCounters() mustEqual Map("counter" -> 5)
       listener.getGauges() mustEqual Map("gauge" -> 0)
       listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
       listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
 
-      listener.getCounters() must eventually(3, wait)(beEqualTo(Map("counter" -> 3)))
+      listener.nextLatch()
+
+      listener.getCounters() mustEqual Map("counter" -> 3)
       listener.getGauges() mustEqual Map("gauge" -> 37)
       listener.getLabels() mustEqual Map("label" -> "EEPEEPIAMAMONKEY")
       listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(3, 4, 5)))
