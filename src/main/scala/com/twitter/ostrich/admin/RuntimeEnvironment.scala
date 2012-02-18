@@ -189,21 +189,14 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   /**
-   * if we don't have any loggers configured, try to get at least
-   * console output setup. In all likelihood the eval'd config
-   * is going to set this to something more robust, but we at least
-   * need to see errors encountered while processing the config
+   * If we don't have any loggers configured, try to get at least console output setup. In all
+   * likelihood the eval'd config is going to set this to something more robust, but we at least
+   * need to see errors encountered while processing the config. We also may need to rebuild this
+   * if a config file threw an exception before getting around to setting up logging.
    */
   def initLogs() {
-    if (Logger.get("").getHandlers == null ||
-        Logger.get("").getHandlers.length == 0) {
-      // todo: eventually this should just call Logger.reset()
-      // however for now that's broked
-      val loggerConf = new LoggerConfig {
-        level = Level.ALL
-        handlers = new ConsoleHandlerConfig :: Nil
-      } :: Nil
-      Logger.configure(loggerConf)
+    if ((Logger.get("").getHandlers eq null) || Logger.get("").getHandlers.length == 0) {
+      Logger.reset()
     }
   }
 
@@ -236,16 +229,19 @@ class RuntimeEnvironment(obj: AnyRef) {
       config()
     } catch {
       case e: Eval.CompilerException =>
+        initLogs()
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         Logger.get("").fatal(e.messages.flatten.mkString("\n"))
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
       case e: Config.RequiredValuesMissing =>
+        initLogs()
         Logger.get("").fatal("Required values missing in config file %s:".format(configFile))
         Logger.get("").fatal(e.getMessage)
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
       case e =>
+        initLogs()
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
@@ -253,6 +249,14 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   def loadRuntimeConfig[T](): T = {
-    loadConfig[RuntimeEnvironment => T]()(this)
+    try {
+      loadConfig[RuntimeEnvironment => T]()(this)
+    } catch {
+      case e =>
+        initLogs()
+        Logger.get("").fatal(e, "Error in config file: %s", configFile)
+        System.exit(1)
+        throw new Exception("which will never execute because of the System.exit above me.")
+    }
   }
 }
