@@ -1,10 +1,11 @@
 4.10.6
 ------
-release: XXX
+release: 21 February 2012
 
 - Build for both scala 2.8.1 and scala 2.9.1.
 - Add support for named JSONP callbacks. [gphat]
 - Add support for exporting to graphite. [ewhauser]
+- Work extra hard to log errors to stderr during startup.
 
 
 4.10.3
