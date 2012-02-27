@@ -50,7 +50,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
     </licenses>
 
   // use "ostrich_<scalaversion>" as the published name:
-  override def disableCrossPaths = false
+  //override def disableCrossPaths = false
 
   def ostrichPropertiesPath = (mainResourcesOutputPath ##) / "ostrich.properties"
   lazy val makeOstrichProperties = task {
