@@ -57,4 +57,10 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
 
     logger.info(Json.build(Map(cleanedKeysStatMap.toSeq: _*)).toString)
   }
+
+  // Try and flush the stats when we're shutting down.
+  override def shutdown() {
+    periodic()
+    super.shutdown()
+  }
 }
