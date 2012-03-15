@@ -1,3 +1,9 @@
+6.0.0
+-----
+release: 14 March 2012
+
+- Try and flush JSON stats when shutting down
+
 4.10.6
 ------
 release: 21 February 2012
