@@ -282,7 +282,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
 }
 
 class AdminHttpService(
-  port: Int, backlog: Int, statsCollection: StatsCollection, runtime: RuntimeEnvironment
+  val port: Int, backlog: Int, statsCollection: StatsCollection, runtime: RuntimeEnvironment
 ) extends Service {
   def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
     this(port, backlog, Stats, runtime)
