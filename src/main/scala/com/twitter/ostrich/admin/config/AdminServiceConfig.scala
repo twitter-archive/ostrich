@@ -19,7 +19,6 @@ package admin
 package config
 
 import scala.collection.Map
-import scala.collection.mutable
 import scala.util.matching.Regex
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
@@ -105,7 +104,7 @@ class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpSe
    * Each key is a path prefix, and each value is the handler to invoke for that path. You can use
    * this to setup extra functionality for the admin web interface.
    */
-  var extraHandlers: Map[String, CustomHttpHandler] = new mutable.HashMap[String, CustomHttpHandler]
+  var extraHandlers: Map[String, CustomHttpHandler] = Map()
 
   /**
    * Default LatchedStatsListener intervals
