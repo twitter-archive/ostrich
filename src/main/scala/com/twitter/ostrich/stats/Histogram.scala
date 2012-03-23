@@ -21,8 +21,8 @@ import scala.annotation.tailrec
 
 object Histogram {
   /**
-   * Given an error (+/-, in percent), compute all the bucket values from 1 until we run out of
-   * positive 32-bit ints.
+   * Given an error (+/-), compute all the bucket values from 1 until we run out of positive
+   * 32-bit ints. The error should be in percent, between 0.0 and 1.0.
    *
    * Each bucket's value will be the midpoint of an error range to the edge of the bucket in each
    * direction, so for example, given a 5% error range (the default), the bucket with value N will
@@ -42,7 +42,7 @@ object Histogram {
     (Seq(1) ++ build(factor, 1.0).map(_.toInt + 1).distinct.force).toArray
   }
 
-  val bucketCache = new ConcurrentHashMap[Double, Array[Int]]()
+  private[this] val bucketCache = new ConcurrentHashMap[Double, Array[Int]]()
 
   def bucketsFor(error: Double): Array[Int] = {
     val rv = bucketCache.get(error)
