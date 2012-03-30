@@ -97,23 +97,14 @@ class RuntimeEnvironment(obj: AnyRef) {
    * Config file, as determined from this jar's runtime path, possibly
    * overridden by a command-line option.
    */
-  var configFile: File = jarPath match {
-      case Some(path) => toConfigFile(path)
-      case None => lookupInLocal map (toConfigFile) getOrElse new java.io.File("/etc/" + jarName + ".conf")
-    }    
-
-    def toConfigFile(configParentPath: String) = 
-      new java.io.File(configParentPath + "/config/" + stageName + ".scala") 
-
-    lazy val lookupInLocal = {
-      val file: File = File("config/" + stageName + ".scala")
-      file match {
-        case fileExists if fileExists.exists =>
-          val configDirectory = fileExists.toAbsolute.parent
-          Some(configDirectory.parent.path)
-        case _ => None
-      }
-    }
+  var configFile: File = jarPath map { path =>
+    new File(path + "/config/" + stageName + ".scala")
+  } orElse {
+    val file = new File("./config/" + stageName + ".scala")
+    if (file.exists) Some(file.getAbsoluteFile) else None
+  } getOrElse {
+    new File("/etc/" + jarName + ".conf")
+  }
 
   /**
    * Perform baseline command-line argument parsing.
