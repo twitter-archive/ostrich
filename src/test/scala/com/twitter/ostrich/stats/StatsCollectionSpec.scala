@@ -22,9 +22,9 @@ import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
 import com.twitter.util.{Time, Future}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object StatsCollectionSpec extends Specification {
+class StatsCollectionSpec extends SpecificationWithJUnit {
   "StatsCollection" should {
     val collection = new StatsCollection()
 

@@ -18,9 +18,9 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
 import com.twitter.util.Time
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object StatsSpec extends Specification {
+class StatsSpec extends SpecificationWithJUnit {
   "Stats" should {
     "delta" in {
       Stats.delta(0, 5) mustEqual 5

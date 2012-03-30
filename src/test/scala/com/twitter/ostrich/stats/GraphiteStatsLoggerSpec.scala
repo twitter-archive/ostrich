@@ -19,13 +19,13 @@ package stats
 
 import com.twitter.conversions.time._
 import com.twitter.util.Time
-import org.specs.Specification
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
+import org.specs.SpecificationWithJUnit
 import org.specs.mock.{ClassMocker, JMocker}
 import java.net.Socket
 import java.io.ByteArrayOutputStream
 
-object GraphiteStatsLoggerSpec extends Specification with JMocker with ClassMocker {
+class GraphiteStatsLoggerSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
   "GraphiteStatsLogger" should {
     var out = new ByteArrayOutputStream
 

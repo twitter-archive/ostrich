@@ -17,9 +17,9 @@
 package com.twitter.ostrich
 
 import com.twitter.logging.{Level, Logger}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-trait ConfiguredSpecification extends Specification {
+trait ConfiguredSpecification extends SpecificationWithJUnit {
   noDetailedDiffs()
 
   Logger.reset()

@@ -18,10 +18,10 @@ package com.twitter.ostrich
 package admin
 
 import com.twitter.io.TempFile
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import stats.Histogram
 
-class RuntimeEnvironmentSpec extends Specification {
+class RuntimeEnvironmentSpec extends SpecificationWithJUnit {
   val config = TempFile.fromResourcePath("/config.scala").getAbsolutePath
 
   "RuntimeEnvironment" should {

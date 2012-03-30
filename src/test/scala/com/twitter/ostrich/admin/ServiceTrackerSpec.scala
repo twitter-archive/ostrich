@@ -21,11 +21,11 @@ import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.mock.JMocker
 import stats.Stats
 
-object ServiceTrackerSpec extends Specification with JMocker {
+class ServiceTrackerSpec extends SpecificationWithJUnit with JMocker {
   "ServiceTracker" should {
     val service = mock[Service]
 

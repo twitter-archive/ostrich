@@ -23,11 +23,11 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.util.DataTables
 import stats.{Stats, StatsListener}
 
-object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
+class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   def get(path: String): String = {
     val port = service.address.getPort
     val url = new URL("http://localhost:%s%s".format(port, path))

@@ -23,11 +23,11 @@ import scala.io.Source
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.mock.{ClassMocker, JMocker}
 import stats.{JsonStatsLogger, Stats, StatsListener, W3CStatsLogger}
 
-class AdminServiceConfigSpec extends Specification with JMocker with ClassMocker {
+class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
   val port = 9990
   var service: AdminHttpService = null
   val runtime = mock[RuntimeEnvironment]
