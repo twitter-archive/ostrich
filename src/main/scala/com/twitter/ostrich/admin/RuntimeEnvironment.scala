@@ -97,9 +97,13 @@ class RuntimeEnvironment(obj: AnyRef) {
    * Config file, as determined from this jar's runtime path, possibly
    * overridden by a command-line option.
    */
-  var configFile: File = jarPath match {
-    case Some(path) => new File(path + "/config/" + stageName + ".scala")
-    case None => new File("/etc/" + jarName + ".conf")
+  var configFile: File = jarPath map { path =>
+    new File(path + "/config/" + stageName + ".scala")
+  } orElse {
+    val file = new File("./config/" + stageName + ".scala")
+    if (file.exists) Some(file.getAbsoluteFile) else None
+  } getOrElse {
+    new File("/etc/" + jarName + ".conf")
   }
 
   /**
