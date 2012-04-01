@@ -64,7 +64,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
     None
   }
   override def copyResourcesAction = super.copyResourcesAction && makeOstrichProperties
-  override def packagePaths = super.packagePaths +++ ostrichPropertiesPath
+  override def packagePaths = super.packagePaths --- (mainResourcesPath / "ostrich.properties") +++ ostrichPropertiesPath
 
   override def subversionRepository = Some("https://svn.twitter.biz/maven-public")
 
