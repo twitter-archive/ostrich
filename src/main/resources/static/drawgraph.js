@@ -97,7 +97,7 @@ function drawContent() {
   $("input[name=log]").attr("checked", $params["log"] > 0);
   $("#display_lines").append("<p />");
 
-  if ($params["g"].substr(0, 7) == "timing:") {
+  if ($params["g"].substr(0, 7) == "metric:") {
     $timing = true;
     for (i = 0; i < percentiles.length; i++) {
       $("#display_lines").append("<input type=checkbox name=box" + i + " onClick=\"clickBox(" + i + ")\" /> " + percentiles[i] + "<br />");
