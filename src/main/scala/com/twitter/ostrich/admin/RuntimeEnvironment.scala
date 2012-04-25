@@ -22,7 +22,6 @@ import java.util.Properties
 import scala.collection.mutable
 import com.twitter.conversions.string._
 import com.twitter.logging.Logger
-import com.twitter.logging.config._
 import com.twitter.util.{Config, Eval}
 
 object RuntimeEnvironment {

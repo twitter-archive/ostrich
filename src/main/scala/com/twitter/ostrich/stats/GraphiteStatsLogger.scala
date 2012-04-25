@@ -22,13 +22,14 @@ import java.io.{IOException, OutputStreamWriter}
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.ostrich.admin.config.StatsReporterConfig
-import com.twitter.ostrich.admin.{AdminHttpService, PeriodicBackgroundProcess}
+import com.twitter.ostrich.admin.{AdminHttpService, PeriodicBackgroundProcess, StatsReporterFactory}
 import com.twitter.util.Duration
 
 /**
  * Write stats to Graphite.  Both a prefix and/or a service name can be
  * provided to be appended to the front of the metric keys.
  */
+@deprecated("use GraphiteStatsLoggerFactory")
 class GraphiteStatsLoggerConfig extends StatsReporterConfig {
   var period: Duration = 1.minute
   var serviceName: Option[String] = None
@@ -39,6 +40,18 @@ class GraphiteStatsLoggerConfig extends StatsReporterConfig {
   def apply() = { (collection: StatsCollection, admin: AdminHttpService) =>
     new GraphiteStatsLogger(host, port, period, prefix, serviceName, collection)
   }
+}
+
+class GraphiteStatsLoggerFactory(
+    period: Duration = 1.minute,
+    serviceName: Option[String] = None,
+    prefix: String = "unknown",
+    host: String = "localhost",
+    port: Int = 2013)
+  extends StatsReporterFactory {
+
+  def apply(collection: StatsCollection, admin: AdminHttpService) =
+    new GraphiteStatsLogger(host, port, period, prefix, serviceName, collection)
 }
 
 /**

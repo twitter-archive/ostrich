@@ -25,8 +25,10 @@ import com.twitter.logging.Logger
 import com.twitter.util.{Config, Duration}
 import stats._
 
+@deprecated("use StatsReporterFactory")
 abstract class StatsReporterConfig extends Config[(StatsCollection, AdminHttpService) => Service]
 
+@deprecated("use JsonStatsLoggerFactory")
 class JsonStatsLoggerConfig extends StatsReporterConfig {
   var loggerName: String = "stats"
   var period: Duration = 1.minute
@@ -38,6 +40,7 @@ class JsonStatsLoggerConfig extends StatsReporterConfig {
   }
 }
 
+@deprecated("use W3CStatsLoggerFactory")
 class W3CStatsLoggerConfig extends StatsReporterConfig {
   var loggerName: String = "w3c"
   var period: Duration = 1.minute
@@ -47,6 +50,7 @@ class W3CStatsLoggerConfig extends StatsReporterConfig {
   }
 }
 
+@deprecated("use TimeSeriesCollectorFactory")
 class TimeSeriesCollectorConfig extends StatsReporterConfig {
   def apply() = { (collection: StatsCollection, admin: AdminHttpService) =>
     val service = new TimeSeriesCollector(collection)
@@ -55,6 +59,7 @@ class TimeSeriesCollectorConfig extends StatsReporterConfig {
   }
 }
 
+@deprecated("use StatsFactory")
 class StatsConfig extends Config[AdminHttpService => StatsCollection] {
   var name: String = ""
   var reporters: List[StatsReporterConfig] = Nil
@@ -70,6 +75,7 @@ class StatsConfig extends Config[AdminHttpService => StatsCollection] {
   }
 }
 
+@deprecated("use AdminServiceFactory")
 class AdminServiceConfig extends Config[RuntimeEnvironment => Option[AdminHttpService]] {
   /**
    * (optional) HTTP port.
