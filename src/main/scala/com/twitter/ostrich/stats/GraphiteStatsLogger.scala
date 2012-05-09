@@ -85,19 +85,19 @@ class GraphiteStatsLogger(val host: String, val port: Int, val period: Duration,
             epoch))
         }}
       } catch {
-        case e: IOException => logger.error("Error writing data to graphite", e)
+        case e: IOException => logger.error("Error writing data to graphite: %s", e.getMessage)
       }
 
       writer.flush()
     } catch {
       case e: Exception =>
-        logger.error("Error writing to Graphite: {}", e.getMessage)
+        logger.error("Error writing to Graphite: %s", e.getMessage)
         if (writer != null) {
           try {
             writer.flush()
           } catch {
             case ioe: IOException =>
-              logger.error("Error while flushing writer:", ioe)
+              logger.error("Error while flushing writer: %s", ioe.getMessage)
           }
         }
     } finally {
@@ -105,7 +105,7 @@ class GraphiteStatsLogger(val host: String, val port: Int, val period: Duration,
         try {
           sock.close();
         } catch {
-          case ioe: IOException => logger.error("Error while closing socket:", ioe)
+          case ioe: IOException => logger.error("Error while closing socket: %s", ioe.getMessage)
         }
       }
       writer = null
