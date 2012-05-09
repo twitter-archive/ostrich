@@ -53,7 +53,11 @@ class GraphiteStatsLogger(val host: String, val port: Int, val period: Duration,
   val hostname = InetAddress.getLocalHost.getCanonicalHostName
 
   def periodic() {
-    write(new Socket(host, port))
+    try {
+      write(new Socket(host, port))
+    } catch {
+      case e: IOException => logger.error("Error connecting to graphite: %s", e.getMessage)
+    }
   }
 
   def write(sock: Socket) {
