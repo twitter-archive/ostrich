@@ -175,7 +175,7 @@ begin
     end
   else # print a report to stdout
     report = metrics.map do |name, value, units|
-      "#{$ganglia_prefix}#{name}=#{value}"
+      "#{$ganglia_group}/#{$ganglia_prefix}#{name}=#{value}"
     end.join("\n")
     puts report
   end
