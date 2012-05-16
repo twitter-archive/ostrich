@@ -16,6 +16,7 @@ require 'open-uri'
 $ostrich3 = false # guessed ostrich version
 $report_to_ganglia = true
 $ganglia_prefix = ''
+$ganglia_group = ''
 $stat_timeout = 5*60
 $pattern = /^x-/
 
@@ -34,6 +35,7 @@ def usage(port)
   puts "    -i <pattern>    ignore all stats matching pattern (default: #{$pattern.inspect})"
   puts "    -p <port>       connect to another port (default: #{port})"
   puts "    -P <prefix>     optional prefix for ganglia names"
+  puts "    -g <group>      optional ganglia group"
   puts "    -t <period>     optional latch period (Ostrich-4.5+)"
   puts
 end
@@ -45,6 +47,7 @@ opts = GetoptLong.new(
   [ '-i', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-p', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-P', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '-g', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-t', GetoptLong::REQUIRED_ARGUMENT ],
   [ '-w', GetoptLong::NO_ARGUMENT ]
   )
@@ -64,6 +67,8 @@ opts.each do |opt, arg|
     port = arg.to_i
   when '-P'
     $ganglia_prefix = arg
+  when '-g'
+    $ganglia_group = arg
   when '-t'
     period = arg.to_i
   when '-w'
@@ -161,7 +166,7 @@ begin
   if $report_to_ganglia # call gmetric for metrics
     metrics.each_slice(100) do |some_metrics|
       cmd = some_metrics.map do |name, value, units|
-        "gmetric -t float -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}"
+        "gmetric -t float -g \"#{$ganglia-group}\" -n \"#{$ganglia_prefix}#{name}\" -v \"#{value}\" -u \"#{units}\" -d #{$stat_timeout}"
       end.join("\n")
       res = system cmd
       unless res
@@ -170,7 +175,7 @@ begin
     end
   else # print a report to stdout
     report = metrics.map do |name, value, units|
-      "#{$ganglia_prefix}#{name}=#{value}"
+      "#{$ganglia_group}/#{$ganglia_prefix}#{name}=#{value}"
     end.join("\n")
     puts report
   end
