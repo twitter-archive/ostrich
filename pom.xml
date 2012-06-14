@@ -67,5 +67,10 @@
       <artifactId>util-logging</artifactId>
       <version>5.1.3-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>util-jvm</artifactId>
+      <version>5.1.3-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 </project>
