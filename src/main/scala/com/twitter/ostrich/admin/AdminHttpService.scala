@@ -201,7 +201,7 @@ class HeapResourceHandler extends CgiRequestHandler {
   }
 }
 
-class ProfileResourceHandler extends CgiRequestHandler {
+class ProfileResourceHandler(which: Thread.State) extends CgiRequestHandler {
   import com.twitter.jvm.CpuProfile
 
   private val log = Logger(getClass.getName)
@@ -218,9 +218,9 @@ class ProfileResourceHandler extends CgiRequestHandler {
           params
       }
 
-    log.info("collecting CPU profile for %s seconds at %dHz".format(
-      params.pause, params.frequency))
-    CpuProfile.recordInThread(params.pause, params.frequency) respond {
+    log.info("collecting CPU profile (%s) for %s seconds at %dHz".format(
+      which, params.pause, params.frequency))
+    CpuProfile.recordInThread(params.pause, params.frequency, which) respond {
       case Return(prof) =>
         // Write out the profile verbatim. It's a pprof "raw" profile.
         exchange.getResponseHeaders.set("Content-Type", "pprof/raw")
@@ -337,7 +337,8 @@ class AdminHttpService(
   addContext("/favicon.ico", new MissingFileHandler())
   addContext("/static", new FolderResourceHandler("/static"))
   addContext("/pprof/heap", new HeapResourceHandler)
-  addContext("/pprof/profile", new ProfileResourceHandler)
+  addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
+  addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
   addContext("/tracing", new TracingHandler)
 
   httpServer.setExecutor(null)
