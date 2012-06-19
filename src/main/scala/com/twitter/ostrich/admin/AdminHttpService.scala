@@ -312,7 +312,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
       render(response, exchange, 200, contentType)
     } catch {
       case e: UnknownCommandError =>
-        render("no such command", exchange, 404)
+        render("no such command\n", exchange, 404)
       case unknownException =>
         render("error processing command: " + unknownException, exchange, 500)
         unknownException.printStackTrace()
