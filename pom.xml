@@ -4,7 +4,7 @@
   <groupId>com.twitter</groupId>
   <artifactId>ostrich</artifactId>
   <packaging>jar</packaging>
-  <version>8.1.1-SNAPSHOT</version>
+  <version>8.2.1-SNAPSHOT</version>
   <parent>
     <groupId>com.twitter</groupId>
     <artifactId>scala-parent-292</artifactId>
