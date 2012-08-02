@@ -16,9 +16,9 @@
 
 package com.twitter.ostrich.stats
 
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object DistributionSpec extends Specification {
+class DistributionSpec extends SpecificationWithJUnit {
   "Distribution" should {
     val histogram0 = Histogram()
     val histogram1 = Histogram(10)

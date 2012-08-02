@@ -22,9 +22,9 @@ import java.util.Date
 import scala.collection.immutable
 import com.twitter.conversions.string._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object W3CStatsSpec extends Specification {
+class W3CStatsSpec extends SpecificationWithJUnit {
   "w3c Stats" should {
     Logger.reset()
 

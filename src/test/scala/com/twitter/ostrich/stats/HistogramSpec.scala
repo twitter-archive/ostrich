@@ -16,10 +16,10 @@
 
 package com.twitter.ostrich.stats
 
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.matcher.Matcher
 
-object HistogramSpec extends Specification {
+class HistogramSpec extends SpecificationWithJUnit {
   "Histogram" should {
     val histogram = new Histogram()
     val histogram2 = new Histogram()

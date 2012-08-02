@@ -3,10 +3,10 @@ package com.twitter.ostrich.stats
 import scala.io.Source
 import com.twitter.io.TempFile
 import com.twitter.ostrich.admin._
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.util.TimeConversions._
 
-object JsonStatsFetcherSpec extends Specification {
+class JsonStatsFetcherSpec extends SpecificationWithJUnit {
   def exec(args: String*) = Runtime.getRuntime.exec(args.toArray)
 
   val hasRuby = try {

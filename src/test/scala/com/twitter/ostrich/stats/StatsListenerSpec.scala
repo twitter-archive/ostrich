@@ -18,10 +18,10 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
 import com.twitter.ostrich.admin.PeriodicBackgroundProcess
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.util.Duration
 
-object StatsListenerSpec extends Specification {
+class StatsListenerSpec extends SpecificationWithJUnit {
   "StatsListener object" should {
     var collection: StatsCollection = null
 

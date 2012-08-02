@@ -23,11 +23,11 @@ import scala.collection.JavaConverters._
 import scala.io.Source
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import org.specs.util.DataTables
 import stats.{Stats, StatsListener}
 
-object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
+class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   def get(path: String): String = {
     val port = service.address.getPort
     val url = new URL("http://localhost:%s%s".format(port, path))
@@ -152,6 +152,31 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
       serverInfo mustMatch("\"version\":")
       serverInfo mustMatch("\"start_time\":")
       serverInfo mustMatch("\"uptime\":")
+    }
+
+    "change log levels" in {
+      // Add a logger with a very specific name
+      val name = "logger-" + System.currentTimeMillis
+      val logger = Logger.get(name) // register this logger
+      logger.setLevel(Level.INFO)
+
+      // no levels specified
+      var logLevels = get("/logging")
+      logLevels mustMatch(name)
+      logLevels mustMatch("Specify a logger name and level")
+
+      // specified properly
+      logLevels = get("/logging?name=%s&level=FATAL".format(name))
+      Logger.get(name).getLevel() must be_==(Level.FATAL)
+      logLevels mustMatch("Successfully changed the level of the following logger")
+
+      // made up level
+      logLevels = get("/logging?name=%s&level=OHEMGEE".format(name))
+      logLevels mustMatch("Logging level change failed")
+
+      // made up logger
+      logLevels = get("/logging?name=OHEMGEEWHYAREYOUUSINGTHISLOGGERNAME&level=INFO")
+      logLevels mustMatch("Logging level change failed")
     }
 
     "fetch static files" in {

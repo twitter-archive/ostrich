@@ -25,7 +25,9 @@ import scala.collection.Map
 import scala.collection.immutable
 import com.twitter.conversions.time._
 import com.twitter.json.Json
-import stats.{StatsListener, Stats, StatsCollection}
+import stats.{StatsListener, StatsCollection}
+import com.twitter.logging.Logger
+import java.util.regex.Pattern
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 
@@ -94,6 +96,8 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
           ServiceTracker.quiesce()
         }
         "ok"
+      case "logging" =>
+        changeLoggingLevel(parameters)
       case "stats" =>
         val filtered = parameters.get("filtered").getOrElse("0") == "1"
         parameters.get("period").map { period =>
@@ -129,6 +133,43 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
         throw new UnknownCommandError(x)
     }
   }
+
+  private def changeLoggingLevel(parameters: Map[String, String]): String = {
+    def helpMessage: String = {
+      val loggingLevels = Logger.levelNames.keys.mkString("\n")
+      val loggerNames = Logger.iterator.map { logger => logger.name }.toSeq.sorted.mkString("\n")
+      "Supported Levels:\n%s\nValid Loggers:%s".format(loggingLevels, loggerNames)
+    }
+
+    val nameRegexOpt = parameters.get("name")
+    val levelNameOpt = parameters.get("level")
+
+    if (nameRegexOpt.isEmpty || levelNameOpt.isEmpty) {
+      "Specify a logger name and level\n\n%s".format(helpMessage)
+    } else {
+      val nameRegex = nameRegexOpt.get
+      val levelName = levelNameOpt.get
+      val pattern: Pattern = Pattern.compile(nameRegex)
+      val updatedLoggers: Option[Seq[String]] = Logger.levelNames.get(levelName.toUpperCase).map { level =>
+        val loggers = Logger.iterator.filter {
+          logger => pattern.matcher(logger.name).matches()
+        }.toSeq
+        loggers foreach { _.setLevel(level) }
+        loggers map { _.name }
+      }
+
+      updatedLoggers match {
+        case None => "Logging level change failed for %s to %s\n\n%s".format(nameRegex, levelName, helpMessage)
+        case Some(Nil) => "Logging level change failed for %s to %s\n\n%s".format(nameRegex, levelName, helpMessage)
+        case Some(loggers) =>
+          val buf = new StringBuilder()
+          buf.append("Successfully changed the level of the following logger(s) to ").append(levelName).append("\n")
+          loggers.foreach { buf.append("\t").append(_).append("\n") }
+          buf.toString
+      }
+    }
+  }
+
 
   private def getThreadStacks(): Map[String, Map[String, Map[String, Any]]] = {
     val stacks = Thread.getAllStackTraces().asScala.map { case (thread, stack) =>

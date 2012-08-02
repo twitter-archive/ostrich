@@ -24,10 +24,10 @@ import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.util.Time
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import stats.Stats
 
-object TimeSeriesCollectorSpec extends Specification {
+class TimeSeriesCollectorSpec extends SpecificationWithJUnit {
   "TimeSeriesCollector" should {
     var collector: TimeSeriesCollector = null
 

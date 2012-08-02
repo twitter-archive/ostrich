@@ -23,7 +23,7 @@ import scala.io.Source
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.util.{Duration, Time}
+import com.twitter.util.{Duration, Time, Return, Throw}
 import java.util.Properties
 import stats.{StatsCollection, Stats}
 
@@ -201,6 +201,45 @@ class HeapResourceHandler extends CgiRequestHandler {
   }
 }
 
+class ProfileResourceHandler(which: Thread.State) extends CgiRequestHandler {
+  import com.twitter.jvm.CpuProfile
+
+  private val log = Logger(getClass.getName)
+  case class Params(pause: Duration, frequency: Int)
+
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+    val params =
+      parameters.foldLeft(Params(10.seconds, 100)) {
+        case (params, ("seconds", pauseVal)) =>
+          params.copy(pause = pauseVal.toInt.seconds)
+        case (params, ("hz", hz)) =>
+          params.copy(frequency = hz.toInt)
+        case (params, _) =>
+          params
+      }
+
+    log.info("collecting CPU profile (%s) for %s seconds at %dHz".format(
+      which, params.pause, params.frequency))
+    CpuProfile.recordInThread(params.pause, params.frequency, which) respond {
+      case Return(prof) =>
+        // Write out the profile verbatim. It's a pprof "raw" profile.
+        exchange.getResponseHeaders.set("Content-Type", "pprof/raw")
+        exchange.sendResponseHeaders(200, 0)
+        val output = exchange.getResponseBody()
+        prof.writeGoogleProfile(output)
+        output.close()
+        exchange.close()
+
+      case Throw(exc) =>
+        exchange.sendResponseHeaders(500, 0)
+        val output = exchange.getResponseBody()
+        output.write(exc.toString.getBytes)
+        output.close()
+        exchange.close()
+    }
+  }
+}
+
 /**
  * Can turn trace recording on and off for the entire service.
  */
@@ -273,7 +312,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
       render(response, exchange, 200, contentType)
     } catch {
       case e: UnknownCommandError =>
-        render("no such command", exchange, 404)
+        render("no such command\n", exchange, 404)
       case unknownException =>
         render("error processing command: " + unknownException, exchange, 500)
         unknownException.printStackTrace()
@@ -282,7 +321,7 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
 }
 
 class AdminHttpService(
-  port: Int, backlog: Int, statsCollection: StatsCollection, runtime: RuntimeEnvironment
+  val port: Int, backlog: Int, statsCollection: StatsCollection, runtime: RuntimeEnvironment
 ) extends Service {
   def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
     this(port, backlog, Stats, runtime)
@@ -298,6 +337,8 @@ class AdminHttpService(
   addContext("/favicon.ico", new MissingFileHandler())
   addContext("/static", new FolderResourceHandler("/static"))
   addContext("/pprof/heap", new HeapResourceHandler)
+  addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
+  addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
   addContext("/tracing", new TracingHandler)
 
   httpServer.setExecutor(null)

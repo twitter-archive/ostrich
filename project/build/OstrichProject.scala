@@ -6,34 +6,22 @@ import com.twitter.sbt._
 class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with SubversionPublisher
   with DefaultRepos
-  with ProjectDependencies
   with PublishSourcesAndJavadocs
   with PublishSite
 {
-  buildScalaVersion match {
-    case "2.8.1" => {
-      projectDependencies(
-        "util"     ~ "util-core",
-        "util"     ~ "util-eval",
-        "util"     ~ "util-logging"
-      )
-    }
-    case "2.9.1" => {
-      projectDependencies(
-        "util"     ~ "util-core_2.9.1",
-        "util"     ~ "util-eval_2.9.1",
-        "util"     ~ "util-logging_2.9.1"
-      )
-    }
-  }
 
-  val json = "com.twitter" %% "json" % "2.1.7"
+  val utilCore = "com.twitter" % "util-core" % "5.3.6"
+  val utilEval = "com.twitter" % "util-eval" % "5.3.6"
+  val utilLogging = "com.twitter" % "util-logging" % "5.3.6"
+  val utilJvm = "com.twitter" % "util-jvm" % "5.3.6"
+  val json = "com.twitter" % "scala-json" % "3.0.0"
 
   // for tests:
   val specs = buildScalaVersion match {
     case "2.8.1" => "org.scala-tools.testing" % "specs_2.8.1" % "1.6.6" % "test"
-    case "2.9.1" => "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test"
+    case "2.9.2" => "org.scala-tools.testing" % "specs_2.9.2" % "1.6.9" % "test"
   }
+  val junit = "junit" % "junit" % "4.8.1" % "test"
   val cglib = "cglib" % "cglib" % "2.1_3" % "test"
   val asm = "asm" % "asm" % "1.5.3" % "test"
   val objenesis = "org.objenesis" % "objenesis" % "1.1" % "test"
@@ -50,7 +38,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
     </licenses>
 
   // use "ostrich_<scalaversion>" as the published name:
-  override def disableCrossPaths = false
+  //override def disableCrossPaths = false
 
   def ostrichPropertiesPath = (mainResourcesOutputPath ##) / "ostrich.properties"
   lazy val makeOstrichProperties = task {
@@ -63,7 +51,7 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
     None
   }
   override def copyResourcesAction = super.copyResourcesAction && makeOstrichProperties
-  override def packagePaths = super.packagePaths +++ ostrichPropertiesPath
+  override def packagePaths = super.packagePaths --- (mainResourcesPath / "ostrich.properties") +++ ostrichPropertiesPath
 
   override def subversionRepository = Some("https://svn.twitter.biz/maven-public")
 

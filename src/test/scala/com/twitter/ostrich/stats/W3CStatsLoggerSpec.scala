@@ -22,9 +22,9 @@ import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import com.twitter.util.Time
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object W3CStatsLoggerSpec extends Specification {
+class W3CStatsLoggerSpec extends SpecificationWithJUnit {
   "W3CStatsLogger" should {
     val logger = Logger.get("w3c")
     logger.setLevel(Level.INFO)
