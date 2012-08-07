@@ -44,12 +44,12 @@ class HistogramSpec extends SpecificationWithJUnit {
     }
 
     "add value buckets.last" in {
-      histogram.add(Histogram.BUCKET_OFFSETS.last)
+      histogram.add(histogram.bucketOffsets.last)
       histogram.get(true).last mustEqual 1
     }
 
     "add value buckets.last+1" in {
-      histogram.add(Histogram.BUCKET_OFFSETS.last + 1)
+      histogram.add(histogram.bucketOffsets.last + 1)
       histogram.get(true).last mustEqual 1
     }
 
@@ -70,7 +70,8 @@ class HistogramSpec extends SpecificationWithJUnit {
 
       case class shareABucketWith(n: Int) extends Matcher[Int]() {
         def apply(v: => Int) = {
-          (Histogram.binarySearch(n) == Histogram.binarySearch(v),
+          (Histogram.bucketIndex(histogram.bucketOffsets, n) ==
+           Histogram.bucketIndex(histogram.bucketOffsets, v),
            "%d and %d are in the same bucket".format(v, n),
            "%d and %d are not in the same bucket".format(v, n))
         }
@@ -81,6 +82,14 @@ class HistogramSpec extends SpecificationWithJUnit {
       histogram.getPercentile(0.9) must shareABucketWith(900)
       histogram.getPercentile(0.99) must shareABucketWith(998) // 999 is a boundary
       histogram.getPercentile(1.0) must shareABucketWith(1000)
+    }
+
+    "use a custom error percentage" in {
+      val h = new Histogram(0.50)
+      h.bucketOffsets.size mustEqual 20
+      h.bucketOffsets(0) mustEqual 1
+      h.bucketOffsets(1) mustEqual 4
+      h.bucketOffsets(2) mustEqual 10
     }
 
     "merge" in {
@@ -94,7 +103,7 @@ class HistogramSpec extends SpecificationWithJUnit {
       val stats = histogram.get(true)
       val stats2 = histogram2.get(true)
       for (i <- 0 until 50) {
-        val bucket = Histogram.binarySearch(i * 10)
+        val bucket = Histogram.bucketIndex(histogram.bucketOffsets, i * 10)
         stats(bucket) mustEqual 2 * stats2(bucket)
       }
     }

@@ -90,7 +90,7 @@ class GraphiteStatsLogger(val host: String, val port: Int, val period: Duration,
 
       try {
         cleanedKeysStatMap.foreach { case (key, value) => {
-          writer.write("%s.%s.%s %.2f %d\n".format(prefix, serviceName.getOrElse("unknown"), key, value.doubleValue,
+          writer.write("%s.%s.%s %.2f %d\n".formatLocal(java.util.Locale.US, prefix, serviceName.getOrElse("unknown"), key, value.doubleValue,
             epoch))
         }}
       } catch {
