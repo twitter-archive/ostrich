@@ -85,7 +85,7 @@ class StatsListener(collection: StatsCollection, startClean: Boolean, filters: L
   def this(collection: StatsCollection) = this(collection, true, Nil)
 
   private val lastCounterMap = new mutable.HashMap[String, Long]()
-  private val lastMetricMap = new mutable.HashMap[String, Distribution]()
+  private val lastMetricMap = new mutable.HashMap[String, Histogram]()
 
   private val filterRegex = filters.mkString("(", ")|(", ")").r
 
@@ -95,7 +95,9 @@ class StatsListener(collection: StatsCollection, startClean: Boolean, filters: L
       lastCounterMap(key) = value
     }
     collection.getMetrics().foreach { case (key, value) =>
-      lastMetricMap(key) = value
+      val histo = new Histogram
+      histo.merge(value.histogram)
+      lastMetricMap(key) = histo
     }
   }
 
@@ -112,16 +114,19 @@ class StatsListener(collection: StatsCollection, startClean: Boolean, filters: L
 
   def getLabels(): Map[String, String] = collection.getLabels()
 
-  def getMetrics(): Map[String, Distribution] = synchronized {
-    val deltas = new mutable.HashMap[String, Distribution]
+  def getMetrics(): Map[String, Histogram] = synchronized {
+    val deltas = new mutable.HashMap[String, Histogram]
     for ((key, newValue) <- collection.getMetrics()) {
-      deltas(key) = newValue - lastMetricMap.getOrElse(key, new Distribution())
-      lastMetricMap(key) = newValue
+      val oldValue = lastMetricMap.getOrElseUpdate(key, new Histogram())
+      deltas(key) = newValue.histogram - oldValue
+      oldValue.clear()
+      oldValue.merge(newValue.histogram)
     }
     deltas
   }
 
-  def get(): StatsSummary = StatsSummary(getCounters(), getMetrics(), getGauges(), getLabels())
+  def get(): StatsSummary =
+    StatsSummary(getCounters(), getMetrics() mapValues { Distribution(_) }, getGauges(), getLabels())
 
   def get(filtered: Boolean): StatsSummary = if (filtered) getFiltered() else get()
 
@@ -148,20 +153,31 @@ class LatchedStatsListener(
   @volatile private var counters: Map[String, Long] = Map()
   @volatile private var gauges: Map[String, Double] = Map()
   @volatile private var labels: Map[String, String] = Map()
-  @volatile private var metrics: Map[String, Distribution] = Map()
+  private var metrics: mutable.Map[String, Histogram] = new mutable.HashMap[String, Histogram]
   nextLatch()
 
   override def getCounters() = counters
   override def getGauges() = gauges
   override def getLabels() = labels
-  override def getMetrics() = metrics
+  override def getMetrics() = synchronized { metrics }
 
   def nextLatch() {
     counters = super.getCounters()
     labels = super.getLabels()
-    metrics = super.getMetrics()
+    syncMetrics()
     // do gauges last since they might be constructed using the others.
     gauges = super.getGauges()
+  }
+
+  private[this] def syncMetrics() {
+    synchronized {
+      val newMetrics = super.getMetrics()
+      newMetrics foreach { case (key, value) =>
+        val currValue = metrics.getOrElseUpdate(key, new Histogram())
+        currValue.clear()
+        currValue.merge(value)
+      }
+    }
   }
 
   // FIXME this would be more efficient as a Timer for all LatchedStatsListeners?

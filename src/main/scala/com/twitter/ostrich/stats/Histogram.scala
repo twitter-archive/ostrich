@@ -16,6 +16,7 @@
 
 package com.twitter.ostrich.stats
 
+import java.util.Arrays
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 
@@ -42,21 +43,10 @@ object Histogram {
     (Seq(1) ++ build(factor, 1.0).map(_.toInt + 1).distinct.force).toArray
   }
 
-  private[this] val bucketCache = new ConcurrentHashMap[Double, Array[Int]]()
+  val buckets = makeBucketsFor(0.05d)
 
-  def bucketsFor(error: Double): Array[Int] = {
-    val rv = bucketCache.get(error)
-    if (rv ne null) {
-      rv
-    } else {
-      val rv = makeBucketsFor(error)
-      bucketCache.putIfAbsent(error, rv)
-      rv
-    }
-  }
-
-  def bucketIndex(buckets: Array[Int], key: Int): Int =
-    binarySearch(buckets, key, 0, buckets.size - 1)
+  def bucketIndex(key: Int): Int =
+    (Arrays.binarySearch(buckets, key) + 1).abs
 
   @tailrec
   private[this] def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
@@ -83,11 +73,8 @@ object Histogram {
   }
 }
 
-class Histogram(error: Double) {
-  def this() = this(0.05)
-
-  val bucketOffsets = Histogram.bucketsFor(error)
-  val numBuckets = bucketOffsets.length + 1
+class Histogram {
+  val numBuckets = Histogram.buckets.length + 1
   val buckets = new Array[Long](numBuckets)
   var count = 0L
   var sum = 0L
@@ -106,17 +93,20 @@ class Histogram(error: Double) {
   }
 
   def add(n: Int): Long = {
-    addToBucket(Histogram.bucketIndex(bucketOffsets, n))
-    sum += n
-    count
+    val index = Histogram.bucketIndex(n)
+    synchronized {
+      addToBucket(index)
+      sum += n
+      count
+    }
   }
 
   def clear() {
-    for (i <- 0 until numBuckets) {
-      buckets(i) = 0
+    synchronized {
+      Arrays.fill(buckets, 0)
+      count = 0
+      sum = 0
     }
-    count = 0
-    sum = 0
   }
 
   def get(reset: Boolean) = {
@@ -142,7 +132,7 @@ class Histogram(error: Double) {
     }
     if (index == 0) {
       0
-    } else if (index - 1 >= bucketOffsets.size) {
+    } else if (index - 1 >= Histogram.buckets.size) {
       Int.MaxValue
     } else {
       midpoint(index - 1)
@@ -162,7 +152,7 @@ class Histogram(error: Double) {
       // No values
       0
     } else {
-      var index = bucketOffsets.size - 1
+      var index = Histogram.buckets.size - 1
       while (index >= 0 && buckets(index) == 0) index -= 1
       if (index < 0) 0 else midpoint(index)
     }
@@ -178,8 +168,8 @@ class Histogram(error: Double) {
       0
     } else {
       var index = 0
-      while (index < bucketOffsets.size && buckets(index) == 0) index += 1
-      if (index >= bucketOffsets.size) Int.MaxValue else midpoint(index)
+      while (index < Histogram.buckets.size && buckets(index) == 0) index += 1
+      if (index >= Histogram.buckets.size) Int.MaxValue else midpoint(index)
     }
   }
 
@@ -187,10 +177,10 @@ class Histogram(error: Double) {
   protected def midpoint(index: Int): Int = {
     if (index == 0) {
       0
-    } else if (index - 1 >= bucketOffsets.size) {
+    } else if (index - 1 >= Histogram.buckets.size) {
       Int.MaxValue
     } else {
-      (bucketOffsets(index - 1) + bucketOffsets(index) - 1) / 2
+      (Histogram.buckets(index - 1) + Histogram.buckets(index) - 1) / 2
     }
   }
 
@@ -231,7 +221,7 @@ class Histogram(error: Double) {
   override def toString = {
     "<Histogram count=" + count + " sum=" + sum +
       buckets.indices.map { i =>
-        (if (i < bucketOffsets.size) bucketOffsets(i) else "inf") +
+        (if (i < Histogram.buckets.size) Histogram.buckets(i) else "inf") +
         "=" + buckets(i)
       }.mkString(" ", ", ", "") +
       ">"

@@ -32,9 +32,7 @@ class Metric {
    * Resets the state of this Metric. Clears all data points collected so far.
    */
   def clear() {
-    synchronized {
-      histogram.clear()
-    }
+    histogram.clear()
   }
 
   /**
@@ -42,9 +40,7 @@ class Metric {
    */
   def add(n: Int): Long = {
     if (n > -1) {
-      synchronized {
-        histogram.add(n)
-      }
+      histogram.add(n)
     } else {
       log.warning("Tried to add a negative data point.")
       histogram.count
