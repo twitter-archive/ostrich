@@ -4,7 +4,7 @@
   <groupId>com.twitter</groupId>
   <artifactId>ostrich</artifactId>
   <packaging>jar</packaging>
-  <version>8.2.4</version>
+  <version>8.2.5</version>
   <parent>
     <groupId>com.twitter</groupId>
     <artifactId>scala-parent-292</artifactId>
@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>scala-json</artifactId>
-      <version>3.0.1-SNAPSHOT</version>
+      <version>3.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
