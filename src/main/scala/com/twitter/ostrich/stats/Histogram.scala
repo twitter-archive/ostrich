@@ -122,11 +122,11 @@ class Histogram {
    *   0 if no values
    *   Int.MaxValue if percentile is out of range
    */
-  def getPercentile(percentile: Double): Int = {
+  def getPercentile(percentile: Double): Int = synchronized {
     if (percentile == 0.0) return minimum
     var total = 0L
     var index = 0
-    while (total < percentile * count) {
+    while (index < buckets.size && total < percentile * count) {
       total += buckets(index)
       index += 1
     }
