@@ -22,7 +22,7 @@ import com.twitter.util.Local
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
-import scala.collection.{Map, mutable, immutable}
+import scala.collection.mutable
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
@@ -80,6 +80,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
       Option(pool.getCollectionUsage).foreach { usage =>
         out += ("jvm_post_gc_" + name + "_used" -> usage.getUsed)
         totalUsage += usage.getUsed
+        out += ("jvm_post_gc_" + name + "_max" -> usage.getMax)
       }
     }
     out += ("jvm_post_gc_used" -> totalUsage)
@@ -91,10 +92,15 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
     ManagementFactory.getGarbageCollectorMXBeans().asScala.foreach { gc =>
       val name = gc.getName.regexSub("""[^\w]""".r) { m => "_" }
-      out += ("jvm_gc_" + name + "_cycles" -> gc.getCollectionCount)
-      out += ("jvm_gc_" + name + "_msec" -> gc.getCollectionTime)
-      totalCycles += gc.getCollectionCount
-      totalTime += gc.getCollectionTime
+      val collectionCount = gc.getCollectionCount
+      out += ("jvm_gc_" + name + "_cycles" -> collectionCount)
+      val collectionTime = gc.getCollectionTime
+      out += ("jvm_gc_" + name + "_msec" -> collectionTime)
+      // note, these could be -1 if the collector doesn't have support for it.
+      if (collectionCount > 0)
+        totalCycles += collectionCount
+      if (collectionTime > 0)
+        totalTime += gc.getCollectionTime
     }
     out += ("jvm_gc_cycles" -> totalCycles)
     out += ("jvm_gc_msec" -> totalTime)

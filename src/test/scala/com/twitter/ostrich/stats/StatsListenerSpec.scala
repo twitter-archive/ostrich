@@ -76,9 +76,9 @@ class StatsListenerSpec extends SpecificationWithJUnit {
       "metrics" in {
         collection.addMetric("beans", 3)
         collection.addMetric("beans", 4)
-        collection.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
-        listener.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
-        listener2.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
+        collection.getMetrics() mustEqual Map("beans" -> Distribution(Histogram(3, 4)))
+        listener.getMetrics() mustEqual Map("beans" -> Histogram(3, 4))
+        listener2.getMetrics() mustEqual Map("beans" -> Histogram(3, 4))
       }
     }
 
@@ -95,15 +95,15 @@ class StatsListenerSpec extends SpecificationWithJUnit {
       "metrics" in {
         collection.addMetric("timing", 10)
         collection.addMetric("timing", 20)
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20)))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 20))
         collection.addMetric("timing", 10)
-        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
+        listener2.getMetrics() mustEqual Map("timing" -> Histogram(10, 20, 10))
         collection.addMetric("timing", 10)
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 10)))
-        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10)))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 10))
+        listener2.getMetrics() mustEqual Map("timing" -> Histogram(10))
 
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram()))
-        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram()))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram())
+        listener2.getMetrics() mustEqual Map("timing" -> Histogram())
       }
     }
 
@@ -120,7 +120,7 @@ class StatsListenerSpec extends SpecificationWithJUnit {
       "metrics" in {
         collection.addMetric("timing", 10)
         collection.addMetric("timing", 20)
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20)))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 20))
         collection.addMetric("timing", 10)
 
         collection.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
@@ -138,8 +138,8 @@ class StatsListenerSpec extends SpecificationWithJUnit {
       collection.addMetric("beans", 3)
       listener3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
       listener3.getMetrics() mustEqual
-        Map("beans" -> new Distribution(Histogram(3)),
-            "rice" -> new Distribution(Histogram()))
+        Map("beans" -> Histogram(3),
+            "rice" -> Histogram())
     }
   }
 
@@ -168,7 +168,7 @@ class StatsListenerSpec extends SpecificationWithJUnit {
       listener.getCounters() mustEqual Map("counter" -> 5)
       listener.getGauges() mustEqual Map("gauge" -> 0)
       listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
-      listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
+      listener.getMetrics() mustEqual Map("metric" -> Histogram(1, 2))
 
       collection.incr("counter", 3)
       synchronized { gauge = 37 }
@@ -178,14 +178,14 @@ class StatsListenerSpec extends SpecificationWithJUnit {
       listener.getCounters() mustEqual Map("counter" -> 5)
       listener.getGauges() mustEqual Map("gauge" -> 0)
       listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
-      listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(1, 2)))
+      listener.getMetrics() mustEqual Map("metric" -> Histogram(1, 2))
 
       listener.nextLatch()
 
       listener.getCounters() mustEqual Map("counter" -> 3)
       listener.getGauges() mustEqual Map("gauge" -> 37)
       listener.getLabels() mustEqual Map("label" -> "EEPEEPIAMAMONKEY")
-      listener.getMetrics() mustEqual Map("metric" -> Distribution(Histogram(3, 4, 5)))
+      listener.getMetrics() mustEqual Map("metric" -> Histogram(3, 4, 5))
     }
   }
 }

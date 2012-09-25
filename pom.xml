@@ -4,11 +4,11 @@
   <groupId>com.twitter</groupId>
   <artifactId>ostrich</artifactId>
   <packaging>jar</packaging>
-  <version>8.2.4-SNAPSHOT</version>
+  <version>8.2.6</version>
   <parent>
     <groupId>com.twitter</groupId>
     <artifactId>scala-parent-292</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.4</version>
     <relativePath>../parents/scala-parent-292/pom.xml</relativePath>
   </parent>
   <properties>
@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>scala-json</artifactId>
-      <version>3.0.1-SNAPSHOT</version>
+      <version>3.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
@@ -55,22 +55,22 @@
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>util-core</artifactId>
-      <version>5.3.7-SNAPSHOT</version>
+      <version>5.3.11</version>
     </dependency>
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>util-eval</artifactId>
-      <version>5.3.7-SNAPSHOT</version>
+      <version>5.3.11</version>
     </dependency>
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>util-logging</artifactId>
-      <version>5.3.7-SNAPSHOT</version>
+      <version>5.3.11</version>
     </dependency>
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>util-jvm</artifactId>
-      <version>5.3.7-SNAPSHOT</version>
+      <version>5.3.11</version>
     </dependency>
   </dependencies>
 </project>
