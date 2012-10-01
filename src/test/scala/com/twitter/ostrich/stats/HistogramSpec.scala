@@ -44,12 +44,12 @@ class HistogramSpec extends SpecificationWithJUnit {
     }
 
     "add value buckets.last" in {
-      histogram.add(Histogram.buckets.last)
+      histogram.add(Histogram.buckets.last.toInt)
       histogram.get(true).last mustEqual 1
     }
 
     "add value buckets.last+1" in {
-      histogram.add(Histogram.buckets.last + 1)
+      histogram.add(Histogram.buckets.last.toInt + 1)
       histogram.get(true).last mustEqual 1
     }
 
@@ -192,6 +192,44 @@ class HistogramSpec extends SpecificationWithJUnit {
       histogram.add(10)
       histogram2.add(15)
       histogram must not(beEqual(histogram2))
+    }
+
+    "integer overflow shouldn't happen" in {
+      // This is equivalent of what's commented out below
+      val last = histogram.buckets.size - 1
+      histogram.buckets(last) = Int.MaxValue
+      histogram.buckets(last - 1) = Int.MaxValue
+      histogram.count += 2L * Int.MaxValue
+
+      // val n = Int.MaxValue
+      // val x = Histogram.buckets.last
+      // (1 to n) foreach { _ =>
+      //   histogram.add(x)
+      //   histogram.add(x - 1)
+      // }
+
+      histogram.getPercentile(0.1) must beGreaterThan(0)
+    }
+
+    "Substracting two histograms must never have negative count" in {
+      histogram.add(1)
+      histogram2.add(1)
+      histogram2.add(10)
+
+      val h = (histogram - histogram2)
+      h.count mustEqual 0L
+      h.getPercentile(0.9999) mustEqual 0
+    }
+
+    "Substracting two histograms must work" in {
+      val n = 10
+      (1 to 2*n) foreach { i => histogram.add(i) }
+      (1 to n) foreach { i => histogram2.add(i) }
+      val histogram3 = new Histogram
+      (n+1 to 2*n) foreach { i => histogram3.add(i) }
+
+      (histogram - histogram2) mustEqual histogram3
+      (histogram2 - histogram) mustEqual (new Histogram)
     }
   }
 }

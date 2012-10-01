@@ -17,7 +17,6 @@
 package com.twitter.ostrich.stats
 
 import java.util.Arrays
-import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
 
 object Histogram {
@@ -33,14 +32,14 @@ object Histogram {
    *
    * The last bucket (the "infinity" bucket) ranges up to Int.MaxValue, which we treat as infinity.
    */
-  private[this] def makeBucketsFor(error: Double): Array[Int] = {
+  private[this] def makeBucketsFor(error: Double): Array[Long] = {
     def build(factor: Double, n: Double): Stream[Double] = {
       val next = n * factor
       if (next.toInt == Int.MaxValue) Stream.empty else Stream.cons(next, build(factor, next))
     }
 
     val factor = (1.0 + error) / (1.0 - error)
-    (Seq(1) ++ build(factor, 1.0).map(_.toInt + 1).distinct.force).toArray
+    (Seq(1L) ++ build(factor, 1.0).map(_.toLong + 1L).distinct.force).toArray
   }
 
   val buckets = makeBucketsFor(0.05d)
@@ -132,8 +131,8 @@ class Histogram {
     }
     if (index == 0) {
       0
-    } else if (index - 1 >= Histogram.buckets.size) {
-      Int.MaxValue
+    } else if (index - 1 == Histogram.buckets.size) {
+      maximum
     } else {
       midpoint(index - 1)
     }
@@ -180,7 +179,7 @@ class Histogram {
     } else if (index - 1 >= Histogram.buckets.size) {
       Int.MaxValue
     } else {
-      (Histogram.buckets(index - 1) + Histogram.buckets(index) - 1) / 2
+      ((Histogram.buckets(index - 1) + Histogram.buckets(index) - 1) / 2).toInt
     }
   }
 
@@ -196,10 +195,10 @@ class Histogram {
 
   def -(other: Histogram): Histogram = {
     val rv = new Histogram()
-    rv.count = count - other.count
-    rv.sum = sum - other.sum
+    rv.sum = math.max(0L, sum - other.sum)
     for (i <- 0 until numBuckets) {
-      rv.buckets(i) = buckets(i) - other.buckets(i)
+      rv.buckets(i) = math.max(0, buckets(i) - other.buckets(i))
+      rv.count += rv.buckets(i)
     }
     rv
   }
