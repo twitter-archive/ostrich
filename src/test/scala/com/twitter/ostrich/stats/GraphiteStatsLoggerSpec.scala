@@ -64,7 +64,7 @@ class GraphiteStatsLoggerSpec extends SpecificationWithJUnit with JMocker with C
         statsLogger.write(socket)
         val lines = getLines().sorted
         lines(0) must beMatching("server_pool\\.unknown\\.zzz_msec_average 15\\.00 [0-9]+")
-        lines(9) must beMatching("server_pool\\.unknown\\.zzz_msec_p99 19\\.00 [0-9]+")
+        lines(7) must beMatching("server_pool\\.unknown\\.zzz_msec_p99 19\\.00 [0-9]+")
       }
     }
 

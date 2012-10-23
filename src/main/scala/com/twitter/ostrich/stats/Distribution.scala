@@ -73,10 +73,8 @@ extends JsonSerializable {
       // If there are no events then derived values are meaningless; so elide them.
       (if (histogram.count > 0) {
         Map[String, Long](
-          "p25" -> percentile(0.25),
           "p50" -> percentile(0.5),
-          "p75" -> percentile(0.75),
-          "p90" -> percentile(0.9),
+          "p90" -> percentile(0.90),
           "p95" -> percentile(0.95),
           "p99" -> percentile(0.99),
           "p999" -> percentile(0.999),
