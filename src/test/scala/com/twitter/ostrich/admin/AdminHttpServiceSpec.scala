@@ -263,14 +263,8 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         timings must haveKey("average")
         timings("average") mustEqual 3
 
-        timings must haveKey("p25")
-        timings("p25") mustEqual 2
-
         timings must haveKey("p50")
         timings("p50") mustEqual 3
-
-        timings must haveKey("p75")
-        timings("p75")  mustEqual 5
 
         timings must haveKey("p99")
         timings("p99") mustEqual 6
@@ -303,14 +297,8 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         timings must haveKey("average")
         timings("average") mustEqual 3
 
-        timings must haveKey("p25")
-        timings("p25") mustEqual 2
-
         timings must haveKey("p50")
         timings("p50") mustEqual 3
-
-        timings must haveKey("p75")
-        timings("p75")  mustEqual 5
 
         timings must haveKey("p95")
         timings("p95") mustEqual 6
