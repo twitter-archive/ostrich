@@ -19,7 +19,7 @@ package com.twitter.ostrich.stats
 import scala.util.matching.Regex
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
-import com.twitter.util.{Duration, Future, Time}
+import com.twitter.util.{Duration, Future, Stopwatch}
 import com.twitter.logging.Logger
 
 /**
@@ -203,9 +203,9 @@ trait StatsProvider {
    * the given name.
    */
   def timeFutureMicros[T](name: String)(f: Future[T]): Future[T] = {
-    val start = Time.now
+    val elapsed = Stopwatch.start()
     f.respond { _ =>
-      addMetric(name + "_usec", start.untilNow.inMicroseconds.toInt)
+      addMetric(name + "_usec", elapsed().inMicroseconds.toInt)
     }
     f
   }
@@ -215,9 +215,9 @@ trait StatsProvider {
    * the given name.
    */
   def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
-    val start = Time.now
+    val elapsed = Stopwatch.start()
     f.respond { _ =>
-      addMetric(name + "_msec", start.untilNow.inMilliseconds.toInt)
+      addMetric(name + "_msec", elapsed().inMilliseconds.toInt)
     }
     f
   }
@@ -227,9 +227,9 @@ trait StatsProvider {
    * the given name.
    */
   def timeFutureNanos[T](name: String)(f: Future[T]): Future[T] = {
-    val start = Time.now
+    val elapsed = Stopwatch.start()
     f.respond { _ =>
-      addMetric(name + "_nsec", start.untilNow.inNanoseconds.toInt)
+      addMetric(name + "_nsec", elapsed().inNanoseconds.toInt)
     }
     f
   }
