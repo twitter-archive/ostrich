@@ -162,6 +162,34 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)])
 }
 
+/**
+ * Deal with requests from the mesos executor
+ */
+object MesosRequestHandler extends CgiRequestHandler {
+
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+    val response = path match {
+      case List("health") =>
+        "OK\n"
+      case List("quitquitquit") =>
+        BackgroundProcess.spawn("admin:quiesce") {
+          Thread.sleep(100)
+          ServiceTracker.quiesce()
+        }
+        "quitting\n"
+      case List("abortabortabort") =>
+        BackgroundProcess.spawn("admin:shutdown") {
+          Thread.sleep(100)
+          ServiceTracker.shutdown()
+        }
+        "aborting\n"
+      case _ =>
+        "unknown command"
+    }
+    render(response, exchange, 200, "text/plain")
+  }
+}
+
 class HeapResourceHandler extends CgiRequestHandler {
   private val log = Logger(getClass.getName)
   case class Params(pause: Duration, samplingPeriod: Int, forceGC: Boolean)
@@ -340,6 +368,9 @@ class AdminHttpService(
   addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
   addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
   addContext("/tracing", new TracingHandler)
+  addContext("/health", MesosRequestHandler)
+  addContext("/quitquitquit", MesosRequestHandler)
+  addContext("/abortabortabort", MesosRequestHandler)
 
   httpServer.setExecutor(null)
 
