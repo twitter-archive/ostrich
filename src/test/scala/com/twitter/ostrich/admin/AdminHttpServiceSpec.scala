@@ -183,6 +183,22 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
       get("/static/drawgraph.js") must include("drawChart")
     }
 
+    "mesos health" in {
+      get("/health") must include("OK")
+    }
+
+    "mesos abortabortabort" in {
+      val port = service.address.getPort
+      get("/abortabortabort")
+      new Socket("localhost", port) must eventually(throwA[SocketException])
+    }
+
+    "mesos quitquitquit" in {
+      val port = service.address.getPort
+      get("/quitquitquit")
+      new Socket("localhost", port) must eventually(throwA[SocketException])
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()
