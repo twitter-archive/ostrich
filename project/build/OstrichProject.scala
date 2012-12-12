@@ -10,11 +10,11 @@ class OstrichProject(info: ProjectInfo) extends StandardLibraryProject(info)
   with PublishSite
 {
 
-  val utilCore = "com.twitter" % "util-core" % "5.3.6"
-  val utilEval = "com.twitter" % "util-eval" % "5.3.6"
-  val utilLogging = "com.twitter" % "util-logging" % "5.3.6"
-  val utilJvm = "com.twitter" % "util-jvm" % "5.3.6"
-  val json = "com.twitter" % "scala-json" % "3.0.0"
+  val utilCore = "com.twitter" % "util-core" % "6.0.3"
+  val utilEval = "com.twitter" % "util-eval" % "6.0.3"
+  val utilLogging = "com.twitter" % "util-logging" % "6.0.3"
+  val utilJvm = "com.twitter" % "util-jvm" % "6.0.3"
+  val json = "com.twitter" % "scala-json" % "3.0.1"
 
   // for tests:
   val specs = buildScalaVersion match {
