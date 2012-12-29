@@ -6,6 +6,11 @@ import com.twitter.ostrich.admin._
 import org.specs.SpecificationWithJUnit
 import org.specs.util.TimeConversions._
 
+/*
+
+	Currently disabled because it's probably a bad idea to test 
+	a ruby script this way. (Eg. it doesn't work with Travis-CI).
+
 class JsonStatsFetcherSpec extends SpecificationWithJUnit {
   def exec(args: String*) = Runtime.getRuntime.exec(args.toArray)
 
@@ -49,3 +54,4 @@ class JsonStatsFetcherSpec extends SpecificationWithJUnit {
     }
   }
 }
+*/
