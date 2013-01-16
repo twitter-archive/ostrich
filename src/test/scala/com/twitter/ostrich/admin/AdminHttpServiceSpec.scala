@@ -17,14 +17,15 @@
 package com.twitter.ostrich
 package admin
 
+import com.twitter.conversions.time._
+import com.twitter.json.Json
+import com.twitter.logging.{Level, Logger}
 import java.net.{Socket, SocketException, URI, URL}
+import org.specs.SpecificationWithJUnit
+import org.specs.util.DataTables
 import scala.collection.Map
 import scala.collection.JavaConverters._
 import scala.io.Source
-import com.twitter.json.Json
-import com.twitter.logging.{Level, Logger}
-import org.specs.SpecificationWithJUnit
-import org.specs.util.DataTables
 import stats.{Stats, StatsListener}
 
 class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
@@ -44,7 +45,7 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
   "AdminHttpService" should {
     doBefore {
-      service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass))
+      service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass), 30.seconds)
       service.start()
     }
 
@@ -354,6 +355,10 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
         get("/stats.txt") must beMatching("  kangaroos: 1")
       }
+    }
+
+    "return 400 for /stats when collection period is below minimum" in {
+      get("/stats.json?period=10") must throwA[Exception]
     }
 
     "parse parameters" in {
