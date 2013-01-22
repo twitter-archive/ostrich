@@ -200,6 +200,11 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
       new Socket("localhost", port) must eventually(throwA[SocketException])
     }
 
+    "thread contention" in {
+      val prof = get("/contention.json")
+      prof mustMatch("\"blocked_threads\":")
+    }
+
     "provide stats" in {
       doAfter {
         service.shutdown()

@@ -19,6 +19,7 @@ package admin
 
 import com.twitter.conversions.time._
 import com.twitter.json.Json
+import com.twitter.jvm.ContentionSnapshot
 import com.twitter.logging.Logger
 import com.twitter.util.Duration
 import java.io._
@@ -65,6 +66,8 @@ class CommandHandler(
         s.flatMap { build(_) }.toList
       case d: Double =>
         if (d.longValue == d) List(d.longValue.toString) else List(d.toString)
+      case x if x == null =>
+        List("null")
       case x =>
         List(x.toString)
     }
@@ -146,6 +149,8 @@ class CommandHandler(
       case "gc" =>
         System.gc()
         "ok"
+      case "contention" =>
+        getContentionSnapshot()
       case x =>
         throw new UnknownCommandError(x)
     }
@@ -197,5 +202,13 @@ class CommandHandler(
                                               "stack" -> stack.toSeq.map(_.toString)))
     }.toSeq
     immutable.Map("threads" -> immutable.Map(stacks: _*))
+  }
+
+  private val contentionSnapshotter = new ContentionSnapshot
+  private def getContentionSnapshot(): Map[String, Seq[String]] = {
+    val snapshot = contentionSnapshotter.snap()
+    Map(
+      ("blocked_threads" -> snapshot.blockedThreads),
+      ("lock_owners" -> snapshot.lockOwners))
   }
 }
