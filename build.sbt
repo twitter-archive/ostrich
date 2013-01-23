@@ -1,24 +1,24 @@
 name := "ostrich"
 
-version := "9.0.5-SNAPSHOT"
+version := "9.0.6"
 
 organization := "com.twitter"
 
 scalaVersion := "2.9.2"
 
-javacOptions ++= Seq("-source", "1.6")
+javacOptions ++= Seq("-source", "1.6", "-target", "1.6")
 
-javacOptions ++= Seq("-target", "1.6")
+javacOptions in doc := Seq("-source", "1.6")
 
 parallelExecution in Test := false
 
 resolvers += "twitter repo" at "http://maven.twttr.com"
 
 libraryDependencies ++= Seq(
-  "com.twitter" %% "util-core" % "6.0.5",
-  "com.twitter" %% "util-eval" % "6.0.5",
-  "com.twitter" %% "util-logging" % "6.0.5",
-  "com.twitter" %% "util-jvm" % "6.0.5",
+  "com.twitter" %% "util-core" % "6.0.6",
+  "com.twitter" %% "util-eval" % "6.0.6",
+  "com.twitter" %% "util-logging" % "6.0.6",
+  "com.twitter" %% "util-jvm" % "6.0.6",
   "com.twitter" % "scala-json" % "3.0.1"
 )
 
