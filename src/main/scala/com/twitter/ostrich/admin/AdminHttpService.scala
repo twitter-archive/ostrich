@@ -341,6 +341,8 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
     } catch {
       case e: UnknownCommandError =>
         render("no such command\n", exchange, 404)
+      case e: InvalidCommandOptionError =>
+        render(e.getMessage + '\n', exchange, 400)
       case unknownException =>
         render("error processing command: " + unknownException, exchange, 500)
         unknownException.printStackTrace()
@@ -349,14 +351,18 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
 }
 
 class AdminHttpService(
-  val port: Int, backlog: Int, statsCollection: StatsCollection, runtime: RuntimeEnvironment
+  val port: Int,
+  backlog: Int,
+  statsCollection: StatsCollection,
+  runtime: RuntimeEnvironment,
+  statsListenerMinPeriod: Duration = 1.minute
 ) extends Service {
   def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
     this(port, backlog, Stats, runtime)
 
   val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
-  val commandHandler = new CommandHandler(runtime, statsCollection)
+  val commandHandler = new CommandHandler(runtime, statsCollection, statsListenerMinPeriod)
 
   def address = httpServer.getAddress
 

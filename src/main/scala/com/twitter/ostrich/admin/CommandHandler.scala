@@ -17,19 +17,27 @@
 package com.twitter.ostrich
 package admin
 
+import com.twitter.conversions.time._
+import com.twitter.json.Json
+import com.twitter.jvm.ContentionSnapshot
+import com.twitter.logging.Logger
+import com.twitter.util.Duration
 import java.io._
 import java.lang.management.ManagementFactory
 import java.util.Date
+import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 import scala.collection.Map
 import scala.collection.immutable
-import com.twitter.conversions.time._
-import com.twitter.json.Json
 import stats.{StatsListener, StatsCollection}
-import com.twitter.logging.Logger
-import java.util.regex.Pattern
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
+class InvalidCommandOptionError(
+    command: String,
+    optionName: String,
+    optionValue: String)
+  extends IllegalArgumentException(
+    "Invalid option for " + command + " command: " + optionName + ':' + optionValue)
 
 sealed abstract class Format()
 object Format {
@@ -37,7 +45,11 @@ object Format {
   case object Json extends Format
 }
 
-class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollection) {
+class CommandHandler(
+  runtime: RuntimeEnvironment,
+  statsCollection: StatsCollection,
+  statsListenerMinPeriod: Duration
+) {
   private def build(obj: Any): List[String] = {
     obj match {
       case m: Map[_, _] =>
@@ -54,6 +66,8 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
         s.flatMap { build(_) }.toList
       case d: Double =>
         if (d.longValue == d) List(d.longValue.toString) else List(d.toString)
+      case x if x == null =>
+        List("null")
       case x =>
         List(x.toString)
     }
@@ -102,7 +116,13 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
         val filtered = parameters.get("filtered").getOrElse("0") == "1"
         parameters.get("period").map { period =>
           // listener for a given period
-          StatsListener(period.toInt.seconds, statsCollection).get(filtered)
+          val periodDuration = period.toInt.seconds
+          if (periodDuration < statsListenerMinPeriod) {
+            throw new InvalidCommandOptionError(
+              command, "statsListenerMinPeriod", statsListenerMinPeriod.toString)
+          }
+
+          StatsListener(periodDuration, statsCollection).get(filtered)
         }.orElse {
           // (archaic, deprecated) named listener
           parameters.get("namespace").map { namespace =>
@@ -129,6 +149,8 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
       case "gc" =>
         System.gc()
         "ok"
+      case "contention" =>
+        getContentionSnapshot()
       case x =>
         throw new UnknownCommandError(x)
     }
@@ -180,5 +202,13 @@ class CommandHandler(runtime: RuntimeEnvironment, statsCollection: StatsCollecti
                                               "stack" -> stack.toSeq.map(_.toString)))
     }.toSeq
     immutable.Map("threads" -> immutable.Map(stacks: _*))
+  }
+
+  private val contentionSnapshotter = new ContentionSnapshot
+  private def getContentionSnapshot(): Map[String, Seq[String]] = {
+    val snapshot = contentionSnapshotter.snap()
+    Map(
+      ("blocked_threads" -> snapshot.blockedThreads),
+      ("lock_owners" -> snapshot.lockOwners))
   }
 }
