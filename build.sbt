@@ -1,10 +1,10 @@
 name := "ostrich"
 
-version := "9.0.6"
+version := "9.1.0"
 
 organization := "com.twitter"
 
-scalaVersion := "2.9.2"
+crossScalaVersions := Seq("2.9.2", "2.10.0")
 
 javacOptions ++= Seq("-source", "1.6", "-target", "1.6")
 
@@ -15,15 +15,19 @@ parallelExecution in Test := false
 resolvers += "twitter repo" at "http://maven.twttr.com"
 
 libraryDependencies ++= Seq(
-  "com.twitter" %% "util-core" % "6.0.6",
-  "com.twitter" %% "util-eval" % "6.0.6",
-  "com.twitter" %% "util-logging" % "6.0.6",
-  "com.twitter" %% "util-jvm" % "6.0.6",
-  "com.twitter" % "scala-json" % "3.0.1"
+  "com.twitter" %% "util-core" % "6.1.0",
+  "com.twitter" %% "util-eval" % "6.1.0",
+  "com.twitter" %% "util-logging" % "6.1.0",
+  "com.twitter" %% "util-jvm" % "6.1.0",
+  "com.twitter" %% "scala-json" % "3.0.1"
 )
 
 libraryDependencies ++= Seq(
-  "org.scala-tools.testing" % "specs_2.9.1" % "1.6.9" % "test",
+  "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
+    case "2.9.2" => "2.9.1"
+    case "2.10.0" => "2.10"
+    case x => x
+  },
   "junit" % "junit" % "4.8.1" % "test",
   "cglib" % "cglib" % "2.1_3" % "test",
   "asm" % "asm" % "1.5.3" % "test",
