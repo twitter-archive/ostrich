@@ -1,3 +1,14 @@
+9.1.0
+-----
+release: 30 January 2013
+
+- Fix Distribution.average() method that can lead to "divide by zero" exception
+- Add contention snapshot
+- Enforce a minimum StatsListener period
+- Add /health, /quitquitquit and /abort to the default Ostrich admin interface
+- Reduce the number of stats we are reporting (This drops p25 and p75)
+- update util versions
+
 8.2.9
 -----
 release: 16 October 2012
