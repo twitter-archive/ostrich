@@ -77,6 +77,7 @@ class Histogram {
   val buckets = new Array[Long](numBuckets)
   var count = 0L
   var sum = 0L
+  var sum2 = 0L
 
   /**
    * Adds a value directly to a bucket in a histogram. Can be used for
@@ -91,11 +92,13 @@ class Histogram {
     count += 1
   }
 
+
   def add(n: Int): Long = {
     val index = Histogram.bucketIndex(n)
     synchronized {
       addToBucket(index)
       sum += n
+      sum2 += n*n
       count
     }
   }
@@ -105,6 +108,7 @@ class Histogram {
       Arrays.fill(buckets, 0)
       count = 0
       sum = 0
+      sum2 = 0
     }
   }
 
@@ -115,6 +119,26 @@ class Histogram {
     }
     rv
   }
+
+  /**
+    * Arithmetic mean
+    */
+  def average = synchronized {
+    if (count > 0) (sum.toDouble / count) else 0.0
+  }
+
+  /**
+    *  Returns variance.
+    */
+  def variance: Double = synchronized {
+    val avg = average.toDouble
+    sum2/count - avg*avg
+  }
+
+  /**
+    *  Standard deviation
+    */
+  def stdDev: Double = math.sqrt(variance)
 
   /**
    * Percentile within 5%, but:
@@ -190,12 +214,14 @@ class Histogram {
       }
       count += other.count
       sum += other.sum
+      sum2 += other.sum2
     }
   }
 
   def -(other: Histogram): Histogram = {
     val rv = new Histogram()
     rv.sum = math.max(0L, sum - other.sum)
+    rv.sum2 = math.max(0L, sum2 - other.sum2)
     for (i <- 0 until numBuckets) {
       rv.buckets(i) = math.max(0, buckets(i) - other.buckets(i))
       rv.count += rv.buckets(i)
@@ -212,6 +238,7 @@ class Histogram {
     case h: Histogram => {
       h.count == count &&
         h.sum == sum &&
+        h.sum2 == sum2 &&
         h.buckets.indices.forall { i => h.buckets(i) == buckets(i) }
     }
     case _ => false
