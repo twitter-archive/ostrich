@@ -31,7 +31,7 @@ class DistributionSpec extends SpecificationWithJUnit {
 
     "toMap" in {
       Distribution(histogram2).toMap mustEqual
-        Map("count" -> 2, "maximum" -> 19, "minimum" -> 10, "average" -> 15, "sum" -> 30,
+        Map("count" -> 2, "maximum" -> 19, "minimum" -> 10, "average" -> 15, "sum" -> 30, "stdDev" -> 5,
             "p50" -> 10, "p90" -> 19, "p95" -> 19, "p99" -> 19, "p999" -> 19, "p9999" -> 19)
       Distribution(histogram0).toMap mustEqual Map("count" -> 0)
     }
@@ -39,7 +39,7 @@ class DistributionSpec extends SpecificationWithJUnit {
     "toJson" in {
       Distribution(histogram2).toJson mustEqual
         "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
-          "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}"
+          "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"stdDev\":5,\"sum\":30}"
     }
   }
 }

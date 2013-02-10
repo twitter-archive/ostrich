@@ -33,10 +33,8 @@ extends JsonSerializable {
   def sum = histogram.sum
   def minimum = histogram.minimum
   def maximum = histogram.maximum
-  def average = {
-    val count = histogram.count
-    if (count > 0) histogram.sum / count else 0.0
-  }
+  def average = histogram.average
+  def stdDev = histogram.stdDev
 
   def toJson() = Json.build(toMap).toString
 
@@ -60,7 +58,9 @@ extends JsonSerializable {
           "sum" -> histogram.sum,
           "maximum" -> histogram.maximum,
           "minimum" -> histogram.minimum,
-          "average" -> average.toLong)
+          "average" -> average.toLong,
+          "stdDev" -> stdDev.toLong
+        )
       } else {
         Map.empty[String, Long]
       }
