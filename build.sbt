@@ -1,6 +1,6 @@
 name := "ostrich"
 
-version := "9.1.0"
+version := "9.1.1"
 
 organization := "com.twitter"
 
@@ -15,10 +15,10 @@ parallelExecution in Test := false
 resolvers += "twitter repo" at "http://maven.twttr.com"
 
 libraryDependencies ++= Seq(
-  "com.twitter" %% "util-core" % "6.1.0",
-  "com.twitter" %% "util-eval" % "6.1.0",
-  "com.twitter" %% "util-logging" % "6.1.0",
-  "com.twitter" %% "util-jvm" % "6.1.0",
+  "com.twitter" %% "util-core" % "6.3.4",
+  "com.twitter" %% "util-eval" % "6.3.4",
+  "com.twitter" %% "util-logging" % "6.3.4",
+  "com.twitter" %% "util-jvm" % "6.3.4",
   "com.twitter" %% "scala-json" % "3.0.1"
 )
 
