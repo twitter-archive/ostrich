@@ -214,12 +214,20 @@ trait StatsProvider {
    * Runs the function f and logs that duration until the future is satisfied, in milliseconds, with
    * the given name.
    */
+  @deprecated("Use timeFutureMillisLazy instead")
   def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
+    timeFutureMillisLazy(name) { f }
+  }
+
+  /**
+   * Lazily runs the Future that `f` returns and measure the duration of Future creation and time
+   * until it is satisfied, in milliseconds, with the given name
+   */
+  def timeFutureMillisLazy[T](name: String)(f: => Future[T]): Future[T] = {
     val elapsed = Stopwatch.start()
-    f.respond { _ =>
+    f.ensure {
       addMetric(name + "_msec", elapsed().inMilliseconds.toInt)
     }
-    f
   }
 
   /**
