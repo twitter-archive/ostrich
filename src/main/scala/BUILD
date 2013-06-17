@@ -1,0 +1,13 @@
+scala_library(name='scala',
+  dependencies=[
+    pants('scala-json'),
+    pants('util/util-core'),
+    pants('util/util-eval'),
+    pants('util/util-logging'),
+    pants('util/util-jvm')
+  ],
+  sources=rglobs('*.scala'),
+  resources=[
+    pants('ostrich/src/main/resources')
+  ]
+)
