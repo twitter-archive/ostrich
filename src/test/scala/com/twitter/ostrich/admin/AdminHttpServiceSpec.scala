@@ -253,15 +253,27 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
                              .asInstanceOf[Map[String, Map[String, AnyRef]]]
         namespaceStats("counters")("apples") mustEqual 6
         namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
-        periodicStats = Json.parse(get("/stats.json?period=30"))
-                            .asInstanceOf[Map[String, Map[String, AnyRef]]]
-        periodicStats("counters")("apples") mustEqual 10
-        periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
-
         namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
-                             .asInstanceOf[Map[String, Map[String, AnyRef]]]
+          .asInstanceOf[Map[String, Map[String, AnyRef]]]
         namespaceStats("counters")("apples") mustEqual 0
         namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 0
+        periodicStats = Json.parse(get("/stats.json?period=30"))
+                            .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        if (periodicStats("counters")("apples") == 6) {
+          // PeriodicBackgroundProcess aligns the first event to the multiple
+          // of the period + 1 so the first event can happen as soon as in two
+          // seconds. In the case of the first event already happens when we
+          // check the stats, we retry the test.
+          Stats.incr("apples", 8)
+          Stats.addMetric("oranges", 4)
+          periodicStats = Json.parse(get("/stats.json?period=30"))
+                              .asInstanceOf[Map[String, Map[String, AnyRef]]]
+          periodicStats("counters")("apples") mustEqual 6
+          periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        } else {
+          periodicStats("counters")("apples") mustEqual 10
+          periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        }
       }
 
       "in json, with histograms" in {
@@ -275,7 +287,7 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         Stats.addMetric("kangaroo_time", 5)
         Stats.addMetric("kangaroo_time", 6)
 
-        val stats = get("/stats.json?period=30")
+        val stats = get("/stats.json")
         val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
         val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 

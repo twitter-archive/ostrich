@@ -1,4 +1,11 @@
-..1
+9.1.2
+-----
+release: 25 June 2013
+
+- upgrade util to version 6.3.7
+- Introduce timeFutureMillisLazy with by-name argument
+
+9.1.1
 -----
 release: 16 May 2013
 
