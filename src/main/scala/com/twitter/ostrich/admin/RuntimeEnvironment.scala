@@ -46,7 +46,10 @@ object RuntimeEnvironment {
  * sbt standard-project: <http://github.com/twitter/standard-project>
  *
  * You have to pass in an object from your package in order to identify the
- * location of the `build.properties` file.
+ * location of the `build.properties` file.  The ClassLoader for the given object
+ * is used to load the buid.properties file, which is first searched for relative
+ * to the given class (class-package-name/build.properties), and if not found there,
+ * then it is searched for with an absolute path ("/build.properties").
  */
 class RuntimeEnvironment(obj: AnyRef) {
   private val buildProperties = new Properties
@@ -58,6 +61,11 @@ class RuntimeEnvironment(obj: AnyRef) {
     buildProperties.load(obj.getClass.getResource("build.properties").openStream)
   } catch {
     case _ =>
+      try {
+        buildProperties.load(obj.getClass.getResource("/build.properties").openStream)
+      } catch {
+        case _ =>
+      }
   }
 
   val jarName = buildProperties.getProperty("name", "unknown")
