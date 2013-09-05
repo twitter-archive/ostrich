@@ -31,7 +31,7 @@ class Metric {
   /**
    * Resets the state of this Metric. Clears all data points collected so far.
    */
-  def clear() = synchronized {
+  def clear() {
     histogram.clear()
   }
 
@@ -40,9 +40,7 @@ class Metric {
    */
   def add(n: Int): Long = {
     if (n > -1) {
-      synchronized {
-        histogram.add(n)
-      }
+      histogram.add(n)
     } else {
       log.warning("Tried to add a negative data point.")
       histogram.count
@@ -66,7 +64,7 @@ class Metric {
   /**
    * Returns a Distribution for this Metric.
    */
-  def apply(): Distribution = histogram()
+  def apply(): Distribution = synchronized { histogram() }
 }
 
 class FanoutMetric(others: Metric*) extends Metric {

@@ -24,10 +24,10 @@ import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.util.Time
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 import stats.Stats
 
-object TimeSeriesCollectorSpec extends Specification {
+class TimeSeriesCollectorSpec extends SpecificationWithJUnit {
   "TimeSeriesCollector" should {
     var collector: TimeSeriesCollector = null
 
@@ -104,7 +104,7 @@ object TimeSeriesCollectorSpec extends Specification {
         Stats.incr("dogs", 1)
         collector.collector.periodic()
 
-        val service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))
+        val service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass))
         collector.registerWith(service)
         service.start()
         val port = service.address.getPort
@@ -130,17 +130,17 @@ object TimeSeriesCollectorSpec extends Specification {
         Stats.addMetric("run", 20)
         collector.collector.periodic()
 
-        val service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))
+        val service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass))
         collector.registerWith(service)
         service.start()
         val port = service.address.getPort
         try {
           var data = getJson(port, "/graph_data/metric:run").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 6, 10, 17, 23, 23, 23, 23, 23)
+          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 5, 10, 15, 19, 19, 19, 19, 19)
           data = getJson(port, "/graph_data/metric:run?p=0,2").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 6, 17)
+          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 5, 15)
           data = getJson(port, "/graph_data/metric:run?p=1,7").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 10, 23)
+          data("metric:run")(59) mustEqual List(Time.now.inSeconds, 10, 19)
         } finally {
           service.shutdown()
         }

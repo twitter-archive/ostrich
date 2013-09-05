@@ -17,11 +17,40 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
-import com.twitter.util.Time
-import org.specs.Specification
+import com.twitter.ostrich.admin.PeriodicBackgroundProcess
+import org.specs.SpecificationWithJUnit
+import org.specs.util.Duration
 
-object StatsListenerSpec extends Specification {
-  "StatsListener" should {
+class StatsListenerSpec extends SpecificationWithJUnit {
+  "StatsListener object" should {
+    var collection: StatsCollection = null
+
+    doBefore {
+      collection = new StatsCollection()
+      StatsListener.clearAll()
+    }
+
+    "track latched listeners" in {
+      StatsListener.listeners.size() mustEqual 0
+      val listener = StatsListener(1.minute, collection)
+      val listener2 = StatsListener(1.minute, collection)
+      listener must be(listener2)
+      StatsListener.listeners.size() mustEqual 1
+      StatsListener(500.millis, collection) mustNot be(listener)
+      StatsListener.listeners.size() mustEqual 2
+      val key = ("period:%d".format(1.minute.inMillis), collection)
+      StatsListener.listeners.containsKey(key) must beTrue
+      StatsListener.listeners.get(key) mustEqual listener
+    }
+
+    "tracks named listeners" in {
+      val monkeyListener = StatsListener("monkey", collection)
+      StatsListener("donkey", collection) mustNot be(monkeyListener)
+      StatsListener("monkey", collection) must be(monkeyListener)
+    }
+  }
+
+  "StatsListener instance" should {
     var collection: StatsCollection = null
     var listener: StatsListener = null
     var listener2: StatsListener = null
@@ -30,12 +59,15 @@ object StatsListenerSpec extends Specification {
       collection = new StatsCollection()
       listener = new StatsListener(collection)
       listener2 = new StatsListener(collection)
+      StatsListener.clearAll()
     }
+
 
     "reports basic stats" in {
       "counters" in {
-        collection.incr("a", 3)
         collection.incr("b", 4)
+        collection.incr("a", 3)
+
         listener.getCounters() mustEqual Map("a" -> 3, "b" -> 4)
         collection.incr("a", 2)
         listener.getCounters() mustEqual Map("a" -> 2, "b" -> 0)
@@ -44,9 +76,9 @@ object StatsListenerSpec extends Specification {
       "metrics" in {
         collection.addMetric("beans", 3)
         collection.addMetric("beans", 4)
-        collection.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
-        listener.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
-        listener2.getMetrics() mustEqual Map("beans" -> new Distribution(Histogram(3, 4)))
+        collection.getMetrics() mustEqual Map("beans" -> Distribution(Histogram(3, 4)))
+        listener.getMetrics() mustEqual Map("beans" -> Histogram(3, 4))
+        listener2.getMetrics() mustEqual Map("beans" -> Histogram(3, 4))
       }
     }
 
@@ -63,15 +95,15 @@ object StatsListenerSpec extends Specification {
       "metrics" in {
         collection.addMetric("timing", 10)
         collection.addMetric("timing", 20)
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20)))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 20))
         collection.addMetric("timing", 10)
-        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
+        listener2.getMetrics() mustEqual Map("timing" -> Histogram(10, 20, 10))
         collection.addMetric("timing", 10)
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 10)))
-        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10)))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 10))
+        listener2.getMetrics() mustEqual Map("timing" -> Histogram(10))
 
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram()))
-        listener2.getMetrics() mustEqual Map("timing" -> Distribution(Histogram()))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram())
+        listener2.getMetrics() mustEqual Map("timing" -> Histogram())
       }
     }
 
@@ -88,7 +120,7 @@ object StatsListenerSpec extends Specification {
       "metrics" in {
         collection.addMetric("timing", 10)
         collection.addMetric("timing", 20)
-        listener.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20)))
+        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 20))
         collection.addMetric("timing", 10)
 
         collection.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
@@ -106,16 +138,54 @@ object StatsListenerSpec extends Specification {
       collection.addMetric("beans", 3)
       listener3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
       listener3.getMetrics() mustEqual
-        Map("beans" -> new Distribution(Histogram(3)),
-            "rice" -> new Distribution(Histogram()))
+        Map("beans" -> Histogram(3),
+            "rice" -> Histogram())
     }
+  }
 
-    "named" in {
-      collection.incr("a", 5)
-      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 5)
-      collection.incr("a", 4)
-      StatsListener("queen", collection).getCounters() mustEqual Map("a" -> 4)
-      StatsListener("king", collection).getCounters() mustEqual Map("a" -> 9)
+  "LatchedStatsListener instance" should {
+    "latch to the top of a period" in {
+      val collection = new StatsCollection()
+      val listener = new LatchedStatsListener(collection, 1.second) {
+        override lazy val service = new PeriodicBackgroundProcess("", 1.second) {
+          def periodic() { }
+        }
+      }
+
+      var gauge = 0
+      collection.incr("counter", 5)
+      collection.addGauge("gauge") { synchronized { gauge } }
+      collection.setLabel("label", "HIMYNAMEISBRAK")
+      collection.addMetric("metric", Distribution(Histogram(1, 2)))
+
+      listener.getCounters() mustEqual Map()
+      listener.getGauges() mustEqual Map()
+      listener.getLabels() mustEqual Map()
+      listener.getMetrics() mustEqual Map()
+
+      listener.nextLatch()
+
+      listener.getCounters() mustEqual Map("counter" -> 5)
+      listener.getGauges() mustEqual Map("gauge" -> 0)
+      listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
+      listener.getMetrics() mustEqual Map("metric" -> Histogram(1, 2))
+
+      collection.incr("counter", 3)
+      synchronized { gauge = 37 }
+      collection.setLabel("label", "EEPEEPIAMAMONKEY")
+      collection.addMetric("metric", Distribution(Histogram(3, 4, 5)))
+
+      listener.getCounters() mustEqual Map("counter" -> 5)
+      listener.getGauges() mustEqual Map("gauge" -> 0)
+      listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
+      listener.getMetrics() mustEqual Map("metric" -> Histogram(1, 2))
+
+      listener.nextLatch()
+
+      listener.getCounters() mustEqual Map("counter" -> 3)
+      listener.getGauges() mustEqual Map("gauge" -> 37)
+      listener.getLabels() mustEqual Map("label" -> "EEPEEPIAMAMONKEY")
+      listener.getMetrics() mustEqual Map("metric" -> Histogram(3, 4, 5))
     }
   }
 }

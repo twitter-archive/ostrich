@@ -17,17 +17,18 @@
 package com.twitter.ostrich
 package admin
 
+import com.twitter.conversions.time._
+import com.twitter.json.Json
+import com.twitter.logging.{Level, Logger}
 import java.net.{Socket, SocketException, URI, URL}
+import org.specs.SpecificationWithJUnit
+import org.specs.util.DataTables
 import scala.collection.Map
 import scala.collection.JavaConverters._
 import scala.io.Source
-import com.twitter.json.Json
-import com.twitter.logging.{Level, Logger}
-import org.specs.Specification
-import org.specs.util.DataTables
-import stats.Stats
+import stats.{Stats, StatsListener}
 
-object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
+class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
   def get(path: String): String = {
     val port = service.address.getPort
     val url = new URL("http://localhost:%s%s".format(port, path))
@@ -44,12 +45,13 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
   "AdminHttpService" should {
     doBefore {
-      service = new AdminHttpService(0, 20, new RuntimeEnvironment(getClass))
+      service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass), 30.seconds)
       service.start()
     }
 
     doAfter {
       Stats.clearAll()
+      StatsListener.clearAll()
       service.shutdown()
     }
 
@@ -153,8 +155,54 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
       serverInfo mustMatch("\"uptime\":")
     }
 
+    "change log levels" in {
+      // Add a logger with a very specific name
+      val name = "logger-" + System.currentTimeMillis
+      val logger = Logger.get(name) // register this logger
+      logger.setLevel(Level.INFO)
+
+      // no levels specified
+      var logLevels = get("/logging")
+      logLevels mustMatch(name)
+      logLevels mustMatch("Specify a logger name and level")
+
+      // specified properly
+      logLevels = get("/logging?name=%s&level=FATAL".format(name))
+      Logger.get(name).getLevel() must be_==(Level.FATAL)
+      logLevels mustMatch("Successfully changed the level of the following logger")
+
+      // made up level
+      logLevels = get("/logging?name=%s&level=OHEMGEE".format(name))
+      logLevels mustMatch("Logging level change failed")
+
+      // made up logger
+      logLevels = get("/logging?name=OHEMGEEWHYAREYOUUSINGTHISLOGGERNAME&level=INFO")
+      logLevels mustMatch("Logging level change failed")
+    }
+
     "fetch static files" in {
       get("/static/drawgraph.js") must include("drawChart")
+    }
+
+    "mesos health" in {
+      get("/health") must include("OK")
+    }
+
+    "mesos abortabortabort" in {
+      val port = service.address.getPort
+      get("/abortabortabort")
+      new Socket("localhost", port) must eventually(throwA[SocketException])
+    }
+
+    "mesos quitquitquit" in {
+      val port = service.address.getPort
+      get("/quitquitquit")
+      new Socket("localhost", port) must eventually(throwA[SocketException])
+    }
+
+    "thread contention" in {
+      val prof = get("/contention.json")
+      prof mustMatch("\"blocked_threads\":")
     }
 
     "provide stats" in {
@@ -184,20 +232,54 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         Stats.incr("apples", 10)
         Stats.addMetric("oranges", 5)
 
-        val stats1 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats1("counters")("apples") mustEqual 10
-        stats1("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        var absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        absStats("counters")("apples") mustEqual 10
+        absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        var namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
+                                 .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        namespaceStats("counters")("apples") mustEqual 10
+        namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        var periodicStats = Json.parse(get("/stats.json?period=30"))
+                                .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        periodicStats("counters")("apples") mustEqual 10
+        periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
 
         Stats.incr("apples", 6)
-        val stats2 = Json.parse(get("/stats.json?namespace=ganglia")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats2("counters")("apples") mustEqual 6
-        val stats3 = Json.parse(get("/stats.json?namespace=vex")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        stats3("counters")("apples") mustEqual 16
+        Stats.addMetric("oranges", 3)
+        absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+        absStats("counters")("apples") mustEqual 16
+        absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 2
+        namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
+                             .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        namespaceStats("counters")("apples") mustEqual 6
+        namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
+          .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        namespaceStats("counters")("apples") mustEqual 0
+        namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 0
+        periodicStats = Json.parse(get("/stats.json?period=30"))
+                            .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        if (periodicStats("counters")("apples") == 6) {
+          // PeriodicBackgroundProcess aligns the first event to the multiple
+          // of the period + 1 so the first event can happen as soon as in two
+          // seconds. In the case of the first event already happens when we
+          // check the stats, we retry the test.
+          Stats.incr("apples", 8)
+          Stats.addMetric("oranges", 4)
+          periodicStats = Json.parse(get("/stats.json?period=30"))
+                              .asInstanceOf[Map[String, Map[String, AnyRef]]]
+          periodicStats("counters")("apples") mustEqual 6
+          periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        } else {
+          periodicStats("counters")("apples") mustEqual 10
+          periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") mustEqual 1
+        }
       }
 
       "in json, with histograms" in {
         // make some statsy things happen
         Stats.clearAll()
+        get("/stats.json")
         Stats.addMetric("kangaroo_time", 1)
         Stats.addMetric("kangaroo_time", 2)
         Stats.addMetric("kangaroo_time", 3)
@@ -215,14 +297,8 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         timings must haveKey("average")
         timings("average") mustEqual 3
 
-        timings must haveKey("p25")
-        timings("p25") mustEqual 2
-
         timings must haveKey("p50")
         timings("p50") mustEqual 3
-
-        timings must haveKey("p75")
-        timings("p75")  mustEqual 6
 
         timings must haveKey("p99")
         timings("p99") mustEqual 6
@@ -255,14 +331,8 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         timings must haveKey("average")
         timings("average") mustEqual 3
 
-        timings must haveKey("p25")
-        timings("p25") mustEqual 2
-
         timings must haveKey("p50")
         timings("p50") mustEqual 3
-
-        timings must haveKey("p75")
-        timings("p75")  mustEqual 6
 
         timings must haveKey("p95")
         timings("p95") mustEqual 6
@@ -283,6 +353,18 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
         stats.endsWith(")") mustBe true
       }
 
+      "in json, with named callback" in {
+        val stats = get("/stats.json?callback=My.Awesome.Callback")
+        stats.startsWith("My.Awesome.Callback(") mustBe true
+        stats.endsWith(")") mustBe true
+      }
+
+      "in json, with empty callback" in {
+        val stats = get("/stats.json?callback=")
+        stats.startsWith("ostrichCallback(") mustBe true
+        stats.endsWith(")") mustBe true
+      }
+
       "in text" in {
         // make some statsy things happen
         Stats.clearAll()
@@ -290,6 +372,10 @@ object AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
         get("/stats.txt") must beMatching("  kangaroos: 1")
       }
+    }
+
+    "return 400 for /stats when collection period is below minimum" in {
+      get("/stats.json?period=10") must throwA[Exception]
     }
 
     "parse parameters" in {

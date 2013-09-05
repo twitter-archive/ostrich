@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Twitter, Inc.
+ * Copyright 2009 - 2011 Twitter, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -60,7 +60,9 @@ object BackgroundProcess {
  * call a method that can be interrupted (like sleep) or block for a low
  * timeout.
  */
-abstract class BackgroundProcess(name: String) extends Service {
+abstract class BackgroundProcess(name: String, interruptable: Boolean) extends Service {
+  def this(name: String) = this(name, true)
+
   private val log = Logger.get(getClass.getName)
 
   @volatile var running = false
@@ -81,6 +83,7 @@ abstract class BackgroundProcess(name: String) extends Service {
             running = false
         }
       }
+      log.info("%s exiting.", name)
     }
   }
 
@@ -95,10 +98,14 @@ abstract class BackgroundProcess(name: String) extends Service {
     }
   }
 
-  def shutdown() {
+  def stop() {
     running = false
+  }
+
+  def shutdown() {
+    stop()
     try {
-      thread.interrupt()
+      if (interruptable) thread.interrupt()
       thread.join()
     } catch {
       case e: Throwable =>
@@ -116,13 +123,16 @@ abstract class BackgroundProcess(name: String) extends Service {
  *
  * The `periodic()` method implements the periodic event.
  */
-abstract class PeriodicBackgroundProcess(name: String, private val period: Duration)
-extends BackgroundProcess(name) {
+abstract class PeriodicBackgroundProcess(name: String, private val period: Duration, interruptable: Boolean)
+extends BackgroundProcess(name, interruptable) {
+  def this(name: String, period: Duration) = this(name, period, true)
+
   def nextRun: Duration = {
     val t = Time.now + period
     // truncate to nearest round multiple of the desired repeat in seconds.
-    if (period >= 1.second) {
-      Time.fromSeconds((t.inSeconds / period.inSeconds) * period.inSeconds) - Time.now
+    if (period > 1.second) {
+      // add 1 second because we rounded off the seconds.
+      Time.fromSeconds((t.inSeconds / period.inSeconds) * period.inSeconds + 1) - Time.now
     } else {
       t - Time.now
     }

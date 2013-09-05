@@ -16,9 +16,9 @@
 
 package com.twitter.ostrich.stats
 
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object MetricSpec extends Specification {
+class MetricSpec extends SpecificationWithJUnit {
   "Metric" should {
     "min, max, mean" in {
       val metric = new Metric()

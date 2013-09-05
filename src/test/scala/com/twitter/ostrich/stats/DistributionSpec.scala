@@ -16,9 +16,9 @@
 
 package com.twitter.ostrich.stats
 
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object DistributionSpec extends Specification {
+class DistributionSpec extends SpecificationWithJUnit {
   "Distribution" should {
     val histogram0 = Histogram()
     val histogram1 = Histogram(10)
@@ -31,16 +31,15 @@ object DistributionSpec extends Specification {
 
     "toMap" in {
       Distribution(histogram2).toMap mustEqual
-        Map("count" -> 2, "maximum" -> 23, "minimum" -> 10, "average" -> 15, "sum" -> 30,
-            "p25" -> 10, "p50" -> 10, "p75" -> 23, "p90" -> 23, "p95" -> 23, "p99" -> 23,
-            "p999" -> 23, "p9999" -> 23)
+        Map("count" -> 2, "maximum" -> 19, "minimum" -> 10, "average" -> 15, "sum" -> 30,
+            "p50" -> 10, "p90" -> 19, "p95" -> 19, "p99" -> 19, "p999" -> 19, "p9999" -> 19)
       Distribution(histogram0).toMap mustEqual Map("count" -> 0)
     }
 
     "toJson" in {
       Distribution(histogram2).toJson mustEqual
-        "{\"average\":15,\"count\":2,\"maximum\":23,\"minimum\":10,\"p25\":10,\"p50\":10," +
-          "\"p75\":23,\"p90\":23,\"p95\":23,\"p99\":23,\"p999\":23,\"p9999\":23,\"sum\":30}"
+        "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
+          "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}"
     }
   }
 }

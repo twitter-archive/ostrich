@@ -22,9 +22,9 @@ import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
 import com.twitter.util.{Time, Future}
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-object StatsCollectionSpec extends Specification {
+class StatsCollectionSpec extends SpecificationWithJUnit {
   "StatsCollection" should {
     val collection = new StatsCollection()
 
@@ -48,6 +48,19 @@ object StatsCollectionSpec extends Specification {
       map.keys.toList must contain("jvm_gc_msec")
     }
 
+    "StatsSummary filtering" in {
+      val summary = StatsSummary(
+        Map("apples" -> 10, "oranges" -> 13, "appliances" -> 4, "bad_oranges" -> 1),
+        Map(),
+        Map(),
+        Map()
+      )
+
+      summary.filterOut("""app.*""".r).counters mustEqual Map("oranges" -> 13, "bad_oranges" -> 1)
+      summary.filterOut("""xyz.*""".r).counters mustEqual summary.counters
+      summary.filterOut(""".*oranges""".r).counters mustEqual Map("apples" -> 10, "appliances" -> 4)
+    }
+
     "counters" in {
       "basic" in {
         collection.incr("widgets", 1)
@@ -60,6 +73,14 @@ object StatsCollectionSpec extends Specification {
         collection.incr("widgets", 3)
         collection.incr("widgets", -1)
         collection.getCounters() mustEqual Map("widgets" -> 2)
+      }
+
+      "clearCounter" in {
+        collection.getCounter("smellyfeet")
+        collection.incr("smellyfeet", 1)
+        collection.getCounters() mustEqual Map("smellyfeet" -> 1)
+        collection.removeCounter("smellyfeet")
+        collection.getCounters() mustEqual Map()
       }
     }
 
@@ -174,7 +195,7 @@ object StatsCollectionSpec extends Specification {
         Stats.addMetric("alpha", new Distribution(Histogram(0)))
         Stats.getMetrics()("alpha").toString mustEqual
           "(average=0, count=1, maximum=0, minimum=0, " +
-          "p25=0, p50=0, p75=0, p90=0, p95=0, p99=0, p999=0, p9999=0, sum=0)"
+          "p50=0, p90=0, p95=0, p99=0, p999=0, p9999=0, sum=0)"
       }
     }
 
@@ -194,6 +215,12 @@ object StatsCollectionSpec extends Specification {
       "getGauge" in {
         collection.setGauge("stew", 11.0)
         collection.getGauges() mustEqual Map("stew" -> 11.0)
+      }
+
+      "swallow exceptions" in {
+        collection.addGauge("YIKES") { throw new RuntimeException("YIKES") }
+        collection.getGauges() mustEqual Map.empty[String, Double]
+        collection.getGauge("YIKES") mustEqual None
       }
 
       "clearGauge" in {

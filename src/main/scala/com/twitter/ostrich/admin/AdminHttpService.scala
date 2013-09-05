@@ -23,8 +23,9 @@ import scala.io.Source
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.util.{Duration, Time}
+import com.twitter.util.{Duration, Time, Return, Throw}
 import java.util.Properties
+import stats.{StatsCollection, Stats}
 
 /**
  * Custom handler interface for the admin web site. The standard `render` calls are implemented in
@@ -161,6 +162,34 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)])
 }
 
+/**
+ * Deal with requests from the mesos executor
+ */
+object MesosRequestHandler extends CgiRequestHandler {
+
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+    val response = path match {
+      case List("health") =>
+        "OK\n"
+      case List("quitquitquit") =>
+        BackgroundProcess.spawn("admin:quiesce") {
+          Thread.sleep(100)
+          ServiceTracker.quiesce()
+        }
+        "quitting\n"
+      case List("abortabortabort") =>
+        BackgroundProcess.spawn("admin:shutdown") {
+          Thread.sleep(100)
+          ServiceTracker.shutdown()
+        }
+        "aborting\n"
+      case _ =>
+        "unknown command"
+    }
+    render(response, exchange, 200, "text/plain")
+  }
+}
+
 class HeapResourceHandler extends CgiRequestHandler {
   private val log = Logger(getClass.getName)
   case class Params(pause: Duration, samplingPeriod: Int, forceGC: Boolean)
@@ -200,10 +229,86 @@ class HeapResourceHandler extends CgiRequestHandler {
   }
 }
 
+class ProfileResourceHandler(which: Thread.State) extends CgiRequestHandler {
+  import com.twitter.jvm.CpuProfile
+
+  private val log = Logger(getClass.getName)
+  case class Params(pause: Duration, frequency: Int)
+
+  def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
+    val params =
+      parameters.foldLeft(Params(10.seconds, 100)) {
+        case (params, ("seconds", pauseVal)) =>
+          params.copy(pause = pauseVal.toInt.seconds)
+        case (params, ("hz", hz)) =>
+          params.copy(frequency = hz.toInt)
+        case (params, _) =>
+          params
+      }
+
+    log.info("collecting CPU profile (%s) for %s seconds at %dHz".format(
+      which, params.pause, params.frequency))
+    CpuProfile.recordInThread(params.pause, params.frequency, which) respond {
+      case Return(prof) =>
+        // Write out the profile verbatim. It's a pprof "raw" profile.
+        exchange.getResponseHeaders.set("Content-Type", "pprof/raw")
+        exchange.sendResponseHeaders(200, 0)
+        val output = exchange.getResponseBody()
+        prof.writeGoogleProfile(output)
+        output.close()
+        exchange.close()
+
+      case Throw(exc) =>
+        exchange.sendResponseHeaders(500, 0)
+        val output = exchange.getResponseBody()
+        output.write(exc.toString.getBytes)
+        output.close()
+        exchange.close()
+    }
+  }
+}
+
+/**
+ * Can turn trace recording on and off for the entire service.
+ */
+class TracingHandler extends CgiRequestHandler {
+  private val log = Logger(getClass.getName)
+
+  def handle(exchange: HttpExchange, path: List[String], params: List[(String, String)]) {
+    try {
+      if (!FinagleTracing.instance.isDefined) {
+        render("Finagle tracing not found!", exchange)
+        return
+      }
+    } catch {
+      case _ =>
+        render("Could not initialize Finagle tracing classes. Possibly old version of Finagle.",
+          exchange)
+        return
+    }
+
+    val tracing = FinagleTracing.instance.get
+    val paramsMap = params.toMap
+    val msg = if (paramsMap.get("enable").equals(Some("true"))) {
+      tracing.enable()
+      "Enabled Finagle tracing"
+    } else if (paramsMap.get("disable").equals(Some("true"))) {
+      tracing.disable()
+      "Disabling Finagle tracing"
+    } else {
+      "Could not figure out what you wanted to do with tracing. " +
+        "Either enable or disable it. This is what we got: " + params
+    }
+
+    log.info(msg)
+    render(msg, exchange)
+  }
+}
+
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     if (path == Nil) {
-      render(loadResource("/index.html"), exchange)
+      render(loadResource("/static/index.html"), exchange)
       return
     }
 
@@ -219,7 +324,13 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
         val commandResponse = commandHandler(command, parameterMap, format)
 
         if (parameterMap.keySet.contains("callback") && (format == Format.Json)) {
-          "ostrichCallback(%s)".format(commandResponse)
+          val callbackName = parameterMap.get("callback") match {
+              case Some("true") => "ostrichCallback"
+              case Some("") => "ostrichCallback" // Just in case callback= shows up
+              case Some(x) => x
+              case None => "ostrichCallBack" // This shouldn't happen
+          }
+          "%s(%s)".format(callbackName,commandResponse)
         } else {
           commandResponse
         }
@@ -229,7 +340,9 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
       render(response, exchange, 200, contentType)
     } catch {
       case e: UnknownCommandError =>
-        render("no such command", exchange, 404)
+        render("no such command\n", exchange, 404)
+      case e: InvalidCommandOptionError =>
+        render(e.getMessage + '\n', exchange, 400)
       case unknownException =>
         render("error processing command: " + unknownException, exchange, 500)
         unknownException.printStackTrace()
@@ -237,10 +350,19 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
   }
 }
 
-class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) extends Service {
+class AdminHttpService(
+  val port: Int,
+  backlog: Int,
+  statsCollection: StatsCollection,
+  runtime: RuntimeEnvironment,
+  statsListenerMinPeriod: Duration = 1.minute
+) extends Service {
+  def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
+    this(port, backlog, Stats, runtime)
+
   val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
-  val commandHandler = new CommandHandler(runtime)
+  val commandHandler = new CommandHandler(runtime, statsCollection, statsListenerMinPeriod)
 
   def address = httpServer.getAddress
 
@@ -249,6 +371,12 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
   addContext("/favicon.ico", new MissingFileHandler())
   addContext("/static", new FolderResourceHandler("/static"))
   addContext("/pprof/heap", new HeapResourceHandler)
+  addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
+  addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
+  addContext("/tracing", new TracingHandler)
+  addContext("/health", MesosRequestHandler)
+  addContext("/quitquitquit", MesosRequestHandler)
+  addContext("/abortabortabort", MesosRequestHandler)
 
   httpServer.setExecutor(null)
 
@@ -265,7 +393,7 @@ class AdminHttpService(port: Int, backlog: Int, runtime: RuntimeEnvironment) ext
 
   def handleRequest(socket: Socket) { }
 
-  def start() = {
+  def start() {
     ServiceTracker.register(this)
     httpServer.start()
     log.info("Admin HTTP interface started on port %d.", address.getPort)

@@ -16,10 +16,12 @@
 
 package com.twitter.ostrich.stats
 
+import scala.util.matching.Regex
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
-import com.twitter.util.{Duration, Future, Time}
+import com.twitter.util.{Duration, Future, Time, Stopwatch}
 import com.twitter.ostrich.admin.ServiceTracker
+import com.twitter.logging.Logger
 
 /**
  * Immutable summary of counters, metrics, gauges, and labels.
@@ -51,6 +53,15 @@ case class StatsSummary(
   def toJson = {
     Json.build(toMap).toString
   }
+
+  def filterOut(regex: Regex) = {
+    StatsSummary(
+      counters.filterKeys { !regex.pattern.matcher(_).matches },
+      metrics.filterKeys { !regex.pattern.matcher(_).matches },
+      gauges.filterKeys { !regex.pattern.matcher(_).matches },
+      labels.filterKeys { !regex.pattern.matcher(_).matches }
+    )
+  }
 }
 
 /**
@@ -68,11 +79,17 @@ case class StatsSummary(
  * - label: an instantaneous informational string for debugging or status checking
  */
 trait StatsProvider {
+  val log = Logger.get(getClass.getName)
+
   /**
    * Adds a value to a named metric, which tracks min, max, mean, and a histogram.
    */
   def addMetric(name: String, value: Int) {
-    getMetric(name).add(value)
+    if (value >= 0) {
+      getMetric(name).add(value)
+    } else {
+      log.warning("Tried to add a negative data point: %s", name)
+    }
   }
 
   /**
@@ -188,10 +205,10 @@ trait StatsProvider {
    * the given name.
    */
   def timeFutureMicros[T](name: String)(f: Future[T]): Future[T] = {
-    val start = Time.now
+    val elapsed = Stopwatch.start()
     f.respond { _ =>
-      addMetric(name + "_usec", start.untilNow.inMicroseconds.toInt)
-      ServiceTracker.hookTime(name + "_usec", start.sinceNow.inMicroseconds.toInt)
+      addMetric(name + "_usec", elapsed().inMicroseconds.toInt)
+      ServiceTracker.hookTime(name + "_usec", elapsed().inMicroseconds.toInt)
     }
     f
   }
@@ -200,13 +217,21 @@ trait StatsProvider {
    * Runs the function f and logs that duration until the future is satisfied, in milliseconds, with
    * the given name.
    */
+  @deprecated("Use timeFutureMillisLazy instead")
   def timeFutureMillis[T](name: String)(f: Future[T]): Future[T] = {
-    val start = Time.now
-    f.respond { _ =>
-      addMetric(name + "_msec", start.untilNow.inMilliseconds.toInt)
-      ServiceTracker.hookTime(name + "_msec", start.sinceNow.inMilliseconds.toInt)
+    timeFutureMillisLazy(name) { f }
+  }
+
+  /**
+   * Lazily runs the Future that `f` returns and measure the duration of Future creation and time
+   * until it is satisfied, in milliseconds, with the given name
+   */
+  def timeFutureMillisLazy[T](name: String)(f: => Future[T]): Future[T] = {
+    val elapsed = Stopwatch.start()
+    f.ensure {
+      addMetric(name + "_msec", elapsed().inMilliseconds.toInt)
+      ServiceTracker.hookTime(name + "_msec", elapsed().inMilliseconds.toInt)
     }
-    f
   }
 
   /**
@@ -214,10 +239,10 @@ trait StatsProvider {
    * the given name.
    */
   def timeFutureNanos[T](name: String)(f: Future[T]): Future[T] = {
-    val start = Time.now
+    val elapsed = Stopwatch.start()
     f.respond { _ =>
-      addMetric(name + "_nsec", start.untilNow.inNanoseconds.toInt)
-      ServiceTracker.hookTime(name + "_nsec", start.sinceNow.inNanoseconds.toInt)
+      addMetric(name + "_nsec", elapsed().inNanoseconds.toInt)
+      ServiceTracker.hookTime(name + "_nsec", elapsed().inNanoseconds.toInt)
     }
     f
   }

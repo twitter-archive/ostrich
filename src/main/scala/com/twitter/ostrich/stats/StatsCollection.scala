@@ -16,12 +16,13 @@
 
 package com.twitter.ostrich.stats
 
-import java.lang.management._
-import java.util.concurrent.ConcurrentHashMap
-import scala.collection.{Map, mutable, immutable}
 import com.twitter.conversions.string._
 import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Local
+import java.lang.management._
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
+import scala.collection.mutable
 
 /**
  * Concrete StatsProvider that tracks counters and timings.
@@ -66,6 +67,12 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
     val os = ManagementFactory.getOperatingSystemMXBean()
     out += ("jvm_num_cpus" -> os.getAvailableProcessors().toLong)
+    os match {
+      case unix: com.sun.management.UnixOperatingSystemMXBean =>
+        out += ("jvm_fd_count" -> unix.getOpenFileDescriptorCount)
+        out += ("jvm_fd_limit" -> unix.getMaxFileDescriptorCount)
+      case _ =>   // ew, Windows... or something
+    }
 
     var totalUsage = 0L
     ManagementFactory.getMemoryPoolMXBeans().asScala.foreach { pool =>
@@ -73,6 +80,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
       Option(pool.getCollectionUsage).foreach { usage =>
         out += ("jvm_post_gc_" + name + "_used" -> usage.getUsed)
         totalUsage += usage.getUsed
+        out += ("jvm_post_gc_" + name + "_max" -> usage.getMax)
       }
     }
     out += ("jvm_post_gc_used" -> totalUsage)
@@ -84,10 +92,15 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
     ManagementFactory.getGarbageCollectorMXBeans().asScala.foreach { gc =>
       val name = gc.getName.regexSub("""[^\w]""".r) { m => "_" }
-      out += ("jvm_gc_" + name + "_cycles" -> gc.getCollectionCount)
-      out += ("jvm_gc_" + name + "_msec" -> gc.getCollectionTime)
-      totalCycles += gc.getCollectionCount
-      totalTime += gc.getCollectionTime
+      val collectionCount = gc.getCollectionCount
+      out += ("jvm_gc_" + name + "_cycles" -> collectionCount)
+      val collectionTime = gc.getCollectionTime
+      out += ("jvm_gc_" + name + "_msec" -> collectionTime)
+      // note, these could be -1 if the collector doesn't have support for it.
+      if (collectionCount > 0)
+        totalCycles += collectionCount
+      if (collectionTime > 0)
+        totalTime += gc.getCollectionTime
     }
     out += ("jvm_gc_cycles" -> totalCycles)
     out += ("jvm_gc_msec" -> totalTime)
@@ -119,13 +132,23 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     labelMap.remove(name)
   }
 
-  def getCounter(name: String) = {
+  private[this] def getCounter(name: String, f: => Counter): Counter = {
     var counter = counterMap.get(name)
-    while (counter == null) {
-      counter = counterMap.putIfAbsent(name, newCounter(name))
+    if (counter == null) {
+      counter = counterMap.putIfAbsent(name, f)
       counter = counterMap.get(name)
     }
     counter
+  }
+
+  def getCounter(name: String): Counter = getCounter(name, newCounter(name))
+
+  def makeCounter(name: String, atomic: AtomicLong): Counter = {
+    getCounter(name, new Counter(atomic))
+  }
+
+  def removeCounter(name: String) {
+    counterMap.remove(name)
   }
 
   protected def newCounter(name: String) = {
@@ -145,6 +168,10 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     new Metric()
   }
 
+  def removeMetric(name: String): Option[Metric] = {
+    Option(metricMap.remove(name))
+  }
+
   def getLabel(name: String) = {
     val value = labelMap.get(name)
     if (value == null) None else Some(value)
@@ -152,7 +179,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getGauge(name: String) = {
     val gauge = gaugeMap.get(name)
-    if (gauge == null) None else Some(gauge())
+    if (gauge != null) {
+      try {
+        Some(gauge())
+      } catch { case e =>
+        log.error(e, "Gauge error: %s", name)
+        None
+      }
+    } else None
   }
 
   def getCounters() = {
@@ -176,7 +210,11 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
     for ((key, gauge) <- gaugeMap.asScala) {
-      gauges += (key -> gauge())
+      try {
+        gauges += (key -> gauge())
+      } catch { case e =>
+        log.error(e, "Gauge error: %s", key)
+      }
     }
     gauges
   }

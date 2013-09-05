@@ -33,7 +33,10 @@ extends JsonSerializable {
   def sum = histogram.sum
   def minimum = histogram.minimum
   def maximum = histogram.maximum
-  def average = if (histogram.count > 0) histogram.sum / histogram.count else 0.0
+  def average = {
+    val count = histogram.count
+    if (count > 0) histogram.sum / count else 0.0
+  }
 
   def toJson() = Json.build(toMap).toString
 
@@ -73,10 +76,8 @@ extends JsonSerializable {
       // If there are no events then derived values are meaningless; so elide them.
       (if (histogram.count > 0) {
         Map[String, Long](
-          "p25" -> percentile(0.25),
           "p50" -> percentile(0.5),
-          "p75" -> percentile(0.75),
-          "p90" -> percentile(0.9),
+          "p90" -> percentile(0.90),
           "p95" -> percentile(0.95),
           "p99" -> percentile(0.99),
           "p999" -> percentile(0.999),

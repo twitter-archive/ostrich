@@ -43,13 +43,15 @@ object RuntimeEnvironment {
  * relative to the executable jar.
  *
  * An example of how to generate a `build.properties` file is included in
- * sbt stanard-project: <http://github.com/twitter/standard-project>
+ * sbt standard-project: <http://github.com/twitter/standard-project>
  *
  * You have to pass in an object from your package in order to identify the
  * location of the `build.properties` file.
  */
 class RuntimeEnvironment(obj: AnyRef) {
   private val buildProperties = new Properties
+  /** the directory in which we'll try to compile configs */
+  private var configTarget: Option[String] = Some("target")
   var arguments: Map[String, String] = Map()
 
   try {
@@ -76,7 +78,9 @@ class RuntimeEnvironment(obj: AnyRef) {
   lazy val jarPath: Option[String] = {
     val paths = System.getProperty("java.class.path").split(System.getProperty("path.separator"))
     findCandidateJar(paths, jarName, jarVersion).flatMap { path =>
-      val parent = new File(path).getParentFile
+      val file = new File(path);
+      var parent = file.getParentFile
+      if (parent == null) parent = file.getAbsoluteFile.getParentFile
       if (parent == null) None else Some(parent.getCanonicalPath)
     }
   }
@@ -92,9 +96,13 @@ class RuntimeEnvironment(obj: AnyRef) {
    * Config file, as determined from this jar's runtime path, possibly
    * overridden by a command-line option.
    */
-  var configFile: File = jarPath match {
-    case Some(path) => new File(path + "/config/" + stageName + ".scala")
-    case None => new File("/etc/" + jarName + ".conf")
+  var configFile: File = jarPath map { path =>
+    new File(path + "/config/" + stageName + ".scala")
+  } orElse {
+    val file = new File("./config/" + stageName + ".scala")
+    if (file.exists) Some(file.getAbsoluteFile) else None
+  } getOrElse {
+    new File("/etc/" + jarName + ".conf")
   }
 
   /**
@@ -108,6 +116,12 @@ class RuntimeEnvironment(obj: AnyRef) {
         parseArgs(xs)
       case "-f" :: filename :: xs =>
         configFile = new File(filename)
+        parseArgs(xs)
+      case "--no-config-cache" :: xs =>
+        configTarget = None
+        parseArgs(xs)
+      case "--config-target" :: filename :: xs =>
+        configTarget = Some(filename)
         parseArgs(xs)
       case "--help" :: xs =>
         help()
@@ -134,6 +148,11 @@ class RuntimeEnvironment(obj: AnyRef) {
     println("options:")
     println("    -f <path>")
     println("        path of config files (default: %s)".format(configFile))
+    println("    --no-config-cache")
+    println("        don't compile configs to disk (recompile on every process start)")
+    println("    --config-target <path>")
+    println("        use the specified path as the target for config compilation")
+    println("        note: this is relative to the directory containing the config file")
     println("    -D <key>=<value>")
     println("        set or override an optional setting")
     println("    --version")
@@ -144,9 +163,50 @@ class RuntimeEnvironment(obj: AnyRef) {
     System.exit(0)
   }
 
+  private def getConfigTarget(): Option[File] = {
+    configTarget flatMap { fileName =>
+      // if we have a config file, try to make the target dir a subdirectory
+      // of the directory the config file lives in (e.g. <my-app>/config/target)
+      val targetFile = if (configFile.exists && configFile.getParentFile != null) {
+        new File(configFile.getParentFile, fileName)
+      } else {
+        new File(fileName)
+      }
+
+      // make sure we can get an actual directory, otherwise fail and return None
+      if (!targetFile.exists) {
+        if (targetFile.mkdirs()) {
+          Some(targetFile)
+        } else {
+          Logger.get("").warning("couldn't make directory %s. will not cache configs", targetFile)
+          None
+        }
+      } else if (!targetFile.isDirectory) {
+        throw new IllegalArgumentException("specified target directory %s exists and is not a directory".
+                                           format(fileName))
+        None
+      } else {
+        Some(targetFile)
+      }
+    }
+  }
+
+  /**
+   * If we don't have any loggers configured, try to get at least console output setup. In all
+   * likelihood the eval'd config is going to set this to something more robust, but we at least
+   * need to see errors encountered while processing the config. We also may need to rebuild this
+   * if a config file threw an exception before getting around to setting up logging.
+   */
+  def initLogs() {
+    if ((Logger.get("").getHandlers eq null) || Logger.get("").getHandlers.length == 0) {
+      Logger.reset()
+    }
+  }
+
   private def validate() {
+    initLogs()
     try {
-      val eval = new Eval
+      val eval = new Eval(getConfigTarget)
       val config = eval[Config[_]](configFile)
       config.validate()
       println("Config file %s compiles. :)".format(configFile))
@@ -164,23 +224,27 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   def loadConfig[T](): T = {
+    initLogs()
     try {
-      val eval = new Eval
+      val eval = new Eval(getConfigTarget)
       val config = eval[Config[T]](configFile)
       config.validate()
       config()
     } catch {
       case e: Eval.CompilerException =>
+        initLogs()
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         Logger.get("").fatal(e.messages.flatten.mkString("\n"))
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
       case e: Config.RequiredValuesMissing =>
+        initLogs()
         Logger.get("").fatal("Required values missing in config file %s:".format(configFile))
         Logger.get("").fatal(e.getMessage)
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
       case e =>
+        initLogs()
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
@@ -188,6 +252,14 @@ class RuntimeEnvironment(obj: AnyRef) {
   }
 
   def loadRuntimeConfig[T](): T = {
-    loadConfig[RuntimeEnvironment => T]()(this)
+    try {
+      loadConfig[RuntimeEnvironment => T]()(this)
+    } catch {
+      case e =>
+        initLogs()
+        Logger.get("").fatal(e, "Error in config file: %s", configFile)
+        System.exit(1)
+        throw new Exception("which will never execute because of the System.exit above me.")
+    }
   }
 }

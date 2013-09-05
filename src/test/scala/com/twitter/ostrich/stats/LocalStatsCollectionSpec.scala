@@ -1,9 +1,9 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.util.Future
-import org.specs.Specification
+import org.specs.SpecificationWithJUnit
 
-class LocalStatsCollectionSpec extends Specification {
+class LocalStatsCollectionSpec extends SpecificationWithJUnit {
   val jobClassName = "rooster.TestCapturer"
 
   "LocalStatsCollection" should {

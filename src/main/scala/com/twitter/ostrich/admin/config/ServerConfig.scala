@@ -22,6 +22,7 @@ import com.twitter.logging.Logger
 import com.twitter.logging.config.LoggerConfig
 import com.twitter.util.Config
 
+@deprecated("no direct replacement")
 abstract class ServerConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
   var loggers: List[LoggerConfig] = Nil
   var admin = new AdminServiceConfig()
