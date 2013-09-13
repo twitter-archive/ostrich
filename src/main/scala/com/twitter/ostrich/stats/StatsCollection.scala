@@ -74,16 +74,23 @@ class StatsCollection extends StatsProvider with JsonSerializable {
       case _ =>   // ew, Windows... or something
     }
 
-    var totalUsage = 0L
+    var postGCTotalUsage = 0L
+    var currentTotalUsage = 0L
     ManagementFactory.getMemoryPoolMXBeans().asScala.foreach { pool =>
       val name = pool.getName.regexSub("""[^\w]""".r) { m => "_" }
       Option(pool.getCollectionUsage).foreach { usage =>
         out += ("jvm_post_gc_" + name + "_used" -> usage.getUsed)
-        totalUsage += usage.getUsed
+        postGCTotalUsage += usage.getUsed
         out += ("jvm_post_gc_" + name + "_max" -> usage.getMax)
       }
+      Option(pool.getUsage) foreach { usage =>
+        out += ("jvm_current_mem_" + name + "_used" -> usage.getUsed)
+        currentTotalUsage += usage.getUsed
+        out += ("jvm_current_mem_" + name + "_max" -> usage.getMax)
+      }
     }
-    out += ("jvm_post_gc_used" -> totalUsage)
+    out += ("jvm_post_gc_used" -> postGCTotalUsage)
+    out += ("jvm_current_mem_used" -> currentTotalUsage)
   }
 
   def fillInJvmCounters(out: mutable.Map[String, Long]) {

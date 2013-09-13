@@ -1,3 +1,9 @@
+9.1.3
+-----
+release: 13 September 2013
+
+- Add jvm_current_mem_* metrics
+
 9.1.2
 -----
 release: 25 June 2013
