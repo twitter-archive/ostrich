@@ -26,13 +26,8 @@ import org.specs.SpecificationWithJUnit
 
 class W3CStatsSpec extends SpecificationWithJUnit {
   "w3c Stats" should {
-    Logger.reset()
-
     val logger = Logger.get("w3c")
-    logger.setLevel(Level.INFO)
-    val handler = new StringHandler(BareFormatter, None)
-    logger.addHandler(handler)
-    logger.setUseParentHandlers(false)
+    var handler: StringHandler = null
 
     val fields = Array(
       "backend-response-time_msec_average",
@@ -47,6 +42,11 @@ class W3CStatsSpec extends SpecificationWithJUnit {
     val w3c = new W3CStats(logger, fields, false)
 
     doBefore {
+      handler = new StringHandler(BareFormatter, None)
+      logger.addHandler(handler)
+      logger.setUseParentHandlers(false)
+      logger.setLevel(Level.INFO)
+
       Logger.get("").setLevel(Level.OFF)
       Stats.clearAll()
       handler.clear()

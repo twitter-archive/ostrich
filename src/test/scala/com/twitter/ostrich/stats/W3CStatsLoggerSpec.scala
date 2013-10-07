@@ -27,12 +27,8 @@ import org.specs.SpecificationWithJUnit
 class W3CStatsLoggerSpec extends SpecificationWithJUnit {
   "W3CStatsLogger" should {
     val logger = Logger.get("w3c")
-    logger.setLevel(Level.INFO)
 
-    val handler = new StringHandler(BareFormatter, None)
-    logger.addHandler(handler)
-    logger.setUseParentHandlers(false)
-
+    var handler: StringHandler = null
     var collection: StatsCollection = null
     var statsLogger: W3CStatsLogger = null
 
@@ -43,6 +39,11 @@ class W3CStatsLoggerSpec extends SpecificationWithJUnit {
     }
 
     doBefore {
+      handler = new StringHandler(BareFormatter, None)
+      logger.addHandler(handler)
+      logger.setUseParentHandlers(false)
+      logger.setLevel(Level.INFO)
+
       collection = new StatsCollection()
       handler.clear()
       statsLogger = new W3CStatsLogger(logger, 1.second, collection)

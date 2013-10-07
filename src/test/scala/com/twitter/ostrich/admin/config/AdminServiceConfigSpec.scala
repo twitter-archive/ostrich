@@ -34,7 +34,6 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
 
   "AdminServiceConfig" should {
     doBefore {
-      Logger.reset()
       Logger.get("").setLevel(Level.OFF)
     }
 
