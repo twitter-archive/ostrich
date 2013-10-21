@@ -17,13 +17,34 @@
 package com.twitter.ostrich.stats
 
 import java.util.concurrent.atomic.AtomicLong
-import scala.collection.mutable
+import com.twitter.jsr166e.LongAdder
+
+/**
+ * Common interface for counters. We choose not to rename the original Counter class, in order
+ * to retain binary backwards compatibility.
+ */
+trait Counting {
+  /**
+   * Get the current value.
+   */
+  def apply(): Long
+
+  /**
+   * Increment the counter by 1.
+   */
+  def increment(): Unit
+
+  /**
+   * Increment the counter by n.
+   */
+  def increment(n: Int): Unit
+}
 
 /**
  * A Counter simply keeps track of how many times an event occurred.
  * All operations are atomic and thread-safe.
  */
-class Counter(value: AtomicLong) {
+class Counter(value: AtomicLong) extends Counting {
   def this() = this(new AtomicLong())
 
   /**
@@ -35,6 +56,16 @@ class Counter(value: AtomicLong) {
    * Increment the counter by `n`, atomically.
    */
   def incr(n: Int): Long = value.addAndGet(n)
+
+  /**
+   * Increment the counter by one.
+   */
+  def increment(): Unit = incr()
+
+  /**
+   * Increment the counter by n.
+   */
+  def increment(n: Int): Unit = incr(n)
 
   /**
    * Get the current value.
@@ -77,4 +108,42 @@ class FanoutCounter(others: Counter*) extends Counter {
     others.foreach { _.reset() }
     super.reset()
   }
+}
+
+/**
+ * A Counter simply keeps track of how many times an event occurred.
+ * This implementation uses LongAdders which perform very well, even under heavy thread contention.
+ */
+class FastCounter() extends Counting {
+  private final val value = new LongAdder()
+
+  /**
+   * Increment the counter by one.
+   */
+  def increment(): Unit = value.increment()
+
+  /**
+   * Increment the counter by 'n'.
+   */
+  def increment(n: Int): Unit = value.add(n)
+
+  /**
+   * Get the current value.
+   */
+  def apply(): Long = value.longValue()
+
+  /**
+   * Set a new value, wiping the old one.
+   */
+  def update(n: Long): Unit = {
+    value.reset()
+    value.add(n)
+  }
+
+  /**
+   * Clear the counter back to zero.
+   */
+  def reset(): Long = value.sumThenReset()
+
+  override def toString() = "FastCounter(%d)".format(value.longValue())
 }

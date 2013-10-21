@@ -112,6 +112,16 @@ trait StatsProvider {
   def incr(name: String): Long = incr(name, 1)
 
   /**
+   * Increments a fast counter by one.
+   */
+  def increment(name: String): Unit = getFastCounter(name).increment()
+
+  /**
+   * Increments a fast counter by count.
+   */
+  def increment(name: String, count: Int): Unit = getFastCounter(name).increment(count)
+
+  /**
    * Add a gauge function, which is used to sample instantaneous values.
    */
   def addGauge(name: String)(gauge: => Double)
@@ -142,6 +152,14 @@ trait StatsProvider {
    * Get the Counter object representing a named counter.
    */
   def getCounter(name: String): Counter
+
+  /**
+   * Get the FastCounter object representing a named counter.
+   */
+  def getFastCounter(name: String): Counting = {
+    // Let this default to whatever "slow" counters so we don't break any existing provider implementations.
+    getCounter(name)
+  }
 
   /**
    * Get the Metric object representing a named metric.

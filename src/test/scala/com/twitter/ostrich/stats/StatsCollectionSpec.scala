@@ -63,10 +63,13 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
 
     "counters" in {
       "basic" in {
-        collection.incr("widgets", 1)
+        collection.incr("widgets")
+        collection.incr("widgets", 2)
+        collection.increment("fast-widgets")
+        collection.increment("fast-widgets", 2)
         collection.incr("wodgets", 12)
         collection.incr("wodgets")
-        collection.getCounters() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
+        collection.getCounters() mustEqual Map("widgets" -> 3, "wodgets" -> 13, "fast-widgets" -> 3)
       }
 
       "negative" in {
@@ -81,6 +84,11 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
         collection.getCounters() mustEqual Map("smellyfeet" -> 1)
         collection.removeCounter("smellyfeet")
         collection.getCounters() mustEqual Map()
+      }
+      "updateCounter" in {
+        collection.getCounter("smellyfeet").update(2)
+        collection.getCounter("smellyfeet").update(3)
+        collection.getCounter("smellyfeet")() mustEqual 3
       }
     }
 

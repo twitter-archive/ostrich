@@ -32,6 +32,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   import scala.collection.JavaConverters._
 
   protected val counterMap = new ConcurrentHashMap[String, Counter]()
+  protected val fastCounterMap = new ConcurrentHashMap[String, Counting]()
   protected val metricMap = new ConcurrentHashMap[String, Metric]()
   protected val gaugeMap = new ConcurrentHashMap[String, () => Double]()
   protected val labelMap = new ConcurrentHashMap[String, String]()
@@ -175,7 +176,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   private[this] def getCounter(name: String, f: => Counter): Counter = {
     var counter = counterMap.get(name)
     if (counter == null) {
-      counter = counterMap.putIfAbsent(name, f)
+      counterMap.putIfAbsent(name, f)
       counter = counterMap.get(name)
     }
     counter
@@ -183,16 +184,30 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getCounter(name: String): Counter = getCounter(name, newCounter(name))
 
+  override def getFastCounter(name: String): Counting = {
+    var counter = fastCounterMap.get(name)
+    if (counter == null) {
+      fastCounterMap.putIfAbsent(name, new FastCounter)
+      counter = fastCounterMap.get(name)
+    }
+    counter
+  }
+
   def makeCounter(name: String, atomic: AtomicLong): Counter = {
     getCounter(name, new Counter(atomic))
   }
 
   def removeCounter(name: String) {
     counterMap.remove(name)
+    fastCounterMap.remove(name)
   }
 
   protected def newCounter(name: String) = {
     new Counter()
+  }
+
+  protected def newFastCounter(name: String) = {
+    new FastCounter()
   }
 
   def getMetric(name: String) = {
@@ -232,7 +247,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getCounters() = {
     val counters = new mutable.HashMap[String, Long]
     if (includeJvmStats) fillInJvmCounters(counters)
-    for ((key, counter) <- counterMap.asScala) {
+    for ((key, counter) <- counterMap.asScala ++ fastCounterMap.asScala) {
       counters += (key -> counter())
     }
     counters
@@ -265,6 +280,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def clearAll() {
     counterMap.clear()
+    fastCounterMap.clear()
     metricMap.clear()
     gaugeMap.clear()
     labelMap.clear()
@@ -312,13 +328,14 @@ class LocalStatsCollection(collectionName: String) extends FanoutStatsCollection
    * will be cleared out. This is not an atomic operation.
    */
   def flushInto(collection: StatsProvider) {
-    counterMap.asScala.foreach { case (name, counter) =>
+    (counterMap.asScala ++ fastCounterMap.asScala).foreach { case (name, counter) =>
       collection.getCounter(collectionName + "." + name).incr(counter().toInt)
     }
     metricMap.asScala.foreach { case (name, metric) =>
       collection.getMetric(collectionName + "." + name).add(metric())
     }
     counterMap.clear()
+    fastCounterMap.clear()
     metricMap.clear()
   }
 
