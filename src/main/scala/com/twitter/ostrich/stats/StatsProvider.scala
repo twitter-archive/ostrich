@@ -102,14 +102,24 @@ trait StatsProvider {
   /**
    * Increments a counter, returning the new value.
    */
-  def incr(name: String, count: Int): Long = {
-    getCounter(name).incr(count)
-  }
+  @deprecated("Use increment or incrementAndGet")
+  def incr(name: String, count: Int) : Long = incrementAndGet(name, count)
 
   /**
    * Increments a counter by one, returning the new value.
    */
-  def incr(name: String): Long = incr(name, 1)
+  @deprecated("Use increment or incrementAndGet")
+  def incr(name: String): Long = incrementAndGet(name, 1)
+
+  def incrementAndGet(name: String, count: Int) : Long = {
+    val counter = getCounter(name)
+    counter.incr(count)
+    counter()
+  }
+  def incrementAndGet(name: String) : Long = incrementAndGet(name, 1)
+  def increment(name: String) : Unit = increment(name, 1)
+  def increment(name: String, count: Int) : Unit = getCounter(name).incr(count)
+
 
   /**
    * Add a gauge function, which is used to sample instantaneous values.
