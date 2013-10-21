@@ -16,42 +16,41 @@
 
 package com.twitter.ostrich.stats
 
-import java.util.concurrent.atomic.AtomicLong
-import scala.collection.mutable
+import com.twitter.jsr166e.LongAdder
 
 /**
  * A Counter simply keeps track of how many times an event occurred.
  * All operations are atomic and thread-safe.
  */
-class Counter(value: AtomicLong) {
-  def this() = this(new AtomicLong())
+class Counter(value: LongAdder) {
+  def this() = this(new LongAdder())
 
   /**
    * Increment the counter by one.
    */
-  def incr(): Long = value.incrementAndGet
+  def incr(): Unit = value.increment()
 
   /**
    * Increment the counter by `n`, atomically.
    */
-  def incr(n: Int): Long = value.addAndGet(n)
+  def incr(n: Int): Unit = value.add(n)
 
   /**
    * Get the current value.
    */
-  def apply(): Long = value.get()
+  def apply(): Long = value.longValue()
 
   /**
    * Set a new value, wiping the old one.
    */
-  def update(n: Long) = value.set(n)
+  def update(n: Long) = value
 
   /**
    * Clear the counter back to zero.
    */
-  def reset() = update(0L)
+  def reset() : Long = value.sumThenReset()
 
-  override def toString() = "Counter(%d)".format(value.get())
+  override def toString() = "Counter(%d)".format(value.longValue())
 }
 
 /**

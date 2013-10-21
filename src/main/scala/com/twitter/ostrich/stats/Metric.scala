@@ -38,12 +38,11 @@ class Metric {
   /**
    * Adds a data point.
    */
-  def add(n: Int): Long = {
+  def add(n: Int): Unit = {
     if (n > -1) {
       histogram.add(n)
     } else {
       log.warning("Tried to add a negative data point.")
-      histogram.count
     }
   }
 

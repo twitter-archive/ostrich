@@ -102,14 +102,14 @@ trait StatsProvider {
   /**
    * Increments a counter, returning the new value.
    */
-  def incr(name: String, count: Int): Long = {
+  def incr(name: String, count: Int): Unit = {
     getCounter(name).incr(count)
   }
 
   /**
    * Increments a counter by one, returning the new value.
    */
-  def incr(name: String): Long = incr(name, 1)
+  def incr(name: String): Unit = incr(name, 1)
 
   /**
    * Add a gauge function, which is used to sample instantaneous values.
