@@ -16,6 +16,7 @@
 
 package com.twitter.ostrich.stats
 
+import java.lang.{Math => JLMath}
 import java.util.Arrays
 import scala.annotation.tailrec
 
@@ -45,7 +46,7 @@ object Histogram {
   val buckets = makeBucketsFor(0.05d)
 
   def bucketIndex(key: Int): Int =
-    (Arrays.binarySearch(buckets, key) + 1).abs
+    JLMath.abs(Arrays.binarySearch(buckets, key) + 1)
 
   @tailrec
   private[this] def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
@@ -96,7 +97,7 @@ class Histogram {
     synchronized {
       addToBucket(index)
       sum += n
-      count
+      return count // explicit return used done to avoid boxing
     }
   }
 

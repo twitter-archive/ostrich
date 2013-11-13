@@ -27,12 +27,8 @@ import org.specs.SpecificationWithJUnit
 class JsonStatsLoggerSpec extends SpecificationWithJUnit {
   "JsonStatsLogger" should {
     val logger = Logger.get("stats")
-    logger.setLevel(Level.INFO)
 
-    val handler = new StringHandler(BareFormatter, None)
-    logger.addHandler(handler)
-    logger.setUseParentHandlers(false)
-
+    var handler: StringHandler = null
     var collection: StatsCollection = null
     var statsLogger: JsonStatsLogger = null
 
@@ -41,6 +37,10 @@ class JsonStatsLoggerSpec extends SpecificationWithJUnit {
     }
 
     doBefore {
+      handler = new StringHandler(BareFormatter, None)
+      logger.addHandler(handler)
+      logger.setUseParentHandlers(false)
+      logger.setLevel(Level.INFO)
       handler.clear()
       collection = new StatsCollection()
       statsLogger = new JsonStatsLogger(logger, 1.second, None, collection)
