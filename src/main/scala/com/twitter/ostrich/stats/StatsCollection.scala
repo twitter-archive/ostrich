@@ -18,8 +18,9 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
 import com.twitter.json.{Json, JsonSerializable}
-import com.twitter.util.Local
+import com.twitter.util.{Local, Try}
 import java.lang.management._
+import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable
@@ -91,6 +92,30 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     }
     out += ("jvm_post_gc_used" -> postGCTotalUsage)
     out += ("jvm_current_mem_used" -> currentTotalUsage)
+
+    // `BufferPoolMXBean` and `ManagementFactory.getPlatfromMXBeans` are introduced in Java 1.7.
+    // Use reflection to add these gauges so we can still compile with 1.6
+    for {
+      bufferPoolMXBean <- Try[Class[_]] {
+        ClassLoader.getSystemClassLoader.loadClass("java.lang.management.BufferPoolMXBean")
+      }
+      getPlatformMXBeans <- classOf[ManagementFactory].getMethods.find { m =>
+        m.getName == "getPlatformMXBeans" && m.getParameterTypes.length == 1
+      }
+      pool <- getPlatformMXBeans.invoke(null /* static method */, bufferPoolMXBean)
+        .asInstanceOf[java.util.List[_]].asScala
+    } {
+      val name = bufferPoolMXBean.getMethod("getName").invoke(pool).asInstanceOf[String]
+
+      val getCount: Method = bufferPoolMXBean.getMethod("getCount")
+      out += ("jvm_buffer_" + name + "_count" -> getCount.invoke(pool).asInstanceOf[Long])
+
+      val getMemoryUsed: Method = bufferPoolMXBean.getMethod("getMemoryUsed")
+      out += ("jvm_buffer_" + name + "_used" -> getMemoryUsed.invoke(pool).asInstanceOf[Long])
+
+      val getTotalCapacity: Method = bufferPoolMXBean.getMethod("getTotalCapacity")
+      out += ("jvm_buffer_" + name + "_max" -> getTotalCapacity.invoke(pool).asInstanceOf[Long])
+    }
   }
 
   def fillInJvmCounters(out: mutable.Map[String, Long]) {
