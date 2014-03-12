@@ -20,13 +20,14 @@ object Ostrich extends Build {
       "com.twitter" %% "util-eval" % utilVersion,
       "com.twitter" %% "util-logging" % utilVersion,
       "com.twitter" %% "util-jvm" % utilVersion,
-      "com.twitter" %% "scala-json" % "3.0.1"
+      "com.twitter" %% "scala-json" % "3.0.1",
+      "com.twitter" % "jsr166e" % "1.0.0"
     ),
 
     libraryDependencies ++= Seq(
       "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
         case "2.9.2" => "2.9.1"
-        case "2.10.0" => "2.10"
+        case x if x startsWith "2.10" => "2.10"
         case x => x
       },
       "junit" % "junit" % "4.8.1" % "test",
