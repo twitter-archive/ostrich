@@ -18,7 +18,6 @@ package com.twitter.ostrich.stats
 
 import org.specs.SpecificationWithJUnit
 import org.specs.matcher.Matcher
-import com.twitter.jsr166e.LongAdder
 
 class HistogramSpec extends SpecificationWithJUnit {
   "Histogram" should {
@@ -198,11 +197,9 @@ class HistogramSpec extends SpecificationWithJUnit {
     "integer overflow shouldn't happen" in {
       // This is equivalent of what's commented out below
       val last = histogram.buckets.size - 1
-      val maxAdd = new LongAdder
-      maxAdd.add(Int.MaxValue)
-      histogram._buckets(last) = maxAdd
-      histogram._buckets(last - 1) = maxAdd
-      histogram._count.add(2L * Int.MaxValue)
+      histogram.buckets(last) = Int.MaxValue
+      histogram.buckets(last - 1) = Int.MaxValue
+      histogram.count += 2L * Int.MaxValue
 
       // val n = Int.MaxValue
       // val x = Histogram.buckets.last

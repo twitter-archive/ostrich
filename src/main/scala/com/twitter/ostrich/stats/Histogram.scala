@@ -16,10 +16,8 @@
 
 package com.twitter.ostrich.stats
 
-import java.lang.{Math => JLMath}
 import java.util.Arrays
 import scala.annotation.tailrec
-import com.twitter.jsr166e.LongAdder
 
 object Histogram {
   /**
@@ -30,7 +28,7 @@ object Histogram {
    * direction, so for example, given a 5% error range (the default), the bucket with value N will
    * cover numbers 5% smaller (0.95*N) and 5% larger (1.05*N).
    *
-   * For the usual default of 5%, this results in 200 _buckets.
+   * For the usual default of 5%, this results in 200 buckets.
    *
    * The last bucket (the "infinity" bucket) ranges up to Int.MaxValue, which we treat as infinity.
    */
@@ -47,7 +45,7 @@ object Histogram {
   val buckets = makeBucketsFor(0.05d)
 
   def bucketIndex(key: Int): Int =
-    JLMath.abs(Arrays.binarySearch(buckets, key) + 1)
+    (Arrays.binarySearch(buckets, key) + 1).abs
 
   @tailrec
   private[this] def binarySearch(array: Array[Int], key: Int, low: Int, high: Int): Int = {
@@ -75,14 +73,10 @@ object Histogram {
 }
 
 class Histogram {
-  private final val num_buckets = Histogram.buckets.length + 1
-  private[stats] final val _buckets = Array.fill[LongAdder](num_buckets)(new LongAdder)
-  private[stats] final val _count = new LongAdder
-  private final val _sum = new LongAdder
-
-  def count : Long = _count.longValue()
-  def sum : Long = _sum.longValue()
-  def buckets: Array[Long] = _buckets.map(_.longValue())
+  val numBuckets = Histogram.buckets.length + 1
+  val buckets = new Array[Long](numBuckets)
+  var count = 0L
+  var sum = 0L
 
   /**
    * Adds a value directly to a bucket in a histogram. Can be used for
@@ -93,26 +87,29 @@ class Histogram {
    * calling Histogram.bucketIndex(n) on the value.
    */
   def addToBucket(index: Int) {
-    _buckets(index).increment()
-    _count.increment()
+    buckets(index) += 1
+    count += 1
   }
 
-  def add(n: Int): Unit = {
+  def add(n: Int): Long = {
     val index = Histogram.bucketIndex(n)
-    addToBucket(index)
-    _sum.add(n)
+    synchronized {
+      addToBucket(index)
+      sum += n
+      count
+    }
   }
 
   def clear() {
     synchronized {
-      _buckets.foreach(_.reset())
-      _count.reset()
-      _sum.reset()
+      Arrays.fill(buckets, 0)
+      count = 0
+      sum = 0
     }
   }
 
-  def get(reset: Boolean) : List[Long] = {
-    val rv = _buckets.toList.map(_.longValue())
+  def get(reset: Boolean) = {
+    val rv = buckets.toList
     if (reset) {
       clear()
     }
@@ -128,9 +125,8 @@ class Histogram {
     if (percentile == 0.0) return minimum
     var total = 0L
     var index = 0
-    val currentCount = _count.longValue()
-    while (index < _buckets.size && total < percentile * currentCount) {
-      total += _buckets(index).longValue()
+    while (index < buckets.size && total < percentile * count) {
+      total += buckets(index)
       index += 1
     }
     if (index == 0) {
@@ -148,15 +144,15 @@ class Histogram {
    *    Int.MaxValue if any value is infinity
    */
   def maximum: Int = {
-    if (_buckets(_buckets.size - 1).longValue() > 0) {
+    if (buckets(buckets.size - 1) > 0) {
       // Infinity bucket has a value
       Int.MaxValue
-    } else if (_count.longValue() == 0) {
+    } else if (count == 0) {
       // No values
       0
     } else {
       var index = Histogram.buckets.size - 1
-      while (index >= 0 && _buckets(index).longValue() == 0) index -= 1
+      while (index >= 0 && buckets(index) == 0) index -= 1
       if (index < 0) 0 else midpoint(index)
     }
   }
@@ -167,11 +163,11 @@ class Histogram {
    *    Int.MaxValue if all values are infinity
    */
   def minimum: Int = {
-    if (_count.longValue() == 0) {
+    if (count == 0) {
       0
     } else {
       var index = 0
-      while (index < Histogram.buckets.size && _buckets(index).longValue() == 0) index += 1
+      while (index < Histogram.buckets.size && buckets(index) == 0) index += 1
       if (index >= Histogram.buckets.size) Int.MaxValue else midpoint(index)
     }
   }
@@ -188,26 +184,21 @@ class Histogram {
   }
 
   def merge(other: Histogram) {
-    if (other._count.longValue() > 0) {
-      for (i <- 0 until num_buckets) {
-        _buckets(i).add(other._buckets(i).longValue())
+    if (other.count > 0) {
+      for (i <- 0 until numBuckets) {
+        buckets(i) += other.buckets(i)
       }
-      _count.add(other._count.longValue())
-      _sum.add(other._sum.longValue())
+      count += other.count
+      sum += other.sum
     }
   }
 
   def -(other: Histogram): Histogram = {
     val rv = new Histogram()
-    rv._sum.reset()
-    rv._sum.add(math.max(0L, _sum.longValue() - other._sum.longValue()))
-    for (i <- 0 until num_buckets) {
-      rv._buckets(i) = {
-        val a = new LongAdder
-        a.add(math.max(0, _buckets(i).longValue() - other._buckets(i).longValue()))
-        a
-      }
-      rv._count.add(rv._buckets(i).longValue())
+    rv.sum = math.max(0L, sum - other.sum)
+    for (i <- 0 until numBuckets) {
+      rv.buckets(i) = math.max(0, buckets(i) - other.buckets(i))
+      rv.count += rv.buckets(i)
     }
     rv
   }
@@ -227,7 +218,7 @@ class Histogram {
   }
 
   override def toString = {
-    "<Histogram count=" + _count + " sum=" + _sum +
+    "<Histogram count=" + count + " sum=" + sum +
       buckets.indices.map { i =>
         (if (i < Histogram.buckets.size) Histogram.buckets(i) else "inf") +
         "=" + buckets(i)
