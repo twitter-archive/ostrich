@@ -21,7 +21,7 @@ object Ostrich extends Build {
       "com.twitter" %% "util-logging" % utilVersion,
       "com.twitter" %% "util-jvm" % utilVersion,
       "com.twitter" %% "scala-json" % "3.0.1",
-      "com.twitter" % "jsr166e" % "1.0.0"
+      "com.twitter" % "jsr166e" % "1.1.0"
     ),
 
     libraryDependencies ++= Seq(
