@@ -35,7 +35,7 @@ class Counter(value: LongAdder) {
    * Increment the counter by `n`.
    */
   @deprecated("Use increment or incrementAndGet")
-  def incr(n: Int): Unit = value.add(n)
+  def incr(n: Int): Long = incrementAndGet(n)
 
   /**
    * Increment the counter by one and return the current value.
