@@ -63,10 +63,15 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
 
     "counters" in {
       "basic" in {
+        collection.incr("widgets")
         collection.incr("widgets", 1)
+        collection.increment("widgets")
+        collection.incrementAndGet("widgets")
+        collection.increment("widgets", 2)
+        collection.incrementAndGet("widgets", 2)
         collection.incr("wodgets", 12)
         collection.incr("wodgets")
-        collection.getCounters() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
+        collection.getCounters() mustEqual Map("widgets" -> 8, "wodgets" -> 13)
       }
 
       "negative" in {
