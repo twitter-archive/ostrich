@@ -17,6 +17,7 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.jsr166e.LongAdder
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * A Counter simply keeps track of how many times an event occurred.
@@ -73,7 +74,10 @@ class Counter(value: LongAdder) {
   /**
    * Set a new value, wiping the old one.
    */
-  def update(n: Long) = value
+  def update(n: Long) = {
+    value.sumThenReset()
+    value.add(n)
+  }
 
   /**
    * Clear the counter back to zero.

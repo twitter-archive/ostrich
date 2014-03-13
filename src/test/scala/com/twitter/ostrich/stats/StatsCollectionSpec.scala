@@ -87,6 +87,11 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
         collection.removeCounter("smellyfeet")
         collection.getCounters() mustEqual Map()
       }
+      "updateCounter" in {
+        collection.getCounter("smellyfeet").update(2)
+        collection.getCounter("smellyfeet").update(3)
+        collection.getCounter("smellyfeet")() mustEqual 3
+      }
     }
 
     "metrics" in {
