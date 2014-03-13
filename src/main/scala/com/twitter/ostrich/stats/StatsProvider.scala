@@ -111,15 +111,27 @@ trait StatsProvider {
   @deprecated("Use increment or incrementAndGet")
   def incr(name: String): Long = incrementAndGet(name, 1)
 
-  def incrementAndGet(name: String, count: Int) : Long = {
-    val counter = getCounter(name)
-    counter.incr(count)
-    counter()
-  }
-  def incrementAndGet(name: String) : Long = incrementAndGet(name, 1)
-  def increment(name: String) : Unit = increment(name, 1)
-  def increment(name: String, count: Int) : Unit = getCounter(name).incr(count)
+  /**
+   * Increments a counter by 'count', returning the new value.
+   * This is not an atomic operation.
+   */
+  def incrementAndGet(name: String, count: Int) : Long = getCounter(name).incrementAndGet(count)
 
+  /**
+   * Increments a counter by 1, returning the new value.
+   * This is not an atomic operation.
+   */
+  def incrementAndGet(name: String) : Long = getCounter(name).incrementAndGet()
+
+  /**
+   * Increments a counter by 'count'.
+   */
+  def increment(name: String, count: Int) : Unit = getCounter(name).increment(count)
+
+  /**
+   * Increments a counter by 1.
+   */
+  def increment(name: String) : Unit = getCounter(name).increment()
 
   /**
    * Add a gauge function, which is used to sample instantaneous values.

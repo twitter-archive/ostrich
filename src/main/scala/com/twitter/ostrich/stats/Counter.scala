@@ -26,14 +26,44 @@ class Counter(value: LongAdder) {
   def this() = this(new LongAdder())
 
   /**
-   * Increment the counter by one.
+   * Increment the counter by one and return the current value.
    */
-  def incr(): Unit = value.increment()
+  @deprecated("Use increment or incrementAndGet")
+  def incr(): Long = incrementAndGet()
 
   /**
-   * Increment the counter by `n`, atomically.
+   * Increment the counter by `n`.
    */
+  @deprecated("Use increment or incrementAndGet")
   def incr(n: Int): Unit = value.add(n)
+
+  /**
+   * Increment the counter by one and return the current value.
+   * This is not an atomic operation.
+   */
+  def incrementAndGet() : Long = {
+    increment()
+    value.longValue()
+  }
+
+  /**
+   * Increment the counter by 'n' and return the current value.
+   * This is not an atomic operation.
+   */
+  def incrementAndGet(n: Int) : Long = {
+    increment(n)
+    value.longValue()
+  }
+
+  /**
+   * Increment the counter by one.
+   */
+  def increment() : Unit = value.increment()
+
+  /**
+   * Increment the counter by 'n'.
+   */
+  def increment(n: Int) : Unit = value.add(n)
 
   /**
    * Get the current value.
