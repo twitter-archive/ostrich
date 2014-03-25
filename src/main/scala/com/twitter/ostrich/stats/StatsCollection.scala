@@ -75,6 +75,14 @@ class StatsCollection extends StatsProvider with JsonSerializable {
       case _ =>   // ew, Windows... or something
     }
 
+    val compilation = ManagementFactory.getCompilationMXBean()
+    out += ("jvm_compilation_time_msec" -> compilation.getTotalCompilationTime())
+
+    val classes = ManagementFactory.getClassLoadingMXBean()
+    out += ("jvm_classes_total_loaded" -> classes.getTotalLoadedClassCount())
+    out += ("jvm_classes_total_unloaded" -> classes.getUnloadedClassCount())
+    out += ("jvm_classes_current_loaded" -> classes.getLoadedClassCount().toLong)
+
     var postGCTotalUsage = 0L
     var currentTotalUsage = 0L
     ManagementFactory.getMemoryPoolMXBeans().asScala.foreach { pool =>
