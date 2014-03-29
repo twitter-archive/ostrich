@@ -102,14 +102,36 @@ trait StatsProvider {
   /**
    * Increments a counter, returning the new value.
    */
-  def incr(name: String, count: Int): Long = {
-    getCounter(name).incr(count)
-  }
+  @deprecated("Use increment or incrementAndGet")
+  def incr(name: String, count: Int) : Long = incrementAndGet(name, count)
 
   /**
    * Increments a counter by one, returning the new value.
    */
-  def incr(name: String): Long = incr(name, 1)
+  @deprecated("Use increment or incrementAndGet")
+  def incr(name: String): Long = incrementAndGet(name, 1)
+
+  /**
+   * Increments a counter by 'count', returning the new value.
+   * This is not an atomic operation.
+   */
+  def incrementAndGet(name: String, count: Int) : Long = getCounter(name).incrementAndGet(count)
+
+  /**
+   * Increments a counter by 1, returning the new value.
+   * This is not an atomic operation.
+   */
+  def incrementAndGet(name: String) : Long = getCounter(name).incrementAndGet()
+
+  /**
+   * Increments a counter by 'count'.
+   */
+  def increment(name: String, count: Int) : Unit = getCounter(name).increment(count)
+
+  /**
+   * Increments a counter by 1.
+   */
+  def increment(name: String) : Unit = getCounter(name).increment()
 
   /**
    * Add a gauge function, which is used to sample instantaneous values.

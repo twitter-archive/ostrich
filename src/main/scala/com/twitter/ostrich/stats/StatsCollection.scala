@@ -183,10 +183,6 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getCounter(name: String): Counter = getCounter(name, newCounter(name))
 
-  def makeCounter(name: String, atomic: AtomicLong): Counter = {
-    getCounter(name, new Counter(atomic))
-  }
-
   def removeCounter(name: String) {
     counterMap.remove(name)
   }
