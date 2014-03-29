@@ -184,14 +184,16 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getCounter(name: String): Counter = getCounter(name, newCounter(name))
 
-  override def getFastCounter(name: String): Counting = {
+  private[this] def getFastCounter(name: String, f: => Counting) : Counting = {
     var counter = fastCounterMap.get(name)
     if (counter == null) {
-      fastCounterMap.putIfAbsent(name, new FastCounter)
+      fastCounterMap.putIfAbsent(name, f)
       counter = fastCounterMap.get(name)
     }
     counter
   }
+
+  override def getFastCounter(name: String): Counting = getFastCounter(name, newFastCounter(name))
 
   def makeCounter(name: String, atomic: AtomicLong): Counter = {
     getCounter(name, new Counter(atomic))
