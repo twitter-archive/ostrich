@@ -184,7 +184,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getCounter(name: String): Counter = getCounter(name, newCounter(name))
 
-  private[this] def getFastCounter(name: String, f: => Incrementable) : Incrementable = {
+  private[this] def getFastCounter(name: String, f: => Incrementable): Incrementable = {
     var counter = fastCounterMap.get(name)
     if (counter == null) {
       fastCounterMap.putIfAbsent(name, f)
@@ -204,15 +204,15 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     fastCounterMap.remove(name)
   }
 
-  protected def newCounter(name: String) = {
+  protected def newCounter(name: String): Counter = {
     new Counter()
   }
 
-  protected def newFastCounter(name: String) = {
+  protected def newFastCounter(name: String): Incrementable = {
     new FastCounter()
   }
 
-  def getMetric(name: String) = {
+  def getMetric(name: String): Metric = {
     var metric = metricMap.get(name)
     if (metric == null) {
       metric = metricMap.putIfAbsent(name, newMetric(name))
@@ -221,7 +221,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     metric
   }
 
-  protected def newMetric(name: String) = {
+  protected def newMetric(name: String): Metric = {
     new Metric()
   }
 
@@ -229,12 +229,12 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     Option(metricMap.remove(name))
   }
 
-  def getLabel(name: String) = {
+  def getLabel(name: String): Option[String] = {
     val value = labelMap.get(name)
     if (value == null) None else Some(value)
   }
 
-  def getGauge(name: String) = {
+  def getGauge(name: String): Option[Double] = {
     val gauge = gaugeMap.get(name)
     if (gauge != null) {
       try {
@@ -246,7 +246,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     } else None
   }
 
-  def getCounters() = {
+  def getCounters(): mutable.HashMap[String, Long] = {
     val counters = new mutable.HashMap[String, Long]
     if (includeJvmStats) fillInJvmCounters(counters)
     for ((key, counter) <- counterMap.asScala ++ fastCounterMap.asScala) {
@@ -255,7 +255,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     counters
   }
 
-  def getMetrics() = {
+  def getMetrics(): mutable.HashMap[String, Distribution] = {
     val metrics = new mutable.HashMap[String, Distribution]
     for ((key, metric) <- metricMap.asScala) {
       metrics += (key -> metric())
@@ -263,7 +263,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     metrics
   }
 
-  def getGauges() = {
+  def getGauges(): mutable.HashMap[String, Double] = {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
     for ((key, gauge) <- gaugeMap.asScala) {
@@ -276,7 +276,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     gauges
   }
 
-  def getLabels() = {
+  def getLabels(): mutable.HashMap[String, String] = {
     new mutable.HashMap[String, String] ++ labelMap.asScala
   }
 
@@ -289,7 +289,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     listeners.clear()
   }
 
-  def toJson = get().toJson
+  def toJson: String = get().toJson
 }
 
 /**
