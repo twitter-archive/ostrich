@@ -112,12 +112,14 @@ trait StatsProvider {
   def incr(name: String): Long = incr(name, 1)
 
   /**
-   * Increments a fast counter by one.
+   * Increments a fast counter by one. Fast counters are NOT in the same namespace
+   * as regular counters, so `incr` and `increment` will increment two different counters.
    */
   def increment(name: String): Unit = getFastCounter(name).increment()
 
   /**
-   * Increments a fast counter by count.
+   * Increments a fast counter by `count``. Fast counters are NOT in the same namespace
+   * as regular counters, so `incr` and `increment` will increment two different counters.
    */
   def increment(name: String, count: Int): Unit = getFastCounter(name).increment(count)
 
