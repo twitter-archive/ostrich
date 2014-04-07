@@ -156,7 +156,7 @@ trait StatsProvider {
   /**
    * Get the FastCounter object representing a named counter.
    */
-  def getFastCounter(name: String): Counting = {
+  def getFastCounter(name: String): Incrementable = {
     // Let this default to whatever "slow" counters so we don't break any existing provider implementations.
     getCounter(name)
   }

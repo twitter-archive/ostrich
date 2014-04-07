@@ -20,10 +20,9 @@ import java.util.concurrent.atomic.AtomicLong
 import com.twitter.jsr166e.LongAdder
 
 /**
- * Common interface for counters. We choose not to rename the original Counter class, in order
- * to retain binary backwards compatibility.
+ * Common interface for counters.
  */
-trait Counting {
+trait Incrementable {
   /**
    * Get the current value.
    */
@@ -44,7 +43,7 @@ trait Counting {
  * A Counter simply keeps track of how many times an event occurred.
  * All operations are atomic and thread-safe.
  */
-class Counter(value: AtomicLong) extends Counting {
+class Counter(value: AtomicLong) extends Incrementable {
   def this() = this(new AtomicLong())
 
   /**
@@ -114,7 +113,7 @@ class FanoutCounter(others: Counter*) extends Counter {
  * A Counter simply keeps track of how many times an event occurred.
  * This implementation uses LongAdders which perform very well, even under heavy thread contention.
  */
-class FastCounter() extends Counting {
+class FastCounter() extends Incrementable {
   private final val value = new LongAdder()
 
   /**

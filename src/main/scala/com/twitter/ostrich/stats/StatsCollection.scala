@@ -32,7 +32,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   import scala.collection.JavaConverters._
 
   protected val counterMap = new ConcurrentHashMap[String, Counter]()
-  protected val fastCounterMap = new ConcurrentHashMap[String, Counting]()
+  protected val fastCounterMap = new ConcurrentHashMap[String, Incrementable]()
   protected val metricMap = new ConcurrentHashMap[String, Metric]()
   protected val gaugeMap = new ConcurrentHashMap[String, () => Double]()
   protected val labelMap = new ConcurrentHashMap[String, String]()
@@ -184,7 +184,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def getCounter(name: String): Counter = getCounter(name, newCounter(name))
 
-  private[this] def getFastCounter(name: String, f: => Counting) : Counting = {
+  private[this] def getFastCounter(name: String, f: => Incrementable) : Incrementable = {
     var counter = fastCounterMap.get(name)
     if (counter == null) {
       fastCounterMap.putIfAbsent(name, f)
@@ -193,7 +193,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     counter
   }
 
-  override def getFastCounter(name: String): Counting = getFastCounter(name, newFastCounter(name))
+  override def getFastCounter(name: String): Incrementable = getFastCounter(name, newFastCounter(name))
 
   def makeCounter(name: String, atomic: AtomicLong): Counter = {
     getCounter(name, new Counter(atomic))
