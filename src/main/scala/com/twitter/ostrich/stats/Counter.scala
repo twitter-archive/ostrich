@@ -132,14 +132,6 @@ class FastCounter() extends Incrementable {
   def apply(): Long = value.longValue()
 
   /**
-   * Set a new value, wiping the old one.
-   */
-  def update(n: Long): Unit = {
-    value.reset()
-    value.add(n)
-  }
-
-  /**
    * Clear the counter back to zero.
    */
   def reset(): Long = value.sumThenReset()
