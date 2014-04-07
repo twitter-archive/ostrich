@@ -123,7 +123,7 @@ class FanoutCounter(others: Counter*) extends Counter {
  * A Counter simply keeps track of how many times an event occurred.
  * This implementation uses LongAdders which perform very well, even under heavy thread contention.
  */
-class FastCounter() extends Incrementable {
+class FastCounter extends Incrementable {
   private[this] val value = new LongAdder()
 
   /**
