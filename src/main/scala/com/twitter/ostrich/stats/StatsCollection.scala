@@ -173,30 +173,24 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     labelMap.remove(name)
   }
 
-  private[this] def getCounter(name: String, f: => Counter): Counter = {
-    var counter = counterMap.get(name)
+  /**
+   * Get a counter `name` from `target`. Creative it with `f` if it does not exist.
+   */
+  private[this] def getCounter[T](name: String, target: ConcurrentHashMap[String, T], f: => T): T = {
+    var counter = target.get(name)
     if (counter == null) {
-      counterMap.putIfAbsent(name, f)
-      counter = counterMap.get(name)
+      target.putIfAbsent(name, f)
+      counter = target.get(name)
     }
     counter
   }
 
-  def getCounter(name: String): Counter = getCounter(name, newCounter(name))
+  def getCounter(name: String): Counter = getCounter(name, counterMap, newCounter(name))
 
-  private[this] def getFastCounter(name: String, f: => Incrementable): Incrementable = {
-    var counter = fastCounterMap.get(name)
-    if (counter == null) {
-      fastCounterMap.putIfAbsent(name, f)
-      counter = fastCounterMap.get(name)
-    }
-    counter
-  }
-
-  override def getFastCounter(name: String): Incrementable = getFastCounter(name, newFastCounter(name))
+  override def getFastCounter(name: String): Incrementable = getCounter(name, fastCounterMap, newFastCounter(name))
 
   def makeCounter(name: String, atomic: AtomicLong): Counter = {
-    getCounter(name, new Counter(atomic))
+    getCounter(name, counterMap, new Counter(atomic))
   }
 
   def removeCounter(name: String) {
