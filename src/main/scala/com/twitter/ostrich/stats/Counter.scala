@@ -114,7 +114,7 @@ class FanoutCounter(others: Counter*) extends Counter {
  * This implementation uses LongAdders which perform very well, even under heavy thread contention.
  */
 class FastCounter() extends Incrementable {
-  private final val value = new LongAdder()
+  private[this] val value = new LongAdder()
 
   /**
    * Increment the counter by one.
