@@ -37,6 +37,11 @@ trait Incrementable {
    * Increment the counter by n.
    */
   def increment(n: Int): Unit
+
+  /**
+   * Get the current value and reset it to zero.
+   */
+  def getAndReset() : Long
 }
 
 /**
@@ -80,6 +85,11 @@ class Counter(value: AtomicLong) extends Incrementable {
    * Clear the counter back to zero.
    */
   def reset() = update(0L)
+
+  /**
+   * Get the current value and reset it to zero.
+   */
+  def getAndReset(): Long = value.getAndSet(0)
 
   override def toString() = "Counter(%d)".format(value.get())
 }
@@ -134,7 +144,7 @@ class FastCounter() extends Incrementable {
   /**
    * Clear the counter back to zero.
    */
-  def reset(): Long = value.sumThenReset()
+  def getAndReset(): Long = value.sumThenReset()
 
   override def toString() = "FastCounter(%d)".format(value.longValue())
 }

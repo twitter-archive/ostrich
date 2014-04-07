@@ -61,23 +61,39 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
       summary.filterOut(""".*oranges""".r).counters mustEqual Map("apples" -> 10, "appliances" -> 4)
     }
 
+    "fast counters" in {
+      "basic" in {
+        collection.increment("widgets")
+        collection.increment("widgets", 2)
+        collection.increment("wodgets", 12)
+        collection.increment("wodgets")
+        collection.getCounters() mustEqual Map("widgets" -> 3, "wodgets" -> 13)
+      }
+      "negative" in {
+        collection.increment("widgets", 3)
+        collection.increment("widgets", -1)
+        collection.getCounters() mustEqual Map("widgets" -> 2)
+      }
+      "getAndReset" in {
+        collection.increment("foo")
+        collection.getFastCounter("foo").getAndReset() must_== 1
+        collection.getFastCounter("foo").getAndReset() must_== 0
+      }
+    }
+
     "counters" in {
       "basic" in {
         collection.incr("widgets")
         collection.incr("widgets", 2)
-        collection.increment("fast-widgets")
-        collection.increment("fast-widgets", 2)
         collection.incr("wodgets", 12)
         collection.incr("wodgets")
-        collection.getCounters() mustEqual Map("widgets" -> 3, "wodgets" -> 13, "fast-widgets" -> 3)
+        collection.getCounters() mustEqual Map("widgets" -> 3, "wodgets" -> 13)
       }
-
       "negative" in {
         collection.incr("widgets", 3)
         collection.incr("widgets", -1)
         collection.getCounters() mustEqual Map("widgets" -> 2)
       }
-
       "clearCounter" in {
         collection.getCounter("smellyfeet")
         collection.incr("smellyfeet", 1)
@@ -89,6 +105,11 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
         collection.getCounter("smellyfeet").update(2)
         collection.getCounter("smellyfeet").update(3)
         collection.getCounter("smellyfeet")() mustEqual 3
+      }
+      "getAndReset" in {
+        collection.incr("foo")
+        collection.getCounter("foo").getAndReset() must_== 1
+        collection.getCounter("foo").getAndReset() must_== 0
       }
     }
 
