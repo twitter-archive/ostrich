@@ -112,6 +112,14 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
         collection.getCounter("foo").getAndReset() must_== 0
       }
     }
+    "counters and fast counters" in {
+      "be in different namespaces" in {
+        collection.incr("foo")
+        collection.increment("foo")
+        collection.getFastCounter("foo").getAndReset() must_== 1
+        collection.getCounter("foo").getAndReset() must_== 1
+      }
+    }
 
     "metrics" in {
       "empty" in {
