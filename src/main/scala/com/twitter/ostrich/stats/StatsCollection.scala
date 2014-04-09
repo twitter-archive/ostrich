@@ -243,9 +243,9 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   def getCounters(): mutable.HashMap[String, Long] = {
     val counters = new mutable.HashMap[String, Long]
     if (includeJvmStats) fillInJvmCounters(counters)
-    for ((key, counter) <- counterMap.asScala ++ fastCounterMap.asScala) {
-      counters += (key -> counter())
-    }
+    counterMap.asScala.foreach { case (k, v) => counters += k -> v() }
+    // Accumulate on collision
+    fastCounterMap.asScala.foreach { case (k, v) => counters += k -> (v() + counters.getOrElse(k, 0L)) }
     counters
   }
 

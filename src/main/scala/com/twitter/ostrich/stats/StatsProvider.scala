@@ -179,7 +179,8 @@ trait StatsProvider {
   def getLabel(name: String): Option[String]
 
   /**
-   * Summarize all the counters in this collection.
+   * Summarize all the counters in this collection. Counter should be accumulated if there
+   * are fast and slow counters with the same name.
    */
   def getCounters(): Map[String, Long]
 

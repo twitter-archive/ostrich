@@ -119,6 +119,11 @@ class StatsCollectionSpec extends SpecificationWithJUnit {
         collection.getFastCounter("foo").getAndReset() must_== 1
         collection.getCounter("foo").getAndReset() must_== 1
       }
+      "accumulate on namespace collision" in {
+        collection.incr("foo")
+        collection.increment("foo")
+        collection.getCounters() mustEqual Map("foo" -> 2L)
+      }
     }
 
     "metrics" in {
