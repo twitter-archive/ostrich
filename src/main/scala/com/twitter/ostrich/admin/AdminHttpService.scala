@@ -165,22 +165,44 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
 /**
  * Deal with requests from the mesos executor
  */
-object MesosRequestHandler extends CgiRequestHandler {
+object MesosRequestHandler {
+  type SystemExitImpl = Int=>Unit
+  object SystemExitImpl {
+    val GracePeriod: Duration = 10.seconds
+
+    val Default: SystemExitImpl = { code =>
+      // NB: there is a race here between exiting cleanly and logging about not exiting cleanly
+      Thread.sleep(GracePeriod.inMilliseconds)
+      System.err.println(
+        "Did not exit cleanly after %s: now calling System.exit.".format(GracePeriod)
+      )
+      System.exit(code)
+    }
+  }
+}
+
+case class MesosRequestHandler(
+  systemExitImpl: MesosRequestHandler.SystemExitImpl
+) extends CgiRequestHandler {
 
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     val response = path match {
       case List("health") =>
         "OK\n"
       case List("quitquitquit") =>
+        // attempt to shutdown cleanly. note that this may leave the server in an unrecoverable
+        // state: any untracked daemon threads will result in the server becoming half dead
         BackgroundProcess.spawn("admin:quiesce") {
           Thread.sleep(100)
           ServiceTracker.quiesce()
         }
         "quitting\n"
       case List("abortabortabort") =>
-        BackgroundProcess.spawn("admin:shutdown") {
+        // attempt to shutdown cleanly before eventually System.exit()'ing
+        BackgroundProcess.spawn("admin:shutdown", true) {
           Thread.sleep(100)
           ServiceTracker.shutdown()
+          systemExitImpl(-1)
         }
         "aborting\n"
       case _ =>
@@ -355,7 +377,8 @@ class AdminHttpService(
   backlog: Int,
   statsCollection: StatsCollection,
   runtime: RuntimeEnvironment,
-  statsListenerMinPeriod: Duration = 1.minute
+  statsListenerMinPeriod: Duration = 1.minute,
+  systemExitImpl: MesosRequestHandler.SystemExitImpl = MesosRequestHandler.SystemExitImpl.Default
 ) extends Service {
   def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
     this(port, backlog, Stats, runtime)
@@ -363,6 +386,7 @@ class AdminHttpService(
   val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
   val commandHandler = new CommandHandler(runtime, statsCollection, statsListenerMinPeriod)
+  val mesosHandler = new MesosRequestHandler(systemExitImpl)
 
   def address = httpServer.getAddress
 
@@ -374,9 +398,9 @@ class AdminHttpService(
   addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
   addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
   addContext("/tracing", new TracingHandler)
-  addContext("/health", MesosRequestHandler)
-  addContext("/quitquitquit", MesosRequestHandler)
-  addContext("/abortabortabort", MesosRequestHandler)
+  addContext("/health", mesosHandler)
+  addContext("/quitquitquit", mesosHandler)
+  addContext("/abortabortabort", mesosHandler)
 
   httpServer.setExecutor(null)
 
