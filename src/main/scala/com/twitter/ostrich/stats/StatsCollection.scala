@@ -174,7 +174,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   }
 
   /**
-   * Get a counter `name` from `target`. Creative it with `f` if it does not exist.
+   * Get a counter `name` from `target`. Creates it with `f` if it does not exist.
    */
   private[this] def getCounter[T](name: String, target: ConcurrentHashMap[String, T], f: => T): T = {
     var counter = target.get(name)
