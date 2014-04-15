@@ -195,6 +195,9 @@ class StatsCollection extends StatsProvider with JsonSerializable {
 
   def removeCounter(name: String) {
     counterMap.remove(name)
+  }
+
+  def removeCounter(name: String) {
     fastCounterMap.remove(name)
   }
 
