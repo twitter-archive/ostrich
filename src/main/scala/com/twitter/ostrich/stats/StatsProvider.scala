@@ -112,6 +112,18 @@ trait StatsProvider {
   def incr(name: String): Long = incr(name, 1)
 
   /**
+   * Increments a fast counter by one. Fast counters are NOT in the same namespace
+   * as regular counters, so `incr` and `increment` will increment two different counters.
+   */
+  def increment(name: String): Unit = getFastCounter(name).increment()
+
+  /**
+   * Increments a fast counter by `count``. Fast counters are NOT in the same namespace
+   * as regular counters, so `incr` and `increment` will increment two different counters.
+   */
+  def increment(name: String, count: Int): Unit = getFastCounter(name).increment(count)
+
+  /**
    * Add a gauge function, which is used to sample instantaneous values.
    */
   def addGauge(name: String)(gauge: => Double)
@@ -144,6 +156,14 @@ trait StatsProvider {
   def getCounter(name: String): Counter
 
   /**
+   * Get the FastCounter object representing a named counter.
+   */
+  def getFastCounter(name: String): Incrementable = {
+    // Let this default to whatever "slow" counters so we don't break any existing provider implementations.
+    getCounter(name)
+  }
+
+  /**
    * Get the Metric object representing a named metric.
    */
   def getMetric(name: String): Metric
@@ -159,7 +179,8 @@ trait StatsProvider {
   def getLabel(name: String): Option[String]
 
   /**
-   * Summarize all the counters in this collection.
+   * Summarize all the counters in this collection. Counter should be accumulated if there
+   * are fast and slow counters with the same name.
    */
   def getCounters(): Map[String, Long]
 

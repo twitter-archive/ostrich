@@ -32,6 +32,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   import scala.collection.JavaConverters._
 
   protected val counterMap = new ConcurrentHashMap[String, Counter]()
+  protected val fastCounterMap = new ConcurrentHashMap[String, Incrementable]()
   protected val metricMap = new ConcurrentHashMap[String, Metric]()
   protected val gaugeMap = new ConcurrentHashMap[String, () => Double]()
   protected val labelMap = new ConcurrentHashMap[String, String]()
@@ -172,30 +173,43 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     labelMap.remove(name)
   }
 
-  private[this] def getCounter(name: String, f: => Counter): Counter = {
-    var counter = counterMap.get(name)
+  /**
+   * Get a counter `name` from `target`. Creates it with `f` if it does not exist.
+   */
+  private[this] def getCounter[T](name: String, target: ConcurrentHashMap[String, T], f: => T): T = {
+    var counter = target.get(name)
     if (counter == null) {
-      counter = counterMap.putIfAbsent(name, f)
-      counter = counterMap.get(name)
+      target.putIfAbsent(name, f)
+      counter = target.get(name)
     }
     counter
   }
 
-  def getCounter(name: String): Counter = getCounter(name, newCounter(name))
+  def getCounter(name: String): Counter = getCounter(name, counterMap, newCounter(name))
+
+  override def getFastCounter(name: String): Incrementable = getCounter(name, fastCounterMap, newFastCounter(name))
 
   def makeCounter(name: String, atomic: AtomicLong): Counter = {
-    getCounter(name, new Counter(atomic))
+    getCounter(name, counterMap, new Counter(atomic))
   }
 
   def removeCounter(name: String) {
     counterMap.remove(name)
   }
 
-  protected def newCounter(name: String) = {
+  def removeFastCounter(name: String) {
+    fastCounterMap.remove(name)
+  }
+
+  protected def newCounter(name: String): Counter = {
     new Counter()
   }
 
-  def getMetric(name: String) = {
+  protected def newFastCounter(name: String): Incrementable = {
+    new FastCounter()
+  }
+
+  def getMetric(name: String): Metric = {
     var metric = metricMap.get(name)
     if (metric == null) {
       metric = metricMap.putIfAbsent(name, newMetric(name))
@@ -204,7 +218,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     metric
   }
 
-  protected def newMetric(name: String) = {
+  protected def newMetric(name: String): Metric = {
     new Metric()
   }
 
@@ -212,12 +226,12 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     Option(metricMap.remove(name))
   }
 
-  def getLabel(name: String) = {
+  def getLabel(name: String): Option[String] = {
     val value = labelMap.get(name)
     if (value == null) None else Some(value)
   }
 
-  def getGauge(name: String) = {
+  def getGauge(name: String): Option[Double] = {
     val gauge = gaugeMap.get(name)
     if (gauge != null) {
       try {
@@ -229,16 +243,16 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     } else None
   }
 
-  def getCounters() = {
+  def getCounters(): mutable.HashMap[String, Long] = {
     val counters = new mutable.HashMap[String, Long]
     if (includeJvmStats) fillInJvmCounters(counters)
-    for ((key, counter) <- counterMap.asScala) {
-      counters += (key -> counter())
-    }
+    counterMap.asScala.foreach { case (k, v) => counters += k -> v() }
+    // Accumulate on collision
+    fastCounterMap.asScala.foreach { case (k, v) => counters += k -> (v() + counters.getOrElse(k, 0L)) }
     counters
   }
 
-  def getMetrics() = {
+  def getMetrics(): mutable.HashMap[String, Distribution] = {
     val metrics = new mutable.HashMap[String, Distribution]
     for ((key, metric) <- metricMap.asScala) {
       metrics += (key -> metric())
@@ -246,7 +260,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     metrics
   }
 
-  def getGauges() = {
+  def getGauges(): mutable.HashMap[String, Double] = {
     val gauges = new mutable.HashMap[String, Double]
     if (includeJvmStats) fillInJvmGauges(gauges)
     for ((key, gauge) <- gaugeMap.asScala) {
@@ -259,19 +273,20 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     gauges
   }
 
-  def getLabels() = {
+  def getLabels(): mutable.HashMap[String, String] = {
     new mutable.HashMap[String, String] ++ labelMap.asScala
   }
 
   def clearAll() {
     counterMap.clear()
+    fastCounterMap.clear()
     metricMap.clear()
     gaugeMap.clear()
     labelMap.clear()
     listeners.clear()
   }
 
-  def toJson = get().toJson
+  def toJson: String = get().toJson
 }
 
 /**
@@ -312,13 +327,14 @@ class LocalStatsCollection(collectionName: String) extends FanoutStatsCollection
    * will be cleared out. This is not an atomic operation.
    */
   def flushInto(collection: StatsProvider) {
-    counterMap.asScala.foreach { case (name, counter) =>
+    (counterMap.asScala ++ fastCounterMap.asScala).foreach { case (name, counter) =>
       collection.getCounter(collectionName + "." + name).incr(counter().toInt)
     }
     metricMap.asScala.foreach { case (name, metric) =>
       collection.getMetric(collectionName + "." + name).add(metric())
     }
     counterMap.clear()
+    fastCounterMap.clear()
     metricMap.clear()
   }
 
