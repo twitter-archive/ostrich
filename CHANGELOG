@@ -1,3 +1,10 @@
+9.5.0
+-----
+release: 29 April 2014
+
+- release util version 6.15.0
+- Add System.exit to the end of abortabortabort
+
 9.4.2
 -----
 release: 24 March 2014
