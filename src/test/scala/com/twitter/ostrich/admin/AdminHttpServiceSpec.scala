@@ -45,7 +45,15 @@ class AdminHttpServiceSpec extends ConfiguredSpecification with DataTables {
 
   "AdminHttpService" should {
     doBefore {
-      service = new AdminHttpService(0, 20, Stats, new RuntimeEnvironment(getClass), 30.seconds)
+      service =
+        new AdminHttpService(
+          0,
+          20,
+          Stats,
+          new RuntimeEnvironment(getClass),
+          30.seconds,
+          { code => /* system-exit is a noop here */ }
+        )
       service.start()
     }
 
