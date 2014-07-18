@@ -41,6 +41,8 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
       ServiceTracker.shutdown()
     }
 
+    // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
+    if (!sys.props.contains("SKIP_FLAKY"))
     "start up" in {
       expect {
         one(runtime).arguments willReturn Map.empty[String, String]
@@ -56,6 +58,8 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
       new Socket("localhost", port) must throwA[SocketException]
     }
 
+    // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
+    if (!sys.props.contains("SKIP_FLAKY"))
     "configure a json stats logger" in {
       expect {
         one(runtime).arguments willReturn Map.empty[String, String]
@@ -77,6 +81,28 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
       }
       ServiceTracker.peek must exist { s =>
         s.isInstanceOf[TimeSeriesCollector]
+      }
+    }
+
+    // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
+    if (!sys.props.contains("SKIP_FLAKY"))
+    "configure a w3c stats logger" in {
+      expect {
+        one(runtime).arguments willReturn Map.empty[String, String]
+      }
+
+      val config = new AdminServiceConfig {
+        httpPort = 9990
+        statsNodes = new StatsConfig {
+          reporters = new W3CStatsLoggerConfig {
+            loggerName = "w3c"
+            period = 1.second
+          }
+        }
+      }
+      val service = config()(runtime)
+      ServiceTracker.peek must exist { s =>
+        s.isInstanceOf[W3CStatsLogger] && s.asInstanceOf[W3CStatsLogger].logger.name == "w3c"
       }
     }
 
@@ -109,24 +135,5 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
       }
     }
 
-    "configure a w3c stats logger" in {
-      expect {
-        one(runtime).arguments willReturn Map.empty[String, String]
-      }
-
-      val config = new AdminServiceConfig {
-        httpPort = 9990
-        statsNodes = new StatsConfig {
-          reporters = new W3CStatsLoggerConfig {
-            loggerName = "w3c"
-            period = 1.second
-          }
-        }
-      }
-      val service = config()(runtime)
-      ServiceTracker.peek must exist { s =>
-        s.isInstanceOf[W3CStatsLogger] && s.asInstanceOf[W3CStatsLogger].logger.name == "w3c"
-      }
-    }
   }
 }
