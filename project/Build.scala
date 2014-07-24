@@ -4,7 +4,7 @@ import Tests._
 
 object Ostrich extends Build {
   val libVersion = "9.5.3"
-  val utilVersion = "6.18.1"
+  val utilVersion = "6.18.2"
 
   val sharedSettings = Seq(
     name := "ostrich",
