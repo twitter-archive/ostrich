@@ -1,17 +1,17 @@
 junit_tests(name='scala',
   dependencies=[
-    pants('3rdparty:cglib'),
-    pants('3rdparty:jmock'),
-    pants('3rdparty:junit'),
-    pants('3rdparty:mockito-all'),
-    pants('3rdparty:specs'),
-    pants('ostrich'),
-    pants('util/util-core'),
-    pants('util/util-logging'),
+    '3rdparty:cglib',
+    '3rdparty:jmock',
+    '3rdparty:junit',
+    '3rdparty:mockito-all',
+    '3rdparty:specs',
+    'ostrich',
+    'util/util-core',
+    'util/util-logging',
   ],
   sources=rglobs('*.scala'),
   resources=[
-    pants('ostrich/src/test/resources'),
-    pants('ostrich/config')
+    'ostrich/src/test/resources',
+    'ostrich/config'
   ]
 )
