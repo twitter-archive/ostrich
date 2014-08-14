@@ -17,7 +17,7 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
-import com.twitter.json.{Json, JsonSerializable}
+import com.twitter.json.JsonSerializable
 import com.twitter.util.{Local, Try}
 import java.lang.management._
 import java.lang.reflect.Method
@@ -39,6 +39,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
   private val listeners = new mutable.ListBuffer[StatsListener]
 
   /** Set this to true to have the collection fill in a set of automatic gauges from the JVM. */
+  @volatile
   var includeJvmStats = false
 
   /**
