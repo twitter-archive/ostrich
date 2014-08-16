@@ -22,3 +22,4 @@ ostrich.tmproj
 .classpath
 .project
 .scala_dependencies
+sbt-launch.jar
