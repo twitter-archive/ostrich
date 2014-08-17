@@ -22,10 +22,14 @@ import java.util.Date
 import scala.collection.immutable
 import com.twitter.conversions.string._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-class W3CStatsSpec extends SpecificationWithJUnit {
-  "w3c Stats" should {
+@RunWith(classOf[JUnitRunner])
+class W3CStatsTest extends FunSuite {
+
+  class Context {
     val logger = Logger.get("w3c")
     var handler: StringHandler = null
 
@@ -39,91 +43,109 @@ class W3CStatsSpec extends SpecificationWithJUnit {
       "widgets",
       "wodgets"
     )
+
     val w3c = new W3CStats(logger, fields, false)
 
-    doBefore {
-      handler = new StringHandler(BareFormatter, None)
-      logger.addHandler(handler)
-      logger.setUseParentHandlers(false)
-      logger.setLevel(Level.INFO)
+    handler = new StringHandler(BareFormatter, None)
+    logger.addHandler(handler)
+    logger.setUseParentHandlers(false)
+    logger.setLevel(Level.INFO)
 
-      Logger.get("").setLevel(Level.OFF)
-      Stats.clearAll()
-      handler.clear()
-    }
+    Logger.get("").setLevel(Level.OFF)
+    Stats.clearAll()
+    handler.clear()
 
     def getLine() = {
       val rv = handler.get.split("\n").filter { line => !(line startsWith "#") }.head
       handler.clear()
       rv
     }
-
-    "can be called manually" in {
-      val counters = Map("widgets" -> 3L)
-      val gauges = Map("wodgets" -> 3.5)
-      val metrics = Map("backend-response-time_msec" -> new Distribution(Histogram(10)))
-      val labels = Map("request-uri" -> "/home")
-      w3c.write(StatsSummary(counters, metrics, gauges, labels))
-      getLine() mustEqual "10 - /home - - - 3 3.5"
-    }
-
-    "can be called transactionally" in {
-      w3c { stats =>
-        val response: Int = stats.time[Int]("backend-response-time") {
-          stats.setLabel("backend-response-method", "GET")
-          stats.setLabel("request-uri", "/home")
-          1 + 1
-        }
-        response mustEqual 2
-
-        val response2: Int = stats.timeNanos[Int]("backend-response-time") {
-          1 + 2
-        }
-        response2 mustEqual 3
-
-        stats.setGauge("wodgets", 3.5)
-      }
-
-      val entries: Array[String] = getLine().split(" ")
-      entries(0).toInt must be_>=(0)
-      entries(1) mustEqual "GET"
-      entries(2) mustEqual "/home"
-      entries(3).toInt must be_>=(10)  //must take at least 10 ns!
-      entries(4) mustEqual "-"
-      entries(7) mustEqual "3.5"
-    }
-
-    "empty stats returns the empty string" in {
-      w3c { stats => () }
-      // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
-      getLine().replaceAll("-", "").trim() mustEqual ""
-    }
-
-    "logging a field not tracked in the fields member shouldn't show up in the logfile" in {
-      w3c { stats =>
-        stats.setLabel("jibberish_nonsense", "foo")
-      }
-      getLine() must notInclude("foo")
-    }
-
-    "sum counts within a transaction" in {
-      w3c { stats =>
-        stats.incr("widgets", 8)
-        stats.incr("widgets", 8)
-      }
-      getLine() mustEqual "- - - - - - 16 -"
-    }
-
-    "logs metrics only once" in {
-      w3c { stats =>
-        stats.addMetric("backend-response-time_msec", 9)
-        stats.addMetric("backend-response-time_msec", 13)
-      }
-      getLine() mustEqual "11 - - - - - - -"
-      w3c { stats =>
-        stats.addMetric("backend-response-time_msec", 9)
-      }
-      getLine() mustEqual "9 - - - - - - -"
-    }
   }
+
+  test("can be called manually") {
+    val context = new Context
+    import context._
+
+    val counters = Map("widgets" -> 3L)
+    val gauges = Map("wodgets" -> 3.5)
+    val metrics = Map("backend-response-time_msec" -> new Distribution(Histogram(10)))
+    val labels = Map("request-uri" -> "/home")
+    w3c.write(StatsSummary(counters, metrics, gauges, labels))
+    assert(getLine() === "10 - /home - - - 3 3.5")
+  }
+
+  test("can be called transactionally") {
+    val context = new Context
+    import context._
+
+    w3c { stats =>
+      val response: Int = stats.time[Int]("backend-response-time") {
+        stats.setLabel("backend-response-method", "GET")
+        stats.setLabel("request-uri", "/home")
+        1 + 1
+      }
+      assert(response === 2)
+
+      val response2: Int = stats.timeNanos[Int]("backend-response-time") {
+        1 + 2
+      }
+      assert(response2 === 3)
+
+      stats.setGauge("wodgets", 3.5)
+    }
+
+    val entries: Array[String] = getLine().split(" ")
+    assert(entries(0).toInt >= 0)
+    assert(entries(1) === "GET")
+    assert(entries(2) === "/home")
+    assert(entries(3).toInt >= 10)  //must take at least 10 ns!
+    assert(entries(4) === "-")
+    assert(entries(7) === "3.5")
+  }
+
+  test("empty stats returns the empty string") {
+    val context = new Context
+    import context._
+
+    w3c { stats => () }
+    // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
+    assert(getLine().replaceAll("-", "").trim() === "")
+  }
+
+  test("logging a field not tracked in the fields member shouldn't show up in the logfile") {
+    val context = new Context
+    import context._
+
+    w3c { stats =>
+      stats.setLabel("jibberish_nonsense", "foo")
+    }
+    assert(!getLine().contains("foo"))
+  }
+
+  test("sum counts within a transaction") {
+    val context = new Context
+    import context._
+
+    w3c { stats =>
+      stats.incr("widgets", 8)
+      stats.incr("widgets", 8)
+    }
+    assert(getLine() === "- - - - - - 16 -")
+  }
+
+  test("logs metrics only once") {
+    val context = new Context
+    import context._
+
+    w3c { stats =>
+      stats.addMetric("backend-response-time_msec", 9)
+      stats.addMetric("backend-response-time_msec", 13)
+    }
+    assert(getLine() === "11 - - - - - - -")
+    w3c { stats =>
+      stats.addMetric("backend-response-time_msec", 9)
+    }
+    assert(getLine() === "9 - - - - - - -")
+  }
+
 }

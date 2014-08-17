@@ -16,30 +16,44 @@
 
 package com.twitter.ostrich.stats
 
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 
-class DistributionSpec extends SpecificationWithJUnit {
-  "Distribution" should {
+@RunWith(classOf[JUnitRunner])
+class DistributionTest extends FunSuite {
+
+  class Context {
     val histogram0 = Histogram()
     val histogram1 = Histogram(10)
     val histogram2 = Histogram(10, 20)
-
-    "equals" in {
-      Distribution(histogram1.clone()) mustEqual Distribution(histogram1.clone())
-      Distribution(histogram1) must not(beEqual(Distribution(histogram2)))
-    }
-
-    "toMap" in {
-      Distribution(histogram2).toMap mustEqual
-        Map("count" -> 2, "maximum" -> 19, "minimum" -> 10, "average" -> 15, "sum" -> 30,
-            "p50" -> 10, "p90" -> 19, "p95" -> 19, "p99" -> 19, "p999" -> 19, "p9999" -> 19)
-      Distribution(histogram0).toMap mustEqual Map("count" -> 0)
-    }
-
-    "toJson" in {
-      Distribution(histogram2).toJson mustEqual
-        "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
-          "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}"
-    }
   }
+
+  test("equals") {
+    val context = new Context
+    import context._
+
+    assert(Distribution(histogram1.clone()) === Distribution(histogram1.clone()))
+    assert(Distribution(histogram1) !== Distribution(histogram2))
+  }
+
+  test("toMap") {
+    val context = new Context
+    import context._
+
+    assert(Distribution(histogram2).toMap ===
+    Map("count" -> 2, "maximum" -> 19, "minimum" -> 10, "average" -> 15, "sum" -> 30,
+      "p50" -> 10, "p90" -> 19, "p95" -> 19, "p99" -> 19, "p999" -> 19, "p9999" -> 19))
+    assert(Distribution(histogram0).toMap === Map("count" -> 0))
+  }
+
+  test("toJson") {
+    val context = new Context
+    import context._
+
+    assert(Distribution(histogram2).toJson ===
+    "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
+    "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}")
+  }
+
 }

@@ -16,36 +16,39 @@
 
 package com.twitter.ostrich.stats
 
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
-class MetricSpec extends SpecificationWithJUnit {
-  "Metric" should {
-    "min, max, mean" in {
-      val metric = new Metric()
-      metric.add(10)
-      metric.add(20)
-      metric() mustEqual Distribution(Histogram(10, 20))
-      metric.add(60)
-      metric() mustEqual Distribution(Histogram(10, 20, 60))
+@RunWith(classOf[JUnitRunner])
+class MetricTest extends FunSuite {
 
-      metric().histogram.get(false) mustEqual Histogram(10, 20, 60).get(false)
-    }
+  test("min, max, mean") {
+    val metric = new Metric()
+    metric.add(10)
+    metric.add(20)
+    assert(metric() === Distribution(Histogram(10, 20)))
+    metric.add(60)
+    assert(metric() === Distribution(Histogram(10, 20, 60)))
 
-    "add distribution" in {
-      val metric = new Metric()
-      metric.add(Distribution(Histogram(10, 20)))
-      metric.add(60)
-      metric() mustEqual Distribution(Histogram(10, 20, 60))
-    }
-
-    "clear" in {
-      val metric = new Metric()
-      metric.add(10)
-      metric.add(20)
-      metric() mustEqual Distribution(Histogram(10, 20))
-      metric() mustEqual Distribution(Histogram(10, 20))
-      metric.clear()
-      metric() mustEqual Distribution(Histogram())
-    }
+    assert(metric().histogram.get(false) === Histogram(10, 20, 60).get(false))
   }
+
+  test("add distribution") {
+    val metric = new Metric()
+    metric.add(Distribution(Histogram(10, 20)))
+    metric.add(60)
+    assert(metric() === Distribution(Histogram(10, 20, 60)))
+  }
+
+  test("clear") {
+    val metric = new Metric()
+    metric.add(10)
+    metric.add(20)
+    assert(metric() === Distribution(Histogram(10, 20)))
+    assert(metric() === Distribution(Histogram(10, 20)))
+    metric.clear()
+    assert(metric() === Distribution(Histogram()))
+  }
+
 }

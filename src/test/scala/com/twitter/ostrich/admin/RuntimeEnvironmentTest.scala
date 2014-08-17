@@ -18,39 +18,41 @@ package com.twitter.ostrich
 package admin
 
 import com.twitter.io.TempFile
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.FunSuite
 import stats.Histogram
 
-class RuntimeEnvironmentSpec extends SpecificationWithJUnit {
-  val config = TempFile.fromResourcePath("/config.scala").getAbsolutePath
+@RunWith(classOf[JUnitRunner])
+class RuntimeEnvironmentTest extends FunSuite {
 
-  "RuntimeEnvironment" should {
-    "find executable jar path" in {
-      val runtime = new RuntimeEnvironment(classOf[Histogram])
-      runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1.jar"), "flockdb", "1.4.1") mustEqual
-        Some("./dist/flockdb/flockdb-1.4.1.jar")
-      runtime.findCandidateJar(List("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"), "flockdb", "1.4.1") mustEqual
-        Some("./dist/flockdb/flockdb_2.7.7-1.4.1.jar")
-      runtime.findCandidateJar(List("./dist/flockdb/wrong-1.4.1.jar"), "flockdb", "1.4.1") mustEqual
-        None
-      runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"), "flockdb", "1.4.1-SNAPSHOT") mustEqual
-        Some("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar")
-    }
-
-    "parse custom args" in {
-      val runtime = new RuntimeEnvironment(classOf[Object])
-      System.getProperty("foo") mustBe null
-      runtime.parseArgs(List("-D", "foo=bar"))
-      runtime.arguments.get("foo") mustEqual Some("bar")
-      System.getProperty("foo") mustEqual "bar"
-      System.clearProperty("foo")  // allow this test to be run multiple times
-    }
-
-    "load a config" in {
-      val runtime = new RuntimeEnvironment(classOf[Object])
-      runtime.parseArgs(List("-f", config))
-      val res: String = runtime.loadConfig()
-      res mustEqual "foo"
-    }
+  test("find executable jar path") {
+    val runtime = new RuntimeEnvironment(classOf[Histogram])
+    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1.jar"), "flockdb", "1.4.1") ===
+    Some("./dist/flockdb/flockdb-1.4.1.jar"))
+    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"), "flockdb", "1.4.1") ===
+    Some("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"))
+    assert(runtime.findCandidateJar(List("./dist/flockdb/wrong-1.4.1.jar"), "flockdb", "1.4.1") ===
+    None)
+    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"), "flockdb", "1.4.1-SNAPSHOT") ===
+    Some("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"))
   }
+
+  test("parse custom args") {
+    val runtime = new RuntimeEnvironment(classOf[Object])
+    assert(System.getProperty("foo") === null)
+    runtime.parseArgs(List("-D", "foo=bar"))
+    assert(runtime.arguments.get("foo") === Some("bar"))
+    assert(System.getProperty("foo") === "bar")
+    System.clearProperty("foo")  // allow this test to be run multiple times
+  }
+
+  test("load a config") {
+    val config = TempFile.fromResourcePath("/config.scala").getAbsolutePath
+    val runtime = new RuntimeEnvironment(classOf[Object])
+    runtime.parseArgs(List("-f", config))
+    val res: String = runtime.loadConfig()
+    assert(res === "foo")
+  }
+
 }

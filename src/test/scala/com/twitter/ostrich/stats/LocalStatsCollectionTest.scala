@@ -1,38 +1,48 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.util.Future
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.junit.JUnitRunner
 
-class LocalStatsCollectionSpec extends SpecificationWithJUnit {
-  val jobClassName = "rooster.TestCapturer"
+@RunWith(classOf[JUnitRunner])
+class LocalStatsCollectionTest extends FunSuite with BeforeAndAfter {
 
-  "LocalStatsCollection" should {
+  class Context {
+    val jobClassName = "rooster.TestCapturer"
     val localStats = LocalStatsCollection(jobClassName)
-
-    doAfter {
-      Stats.clearAll()
-    }
-
-    "writes to global stats at the same time" in {
-      localStats.addMetric("whateva", 5)
-      localStats.addMetric("whateva", 15)
-      Stats.getMetric("whateva")() mustEqual Distribution(Histogram(5, 15))
-      localStats.getMetric("whateva")() mustEqual Distribution(Histogram(5, 15))
-    }
-
-    "flush" in {
-      localStats.incr("tflock")
-      localStats.incr("tflock")
-      localStats.getCounter("tflock")() mustEqual 2
-      localStats.addMetric("timing", 900)
-      localStats.getMetric("timing")() mustEqual Distribution(Histogram(900))
-
-      localStats.flushInto(Stats)
-
-      Stats.getCounter(jobClassName + ".tflock")() mustEqual 2
-      Stats.getMetric(jobClassName + ".timing")() mustEqual Distribution(Histogram(900))
-      localStats.getCounter("tflock")() mustEqual 0
-      localStats.getMetric("timing")() mustEqual Distribution(Histogram())
-    }
   }
+
+  after {
+    Stats.clearAll()
+  }
+
+  test("writes to global stats at the same time") {
+    val context = new Context
+    import context._
+
+    localStats.addMetric("whateva", 5)
+    localStats.addMetric("whateva", 15)
+    assert(Stats.getMetric("whateva")() === Distribution(Histogram(5, 15)))
+    assert(localStats.getMetric("whateva")() === Distribution(Histogram(5, 15)))
+  }
+
+  test("flush") {
+    val context = new Context
+    import context._
+
+    localStats.incr("tflock")
+    localStats.incr("tflock")
+    assert(localStats.getCounter("tflock")() === 2)
+    localStats.addMetric("timing", 900)
+    assert(localStats.getMetric("timing")() === Distribution(Histogram(900)))
+
+    localStats.flushInto(Stats)
+
+    assert(Stats.getCounter(jobClassName + ".tflock")() === 2)
+    assert(Stats.getMetric(jobClassName + ".timing")() === Distribution(Histogram(900)))
+    assert(localStats.getCounter("tflock")() === 0)
+    assert(localStats.getMetric("timing")() === Distribution(Histogram()))
+  }
+
 }
