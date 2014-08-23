@@ -18,174 +18,179 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
 import com.twitter.ostrich.admin.PeriodicBackgroundProcess
-import org.specs.SpecificationWithJUnit
-import org.specs.util.Duration
+import com.twitter.util.Future
+import org.junit.runner.RunWith
+import org.scalatest.FunSuite
+import org.scalatest.junit.JUnitRunner
 
-class StatsListenerSpec extends SpecificationWithJUnit {
-  "StatsListener object" should {
-    var collection: StatsCollection = null
+@RunWith(classOf[JUnitRunner])
+class StatsListenerTest extends FunSuite {
 
-    doBefore {
-      collection = new StatsCollection()
-      StatsListener.clearAll()
-    }
-
-    "track latched listeners" in {
-      StatsListener.listeners.size() mustEqual 0
-      val listener = StatsListener(1.minute, collection)
-      val listener2 = StatsListener(1.minute, collection)
-      listener must be(listener2)
-      StatsListener.listeners.size() mustEqual 1
-      StatsListener(500.millis, collection) mustNot be(listener)
-      StatsListener.listeners.size() mustEqual 2
-      val key = ("period:%d".format(1.minute.inMillis), collection)
-      StatsListener.listeners.containsKey(key) must beTrue
-      StatsListener.listeners.get(key) mustEqual listener
-    }
-
-    "tracks named listeners" in {
-      val monkeyListener = StatsListener("monkey", collection)
-      StatsListener("donkey", collection) mustNot be(monkeyListener)
-      StatsListener("monkey", collection) must be(monkeyListener)
-    }
+  class StatsListenerObjectContext {
+    var collection: StatsCollection = new StatsCollection()
+    StatsListener.clearAll()
   }
 
-  "StatsListener instance" should {
-    var collection: StatsCollection = null
-    var listener: StatsListener = null
-    var listener2: StatsListener = null
+  test("tracks latched listeners") {
+    val context = new StatsListenerObjectContext
+    import context._
 
-    doBefore {
-      collection = new StatsCollection()
-      listener = new StatsListener(collection)
-      listener2 = new StatsListener(collection)
-      StatsListener.clearAll()
-    }
-
-
-    "reports basic stats" in {
-      "counters" in {
-        collection.incr("b", 4)
-        collection.incr("a", 3)
-
-        listener.getCounters() mustEqual Map("a" -> 3, "b" -> 4)
-        collection.incr("a", 2)
-        listener.getCounters() mustEqual Map("a" -> 2, "b" -> 0)
-      }
-
-      "metrics" in {
-        collection.addMetric("beans", 3)
-        collection.addMetric("beans", 4)
-        collection.getMetrics() mustEqual Map("beans" -> Distribution(Histogram(3, 4)))
-        listener.getMetrics() mustEqual Map("beans" -> Histogram(3, 4))
-        listener2.getMetrics() mustEqual Map("beans" -> Histogram(3, 4))
-      }
-    }
-
-    "independently tracks deltas" in {
-      "counters" in {
-        collection.incr("a", 3)
-        listener.getCounters() mustEqual Map("a" -> 3)
-        collection.incr("a", 5)
-        listener2.getCounters() mustEqual Map("a" -> 8)
-        collection.incr("a", 1)
-        listener.getCounters() mustEqual Map("a" -> 6)
-      }
-
-      "metrics" in {
-        collection.addMetric("timing", 10)
-        collection.addMetric("timing", 20)
-        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 20))
-        collection.addMetric("timing", 10)
-        listener2.getMetrics() mustEqual Map("timing" -> Histogram(10, 20, 10))
-        collection.addMetric("timing", 10)
-        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 10))
-        listener2.getMetrics() mustEqual Map("timing" -> Histogram(10))
-
-        listener.getMetrics() mustEqual Map("timing" -> Histogram())
-        listener2.getMetrics() mustEqual Map("timing" -> Histogram())
-      }
-    }
-
-    "master stats always increase, even with listeners connected" in {
-      "counters" in {
-        collection.incr("a", 3)
-        listener.getCounters() mustEqual Map("a" -> 3)
-        collection.incr("a", 5)
-        listener.getCounters() mustEqual Map("a" -> 5)
-
-        collection.getCounters() mustEqual Map("a" -> 8)
-      }
-
-      "metrics" in {
-        collection.addMetric("timing", 10)
-        collection.addMetric("timing", 20)
-        listener.getMetrics() mustEqual Map("timing" -> Histogram(10, 20))
-        collection.addMetric("timing", 10)
-
-        collection.getMetrics() mustEqual Map("timing" -> Distribution(Histogram(10, 20, 10)))
-      }
-    }
-
-    "tracks stats only from the point a listener was attached, but report all keys" in {
-      collection.incr("a", 5)
-      collection.incr("b", 5)
-      collection.addMetric("beans", 5)
-      collection.addMetric("rice", 5)
-      val listener3 = new StatsListener(collection)
-      collection.incr("a", 70)
-      collection.incr("a", 300)
-      collection.addMetric("beans", 3)
-      listener3.getCounters() mustEqual Map("a" -> 370, "b" -> 0)
-      listener3.getMetrics() mustEqual
-        Map("beans" -> Histogram(3),
-            "rice" -> Histogram())
-    }
+    assert(StatsListener.listeners.size() === 0)
+    val listener = StatsListener(1.minute, collection)
+    val listener2 = StatsListener(1.minute, collection)
+    assert(listener === listener2)
+    assert(StatsListener.listeners.size() === 1)
+    assert(StatsListener(500.millis, collection) !== listener)
+    assert(StatsListener.listeners.size() === 2)
+    val key = ("period:%d".format(1.minute.inMillis), collection)
+    assert(StatsListener.listeners.containsKey(key))
+    assert(StatsListener.listeners.get(key) === listener)
   }
 
-  "LatchedStatsListener instance" should {
-    "latch to the top of a period" in {
-      val collection = new StatsCollection()
-      val listener = new LatchedStatsListener(collection, 1.second) {
-        override lazy val service = new PeriodicBackgroundProcess("", 1.second) {
-          def periodic() { }
-        }
-      }
+  test("tracks named listeners") {
+    val context = new StatsListenerObjectContext
+    import context._
 
-      var gauge = 0
-      collection.incr("counter", 5)
-      collection.addGauge("gauge") { synchronized { gauge } }
-      collection.setLabel("label", "HIMYNAMEISBRAK")
-      collection.addMetric("metric", Distribution(Histogram(1, 2)))
-
-      listener.getCounters() mustEqual Map()
-      listener.getGauges() mustEqual Map()
-      listener.getLabels() mustEqual Map()
-      listener.getMetrics() mustEqual Map()
-
-      listener.nextLatch()
-
-      listener.getCounters() mustEqual Map("counter" -> 5)
-      listener.getGauges() mustEqual Map("gauge" -> 0)
-      listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
-      listener.getMetrics() mustEqual Map("metric" -> Histogram(1, 2))
-
-      collection.incr("counter", 3)
-      synchronized { gauge = 37 }
-      collection.setLabel("label", "EEPEEPIAMAMONKEY")
-      collection.addMetric("metric", Distribution(Histogram(3, 4, 5)))
-
-      listener.getCounters() mustEqual Map("counter" -> 5)
-      listener.getGauges() mustEqual Map("gauge" -> 0)
-      listener.getLabels() mustEqual Map("label" -> "HIMYNAMEISBRAK")
-      listener.getMetrics() mustEqual Map("metric" -> Histogram(1, 2))
-
-      listener.nextLatch()
-
-      listener.getCounters() mustEqual Map("counter" -> 3)
-      listener.getGauges() mustEqual Map("gauge" -> 37)
-      listener.getLabels() mustEqual Map("label" -> "EEPEEPIAMAMONKEY")
-      listener.getMetrics() mustEqual Map("metric" -> Histogram(3, 4, 5))
-    }
+    val monkeyListener = StatsListener("monkey", collection)
+    assert(StatsListener("donkey", collection) !== monkeyListener)
+    assert(StatsListener("monkey", collection) === monkeyListener)
   }
+
+  class StatsListenerInstanceContext {
+    var collection: StatsCollection = new StatsCollection()
+    var listener: StatsListener = new StatsListener(collection)
+    var listener2: StatsListener = new StatsListener(collection)
+    StatsListener.clearAll()
+  }
+
+  test("reports basic stats") {
+    val context = new StatsListenerInstanceContext
+    import context._
+
+    info("counters")
+    collection.incr("b", 4)
+    collection.incr("a", 3)
+
+    assert(listener.getCounters() === Map("a" -> 3, "b" -> 4))
+    collection.incr("a", 2)
+    assert(listener.getCounters() === Map("a" -> 2, "b" -> 0))
+
+    info("metrics")
+    collection.addMetric("beans", 3)
+    collection.addMetric("beans", 4)
+    assert(collection.getMetrics() === Map("beans" -> Distribution(Histogram(3, 4))))
+    assert(listener.getMetrics() === Map("beans" -> Histogram(3, 4)))
+    assert(listener2.getMetrics() === Map("beans" -> Histogram(3, 4)))
+  }
+
+  test("independently tracks deltas") {
+    val context = new StatsListenerInstanceContext
+    import context._
+
+    info("counters")
+    collection.incr("a", 3)
+    assert(listener.getCounters() === Map("a" -> 3))
+    collection.incr("a", 5)
+    assert(listener2.getCounters() === Map("a" -> 8))
+    collection.incr("a", 1)
+    assert(listener.getCounters() === Map("a" -> 6))
+
+    info("metrics")
+    collection.addMetric("timing", 10)
+    collection.addMetric("timing", 20)
+    assert(listener.getMetrics() === Map("timing" -> Histogram(10, 20)))
+    collection.addMetric("timing", 10)
+    assert(listener2.getMetrics() === Map("timing" -> Histogram(10, 20, 10)))
+    collection.addMetric("timing", 10)
+    assert(listener.getMetrics() === Map("timing" -> Histogram(10, 10)))
+    assert(listener2.getMetrics() === Map("timing" -> Histogram(10)))
+
+    assert(listener.getMetrics() === Map("timing" -> Histogram()))
+    assert(listener2.getMetrics() === Map("timing" -> Histogram()))
+  }
+
+  test("master stats always increase, even with listeners connected") {
+    val context = new StatsListenerInstanceContext
+    import context._
+
+    info("counters")
+    collection.incr("a", 3)
+    assert(listener.getCounters() === Map("a" -> 3))
+    collection.incr("a", 5)
+    assert(listener.getCounters() === Map("a" -> 5))
+
+    assert(collection.getCounters() === Map("a" -> 8))
+
+    info("metrics")
+    collection.addMetric("timing", 10)
+    collection.addMetric("timing", 20)
+    assert(listener.getMetrics() === Map("timing" -> Histogram(10, 20)))
+    collection.addMetric("timing", 10)
+
+    assert(collection.getMetrics() === Map("timing" -> Distribution(Histogram(10, 20, 10))))
+  }
+
+
+  test("tracks stats only from the point a listener was attached, but report all keys") {
+    val context = new StatsListenerInstanceContext
+    import context._
+
+    collection.incr("a", 5)
+    collection.incr("b", 5)
+    collection.addMetric("beans", 5)
+    collection.addMetric("rice", 5)
+    val listener3 = new StatsListener(collection)
+    collection.incr("a", 70)
+    collection.incr("a", 300)
+    collection.addMetric("beans", 3)
+    assert(listener3.getCounters() === Map("a" -> 370, "b" -> 0))
+    assert(listener3.getMetrics() ===
+    Map("beans" -> Histogram(3),
+      "rice" -> Histogram()))
+  }
+
+  test("latch to the top of a period") {
+    val collection = new StatsCollection()
+    val listener = new LatchedStatsListener(collection, 1.second) {
+      override lazy val service = new PeriodicBackgroundProcess("", 1.second) {
+        def periodic() { }
+      }
+    }
+
+    var gauge = 0
+    collection.incr("counter", 5)
+    collection.addGauge("gauge") { synchronized { gauge } }
+    collection.setLabel("label", "HIMYNAMEISBRAK")
+    collection.addMetric("metric", Distribution(Histogram(1, 2)))
+
+    assert(listener.getCounters() === Map())
+    assert(listener.getGauges() === Map())
+    assert(listener.getLabels() === Map())
+    assert(listener.getMetrics() === Map())
+
+    listener.nextLatch()
+
+    assert(listener.getCounters() === Map("counter" -> 5))
+    assert(listener.getGauges() === Map("gauge" -> 0))
+    assert(listener.getLabels() === Map("label" -> "HIMYNAMEISBRAK"))
+    assert(listener.getMetrics() === Map("metric" -> Histogram(1, 2)))
+
+    collection.incr("counter", 3)
+    synchronized { gauge = 37 }
+    collection.setLabel("label", "EEPEEPIAMAMONKEY")
+    collection.addMetric("metric", Distribution(Histogram(3, 4, 5)))
+
+    assert(listener.getCounters() === Map("counter" -> 5))
+    assert(listener.getGauges() === Map("gauge" -> 0))
+    assert(listener.getLabels() === Map("label" -> "HIMYNAMEISBRAK"))
+    assert(listener.getMetrics() === Map("metric" -> Histogram(1, 2)))
+
+    listener.nextLatch()
+
+    assert(listener.getCounters() === Map("counter" -> 3))
+    assert(listener.getGauges() === Map("gauge" -> 37))
+    assert(listener.getLabels() === Map("label" -> "EEPEEPIAMAMONKEY"))
+    assert(listener.getMetrics() === Map("metric" -> Histogram(3, 4, 5)))
+  }
+
 }
