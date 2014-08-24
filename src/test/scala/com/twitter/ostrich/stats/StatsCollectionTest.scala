@@ -22,221 +22,253 @@ import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
 import com.twitter.util.{Time, Future}
-import org.specs.SpecificationWithJUnit
+import org.junit.runner.RunWith
+import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.junit.JUnitRunner
 
-class StatsCollectionSpec extends SpecificationWithJUnit {
-  "StatsCollection" should {
+@RunWith(classOf[JUnitRunner])
+class StatsCollectionTest extends FunSuite with BeforeAndAfter {
+
+  class Context {
     val collection = new StatsCollection()
+  }
 
-    doBefore {
-      Logger.get("").setLevel(Level.OFF)
-    }
+  before {
+    Logger.get("").setLevel(Level.OFF)
+  }
 
-    "fillInJvmGauges" in {
-      val map = new mutable.HashMap[String, Double]
-      collection.fillInJvmGauges(map)
-      map.keys.toList must contain("jvm_num_cpus")
-      map.keys.toList must contain("jvm_heap_used")
-      map.keys.toList must contain("jvm_start_time")
-      map.keys.toList must contain("jvm_post_gc_used")
-    }
+  test("fillInJvmGauges") {
+    val context = new Context
+    import context._
 
-    "fillInJvmCounters" in {
-      val map = new mutable.HashMap[String, Long]
-      collection.fillInJvmCounters(map)
-      map.keys.toList must contain("jvm_gc_cycles")
-      map.keys.toList must contain("jvm_gc_msec")
-    }
+    val map = new mutable.HashMap[String, Double]
+    collection.fillInJvmGauges(map)
+    assert(map.keys.toList.contains("jvm_num_cpus"))
+    assert(map.keys.toList.contains("jvm_heap_used"))
+    assert(map.keys.toList.contains("jvm_start_time"))
+    assert(map.keys.toList.contains("jvm_post_gc_used"))
+  }
 
-    "StatsSummary filtering" in {
-      val summary = StatsSummary(
-        Map("apples" -> 10, "oranges" -> 13, "appliances" -> 4, "bad_oranges" -> 1),
-        Map(),
-        Map(),
-        Map()
-      )
+  test("fillInJvmCounters") {
+    val context = new Context
+    import context._
 
-      summary.filterOut("""app.*""".r).counters mustEqual Map("oranges" -> 13, "bad_oranges" -> 1)
-      summary.filterOut("""xyz.*""".r).counters mustEqual summary.counters
-      summary.filterOut(""".*oranges""".r).counters mustEqual Map("apples" -> 10, "appliances" -> 4)
-    }
+    val map = new mutable.HashMap[String, Long]
+    collection.fillInJvmCounters(map)
+    assert(map.keys.toList.contains("jvm_gc_cycles"))
+    assert(map.keys.toList.contains("jvm_gc_msec"))
+  }
 
-    "counters" in {
-      "basic" in {
+  test("StatsSummary filtering") {
+    val summary = StatsSummary(
+      Map("apples" -> 10, "oranges" -> 13, "appliances" -> 4, "bad_oranges" -> 1),
+      Map(),
+      Map(),
+      Map()
+    )
+
+    assert(summary.filterOut("""app.*""".r).counters === Map("oranges" -> 13, "bad_oranges" -> 1))
+    assert(summary.filterOut("""xyz.*""".r).counters === summary.counters)
+    assert(summary.filterOut(""".*oranges""".r).counters === Map("apples" -> 10, "appliances" -> 4))
+  }
+
+    test("counters") {
+      new Context {
+        info("basic")
         collection.incr("widgets", 1)
         collection.incr("wodgets", 12)
         collection.incr("wodgets")
-        collection.getCounters() mustEqual Map("widgets" -> 1, "wodgets" -> 13)
+        assert(collection.getCounters() === Map("widgets" -> 1, "wodgets" -> 13))
       }
 
-      "negative" in {
+      new Context {
+        info("negative")
         collection.incr("widgets", 3)
         collection.incr("widgets", -1)
-        collection.getCounters() mustEqual Map("widgets" -> 2)
+        assert(collection.getCounters() === Map("widgets" -> 2))
       }
 
-      "clearCounter" in {
+      new Context {
+        info("clearCounter")
         collection.getCounter("smellyfeet")
         collection.incr("smellyfeet", 1)
-        collection.getCounters() mustEqual Map("smellyfeet" -> 1)
+        assert(collection.getCounters() === Map("smellyfeet" -> 1))
         collection.removeCounter("smellyfeet")
-        collection.getCounters() mustEqual Map()
+        assert(collection.getCounters() === Map())
       }
     }
 
-    "metrics" in {
-      "empty" in {
+    test("metrics") {
+      new Context {
+        info("empty")
         collection.addMetric("test", 0)
         val test = collection.getMetric("test")
-        test() mustEqual new Distribution(Histogram(0))
-        test() mustEqual new Distribution(Histogram(0))
+        assert(test() === new Distribution(Histogram(0)))
+        assert(test() === new Distribution(Histogram(0)))
         // the timings list will be empty here:
         test.clear()
-        test() mustEqual new Distribution(Histogram())
+        assert(test() === new Distribution(Histogram()))
       }
 
-      "basic min/max/average" in {
+      new Context {
+        info("basic min/max/average")
         collection.addMetric("test", 1)
         collection.addMetric("test", 2)
         collection.addMetric("test", 3)
         val test = collection.getMetric("test")
-        test() mustEqual new Distribution(Histogram(1, 2, 3))
+        assert(test() === new Distribution(Histogram(1, 2, 3)))
       }
 
-      "report" in {
+      new Context {
+        info("report")
         var x = 0
         collection.time("hundred") { Thread.sleep(10) }
         val timings = collection.getMetrics()
-        timings.keys.toList mustEqual List("hundred_msec")
-        timings("hundred_msec").count mustEqual 1
-        timings("hundred_msec").minimum must be_>(0)
-        timings("hundred_msec").maximum must be_>(0)
+        assert(timings.keys.toList === List("hundred_msec"))
+        assert(timings("hundred_msec").count === 1)
+        assert(timings("hundred_msec").minimum > 0)
+        assert(timings("hundred_msec").maximum > 0)
       }
 
-      "time future" in {
+      new Context {
+        info("time future")
         val future = Future({ Thread.sleep(10); 100 })
 
-        collection.timeFutureMillis("latency")(future)() mustEqual 100
+        assert(collection.timeFutureMillis("latency")(future)() === 100)
 
         val timings = collection.getMetrics()
-        timings("latency_msec").count mustEqual 1
-        timings("latency_msec").minimum must be_>(0)
-        timings("latency_msec").minimum must be_>(0)
+        assert(timings("latency_msec").count === 1)
+        assert(timings("latency_msec").minimum > 0)
+        assert(timings("latency_msec").minimum > 0)
       }
 
-      "average of 0" in {
+      new Context {
+        info("average of 0")
         collection.addMetric("test", 0)
         val test = collection.getMetric("test")
-        test() mustEqual new Distribution(Histogram(0))
+        assert(test() === new Distribution(Histogram(0)))
       }
 
-      "ignore negative timings" in {
+      new Context {
+        info("ignore negative timings")
         collection.addMetric("test", 1)
         collection.addMetric("test", -1)
         collection.addMetric("test", Int.MinValue)
         val test = collection.getMetric("test")
-        test() mustEqual new Distribution(Histogram(1))
+        assert(test() === new Distribution(Histogram(1)))
       }
 
-      "boundary timing sizes" in {
+      new Context {
+        info("boundary timing sizes")
         collection.addMetric("test", Int.MaxValue)
         collection.addMetric("test", 5)
         val sum = 5 + Int.MaxValue
         val avg = sum / 2.0
         val test = collection.getMetric("test")
-        test() mustEqual
-          new Distribution(Histogram(5, Int.MaxValue))
+        assert(test() ===
+          new Distribution(Histogram(5, Int.MaxValue)))
       }
 
-      "handle code blocks" in {
+      new Context {
+        info("handle code blocks")
         Time.withCurrentTimeFrozen { time =>
           collection.time("test") {
             time.advance(10.millis)
           }
           val test = collection.getMetric("test_msec")
-          test().average must be_>=(10.0)
+          assert(test().average >= 10.0)
         }
       }
 
-      "reset when asked" in {
+      new Context {
+        info("reset when asked")
         var x = 0
         collection.time("hundred") { for (i <- 0 until 100) x += i }
-        collection.getMetric("hundred_msec")().count mustEqual 1
+        assert(collection.getMetric("hundred_msec")().count === 1)
         collection.time("hundred") { for (i <- 0 until 100) x += i }
-        collection.getMetric("hundred_msec")().count mustEqual 2
+        assert(collection.getMetric("hundred_msec")().count === 2)
         collection.getMetric("hundred_msec").clear()
         collection.time("hundred") { for (i <- 0 until 100) x += i }
-        collection.getMetric("hundred_msec")().count mustEqual 1
+        assert(collection.getMetric("hundred_msec")().count === 1)
       }
 
-      "add bundle of timings at once" in {
+      new Context {
+        info("add bundle of timings at once")
         val timingStat = new Distribution(Histogram(10, 15, 20))
         collection.addMetric("test", timingStat)
         collection.addMetric("test", 25)
-        collection.getMetric("test")() mustEqual Distribution(Histogram(10, 15, 20, 25))
+        assert(collection.getMetric("test")() === Distribution(Histogram(10, 15, 20, 25)))
       }
 
-      "add multiple bundles of timings" in {
+      new Context {
+        info("add multiple bundles of timings")
         val timingStat1 = new Distribution(Histogram(15, 25))
         val timingStat2 = new Distribution(Histogram(10, 20, 25))
         collection.addMetric("test", timingStat1)
         collection.addMetric("test", timingStat2)
-        collection.getMetric("test")() mustEqual Distribution(Histogram(10, 15, 20, 25, 25))
+        assert(collection.getMetric("test")() === Distribution(Histogram(10, 15, 20, 25, 25)))
       }
 
-      "timing stats can be added and reflected in Stats.getMetrics" in {
+      new Context {  
+        info("timing stats can be added and reflected in Stats.getMetrics")
         Stats.addMetric("foobar", new Distribution(Histogram(10)))
-        Stats.getMetrics()("foobar").count mustEqual 1
+        assert(Stats.getMetrics()("foobar").count === 1)
         Stats.addMetric("foobar", new Distribution(Histogram(20, 30)))
-        Stats.getMetrics()("foobar").count mustEqual 3
+        assert(Stats.getMetrics()("foobar").count === 3)
       }
 
-      "report text in sorted order" in {
+      new Context {
+        info("report text in sorted order")
         Stats.addMetric("alpha", new Distribution(Histogram(0)))
-        Stats.getMetrics()("alpha").toString mustEqual
+        assert(Stats.getMetrics()("alpha").toString ===
           "(average=0, count=1, maximum=0, minimum=0, " +
-          "p50=0, p90=0, p95=0, p99=0, p999=0, p9999=0, sum=0)"
+          "p50=0, p90=0, p95=0, p99=0, p999=0, p9999=0, sum=0)")
       }
     }
 
-    "gauges" in {
-      val collection = new StatsCollection()
+  test("gauges") {
 
-      "report" in {
-        collection.addGauge("pi") { java.lang.Math.PI }
-        collection.getGauges() mustEqual Map("pi" -> java.lang.Math.PI)
-      }
+    new Context {
+      info("report")
+      collection.addGauge("pi") { java.lang.Math.PI }
+      assert(collection.getGauges() === Map("pi" -> java.lang.Math.PI))
+    }
 
-      "setGauge" in {
-        collection.setGauge("stew", 11.0)
-        collection.getGauge("stew") mustEqual Some(11.0)
-      }
+    new Context {
+      info("setGauge")
+      collection.setGauge("stew", 11.0)
+      assert(collection.getGauge("stew") === Some(11.0))
+    }
 
-      "getGauge" in {
-        collection.setGauge("stew", 11.0)
-        collection.getGauges() mustEqual Map("stew" -> 11.0)
-      }
+    new Context {
+      info("getGauge")
+      collection.setGauge("stew", 11.0)
+      assert(collection.getGauges() === Map("stew" -> 11.0))
+    }
 
-      "swallow exceptions" in {
-        collection.addGauge("YIKES") { throw new RuntimeException("YIKES") }
-        collection.getGauges() mustEqual Map.empty[String, Double]
-        collection.getGauge("YIKES") mustEqual None
-      }
+    new Context {
+      info("swallow exceptions")
+      collection.addGauge("YIKES") { throw new RuntimeException("YIKES") }
+      assert(collection.getGauges() === Map.empty[String, Double])
+      assert(collection.getGauge("YIKES") === None)
+    }
 
-      "clearGauge" in {
-        collection.setGauge("stew", 11.0)
-        collection.clearGauge("stew")
-        collection.getGauges() mustEqual Map()
-      }
+    new Context {
+      info("clearGauge")
+      collection.setGauge("stew", 11.0)
+      collection.clearGauge("stew")
+      assert(collection.getGauges() === Map())
+    }
 
-      "update" in {
-        var potatoes = 100.0
-        // gauge that increments every time it's read:
-        collection.addGauge("stew") { potatoes += 1.0; potatoes }
-        collection.getGauges() mustEqual Map("stew" -> 101.0)
-        collection.getGauges() mustEqual Map("stew" -> 102.0)
-        collection.getGauges() mustEqual Map("stew" -> 103.0)
-      }
+    new Context {
+      info("update")
+      var potatoes = 100.0
+      // gauge that increments every time it's read:
+      collection.addGauge("stew") { potatoes += 1.0; potatoes }
+      assert(collection.getGauges() === Map("stew" -> 101.0))
+      assert(collection.getGauges() === Map("stew" -> 102.0))
+      assert(collection.getGauges() === Map("stew" -> 103.0))
     }
   }
+
 }

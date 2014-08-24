@@ -18,7 +18,6 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.time._
 import com.twitter.util.Time
-import org.specs.SpecificationWithJUnit
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite

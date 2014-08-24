@@ -30,7 +30,7 @@ import org.scalatest.{FunSuite, BeforeAndAfter}
 import stats.Stats
 
 @RunWith(classOf[JUnitRunner])
-class TimeSeriesCollectorSpec extends FunSuite with BeforeAndAfter {
+class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
 
   var collector: TimeSeriesCollector = null
 

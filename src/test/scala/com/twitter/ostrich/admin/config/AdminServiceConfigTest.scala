@@ -23,47 +23,60 @@ import scala.io.Source
 import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import org.specs.SpecificationWithJUnit
-import org.specs.mock.{ClassMocker, JMocker}
 import stats.{JsonStatsLogger, Stats, StatsListener, W3CStatsLogger}
+import org.junit.runner.RunWith
+import org.mockito.Mockito.{verify, times, when}
+import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.junit.JUnitRunner
+import org.scalatest.mock.MockitoSugar
 
-class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with ClassMocker {
-  val port = 9990
-  var service: AdminHttpService = null
-  val runtime = mock[RuntimeEnvironment]
+@RunWith(classOf[JUnitRunner])
+class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSugar {
 
-  "AdminServiceConfig" should {
-    doBefore {
-      Logger.get("").setLevel(Level.OFF)
-    }
+  class Context {
+    val port = 9990
+    var service: AdminHttpService = null
+    val runtime = mock[RuntimeEnvironment]
+    when(runtime.arguments) thenReturn Map.empty[String, String]
+  }
 
-    doAfter {
-      ServiceTracker.shutdown()
-    }
+  before {
+    Logger.get("").setLevel(Level.OFF)
+  }
 
-    // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
-    if (!sys.props.contains("SKIP_FLAKY"))
-    "start up" in {
-      expect {
-        one(runtime).arguments willReturn Map.empty[String, String]
+  after {
+    ServiceTracker.shutdown()
+  }
+
+  // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
+  if (!sys.props.contains("SKIP_FLAKY"))
+    test("start up") {
+      val context = new Context
+      import context._
+
+      intercept[SocketException] {
+        new Socket("localhost", port)
       }
 
-      new Socket("localhost", port) must throwA[SocketException]
       val config = new AdminServiceConfig {
         httpPort = 9990
       }
       val service = config()(runtime)
-      new Socket("localhost", port) must notBeNull
+      assert(new Socket("localhost", port) !== null)
       ServiceTracker.shutdown()
-      new Socket("localhost", port) must throwA[SocketException]
+
+      intercept[SocketException] {
+        new Socket("localhost", port)
+      }
+
+      verify(runtime, times(1)).arguments
     }
 
-    // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
-    if (!sys.props.contains("SKIP_FLAKY"))
-    "configure a json stats logger" in {
-      expect {
-        one(runtime).arguments willReturn Map.empty[String, String]
-      }
+  // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
+  if (!sys.props.contains("SKIP_FLAKY"))
+    test("configure a json stats logger") {
+      val context = new Context
+      import context._
 
       val config = new AdminServiceConfig {
         httpPort = 9990
@@ -75,21 +88,21 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
           } :: new TimeSeriesCollectorConfig()
         }
       }
+
       val service = config()(runtime)
-      ServiceTracker.peek must exist { s =>
-        s.isInstanceOf[JsonStatsLogger] && s.asInstanceOf[JsonStatsLogger].serviceName == Some("hello")
-      }
-      ServiceTracker.peek must exist { s =>
-        s.isInstanceOf[TimeSeriesCollector]
-      }
+      val jsonStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[JsonStatsLogger])
+      assert(jsonStatsLoggerConfig.isDefined &&
+        jsonStatsLoggerConfig.get.asInstanceOf[JsonStatsLogger].serviceName === Some("hello"))
+      assert(ServiceTracker.peek.find(_.isInstanceOf[TimeSeriesCollector]).isDefined)
+
+      verify(runtime, times(1)).arguments
     }
 
-    // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
-    if (!sys.props.contains("SKIP_FLAKY"))
-    "configure a w3c stats logger" in {
-      expect {
-        one(runtime).arguments willReturn Map.empty[String, String]
-      }
+  // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
+  if (!sys.props.contains("SKIP_FLAKY"))
+    test("configure a w3c stats logger") {
+      val context = new Context
+      import context._
 
       val config = new AdminServiceConfig {
         httpPort = 9990
@@ -101,39 +114,42 @@ class AdminServiceConfigSpec extends SpecificationWithJUnit with JMocker with Cl
         }
       }
       val service = config()(runtime)
-      ServiceTracker.peek must exist { s =>
-        s.isInstanceOf[W3CStatsLogger] && s.asInstanceOf[W3CStatsLogger].logger.name == "w3c"
-      }
+      val w3cStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[W3CStatsLogger])
+      assert(w3cStatsLoggerConfig.isDefined &&
+        w3cStatsLoggerConfig.get.asInstanceOf[W3CStatsLogger].logger.name == "w3c")
+
+      verify(runtime, times(1)).arguments
     }
 
-    "configure filtered stats" in {
-      Stats.clearAll()
-      StatsListener.clearAll()
+  test("configure filtered stats") {
+    val context = new Context
+    import context._
 
-      expect {
-        one(runtime).arguments willReturn Map.empty[String, String]
-      }
+    Stats.clearAll()
+    StatsListener.clearAll()
 
-      val config = new AdminServiceConfig {
-        httpPort = 0
-        statsFilters = List("a.*".r, "jvm_.*".r)
-      }
-      val service = config()(runtime).get
+    val config = new AdminServiceConfig {
+      httpPort = 0
+      statsFilters = List("a.*".r, "jvm_.*".r)
+    }
+    val service = config()(runtime).get
 
-      try {
-        Stats.incr("apples", 10)
-        Stats.addMetric("oranges", 5)
+    try {
+      Stats.incr("apples", 10)
+      Stats.addMetric("oranges", 5)
 
-        val port = service.address.getPort
-        val path = "/stats.json?period=60&filtered=1"
-        val url = new URL("http://localhost:%s%s".format(port, path))
-        val data = Source.fromURL(url).getLines().mkString("\n")
-        val json = Json.parse(data).asInstanceOf[Map[String, Map[String, AnyRef]]]
-        json("counters") mustEqual Map()
-      } finally {
-        service.shutdown()
-      }
+      val port = service.address.getPort
+      val path = "/stats.json?period=60&filtered=1"
+      val url = new URL("http://localhost:%s%s".format(port, path))
+      val data = Source.fromURL(url).getLines().mkString("\n")
+      val json = Json.parse(data).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      assert(json("counters") === Map())
+    } finally {
+      service.shutdown()
     }
 
+    verify(runtime, times(1)).arguments
   }
+
+
 }
