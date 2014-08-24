@@ -20,7 +20,7 @@ package stats
 import java.net.InetAddress
 import scala.collection.immutable
 import com.twitter.conversions.time._
-import com.twitter.json.Json
+import com.twitter.ostrich.util.Json
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, Time}
 import admin.PeriodicBackgroundProcess
@@ -55,7 +55,7 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
       )
     val cleanedKeysStatMap = statMap.map { case (key, value) => (key.replaceAll(":", "_"), value) }
 
-    logger.info(Json.build(Map(cleanedKeysStatMap.toSeq: _*)).toString)
+    logger.info(Json.build(Map(cleanedKeysStatMap.toSeq: _*)))
   }
 
   // Try and flush the stats when we're shutting down.
