@@ -5,6 +5,7 @@ import Tests._
 object Ostrich extends Build {
   val libVersion = "9.5.6"
   val utilVersion = "6.19.0"
+  val jacksonVersion = "2.3.3"
 
   val sharedSettings = Seq(
     name := "ostrich",
@@ -20,7 +21,9 @@ object Ostrich extends Build {
       "com.twitter" %% "util-eval" % utilVersion,
       "com.twitter" %% "util-logging" % utilVersion,
       "com.twitter" %% "util-jvm" % utilVersion,
-      "com.twitter" %% "scala-json" % "3.0.1"
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
     ),
 
     libraryDependencies <+= scalatestTest,
