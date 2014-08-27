@@ -37,7 +37,7 @@ class JsonTest extends FunSuite {
     assert(json === expectedJson)
   }
 
-  test("a object") {
+  test("an object") {
     class Person(val name: String, val age: Int)
     val person = new Person("Daenerys Targaryen", 15)
 
