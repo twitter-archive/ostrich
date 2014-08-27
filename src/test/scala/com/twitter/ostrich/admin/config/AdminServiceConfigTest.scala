@@ -21,7 +21,7 @@ package config
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
 import com.twitter.conversions.time._
-import com.twitter.json.Json
+import com.twitter.ostrich.util.Json
 import com.twitter.logging.{Level, Logger}
 import stats.{JsonStatsLogger, Stats, StatsListener, W3CStatsLogger}
 import org.junit.runner.RunWith

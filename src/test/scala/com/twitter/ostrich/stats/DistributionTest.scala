@@ -52,8 +52,8 @@ class DistributionTest extends FunSuite {
     import context._
 
     assert(Distribution(histogram2).toJson ===
-    "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
-    "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}")
+      "{\"count\":2,\"p95\":19,\"maximum\":19,\"p9999\":19,\"p90\":19,\"p99\":19," +
+      "\"average\":15,\"minimum\":10,\"p50\":10,\"sum\":30,\"p999\":19}")
   }
 
 }

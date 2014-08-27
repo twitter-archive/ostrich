@@ -19,7 +19,7 @@ package admin
 
 import java.net.{Socket, SocketException, URL}
 import scala.io.Source
-import com.twitter.json.Json
+import com.twitter.ostrich.util.Json
 import com.twitter.logging.{Level, Logger}
 import org.junit.runner.RunWith
 import org.mockito.Mockito.{verify, times}

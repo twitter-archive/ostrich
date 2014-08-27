@@ -22,7 +22,7 @@ import scala.collection.immutable
 import scala.io.Source
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
-import com.twitter.json.Json
+import com.twitter.ostrich.util.Json
 import com.twitter.util.Time
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

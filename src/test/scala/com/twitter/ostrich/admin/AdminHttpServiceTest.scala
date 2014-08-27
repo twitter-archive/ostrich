@@ -18,7 +18,7 @@ package com.twitter.ostrich
 package admin
 
 import com.twitter.conversions.time._
-import com.twitter.json.Json
+import com.twitter.ostrich.util.Json
 import com.twitter.logging.{Level, Logger}
 import java.net.{Socket, SocketException, URI, URL}
 import java.util.regex.Pattern

@@ -38,9 +38,10 @@ case class StatsSummary(
     val jsonGauges = Map[String, Any]() ++ gauges.map { case (k, v) =>
       if (v.longValue == v) { (k, v.longValue) } else { (k, v) }
     }
+    val mapMetrics = metrics.map { case (k, v) => (k, v.toMap) }
     Map(
       "counters" -> counters,
-      "metrics" -> metrics,
+      "metrics" -> mapMetrics,
       "gauges" -> jsonGauges,
       "labels" -> labels
     )
