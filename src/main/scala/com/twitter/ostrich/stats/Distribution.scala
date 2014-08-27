@@ -19,14 +19,13 @@ package com.twitter.ostrich.stats
 import scala.collection.Map
 import scala.collection.immutable
 import scala.util.Sorting
-import com.twitter.json.{Json, JsonSerializable}
+import com.twitter.ostrich.util.Json
 
 /**
  * A set of data points summarized into a histogram, mean, min, and max.
  * Distributions are immutable.
  */
-case class Distribution(histogram: Histogram)
-extends JsonSerializable {
+case class Distribution(histogram: Histogram) {
   def this() = this(Histogram())
 
   def count = histogram.count
@@ -38,7 +37,7 @@ extends JsonSerializable {
     if (count > 0) histogram.sum / count else 0.0
   }
 
-  def toJson() = Json.build(toMap).toString
+  def toJson() = Json.build(toMap)
 
   override def equals(other: Any) = other match {
     case t: Distribution => t.histogram == histogram

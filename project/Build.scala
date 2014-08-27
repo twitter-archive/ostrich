@@ -5,12 +5,13 @@ import Tests._
 object Ostrich extends Build {
   val libVersion = "9.5.6"
   val utilVersion = "6.19.0"
+  val jacksonVersion = "2.4.1"
 
   val sharedSettings = Seq(
     name := "ostrich",
     version := libVersion,
     organization := "com.twitter",
-    crossScalaVersions := Seq("2.9.2", "2.10.0"),
+    crossScalaVersions := Seq("2.9.2", "2.10.4", "2.11.2"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
     parallelExecution in Test := false,
@@ -20,21 +21,19 @@ object Ostrich extends Build {
       "com.twitter" %% "util-eval" % utilVersion,
       "com.twitter" %% "util-logging" % utilVersion,
       "com.twitter" %% "util-jvm" % utilVersion,
-      "com.twitter" %% "scala-json" % "3.0.1"
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
     ),
 
+    libraryDependencies <+= scalatest,
     libraryDependencies ++= Seq(
-      "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
-        case "2.9.2" => "2.9.1"
-        case "2.10.0" => "2.10"
-        case x => x
-      },
       "junit" % "junit" % "4.8.1" % "test",
       "cglib" % "cglib" % "2.1_3" % "test",
       "asm" % "asm" % "1.5.3" % "test",
       "org.objenesis" % "objenesis" % "1.1" % "test",
       "org.hamcrest" % "hamcrest-all" % "1.1" % "test",
-      "org.jmock" % "jmock" % "2.4.0" % "test"
+      "org.mockito" % "mockito-all" % "1.9.5" % "test"
     ),
     publishMavenStyle := true,
     publishTo <<= version { (v: String) =>
@@ -72,6 +71,11 @@ object Ostrich extends Build {
       </developers>
     )
   )
+
+  lazy val scalatest = scalaVersion(sv => sv match {
+    case "2.9.2" => "org.scalatest" %% "scalatest" % "1.9.2" % "test"
+    case _ => "org.scalatest" %% "scalatest" % "2.1.3" % "test"
+  })
 
   lazy val ostrich = Project(
     id = "ostrich",

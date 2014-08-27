@@ -22,3 +22,5 @@ ostrich.tmproj
 .classpath
 .project
 .scala_dependencies
+sbt-launch.jar
+.ensime_cache/
