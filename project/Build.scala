@@ -26,7 +26,7 @@ object Ostrich extends Build {
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
     ),
 
-    libraryDependencies <+= scalatestTest,
+    libraryDependencies <+= scalatest,
     libraryDependencies ++= Seq(
       "junit" % "junit" % "4.8.1" % "test",
       "cglib" % "cglib" % "2.1_3" % "test",
@@ -72,7 +72,7 @@ object Ostrich extends Build {
     )
   )
 
-  lazy val scalatestTest = scalaVersion(sv => sv match {
+  lazy val scalatest = scalaVersion(sv => sv match {
     case "2.9.2" => "org.scalatest" %% "scalatest" % "1.9.2" % "test"
     case _ => "org.scalatest" %% "scalatest" % "2.1.3" % "test"
   })
