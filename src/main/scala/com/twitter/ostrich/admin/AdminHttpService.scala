@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.twitter.ostrich
-package admin
+package com.twitter.ostrich.admin
 
+import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
+import com.twitter.concurrent.NamedPoolThreadFactory
+import com.twitter.conversions.time._
+import com.twitter.ostrich.stats.{StatsCollection, Stats}
+import com.twitter.logging.Logger
+import com.twitter.util.{Duration, NonFatal, Return, Throw}
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI}
-import scala.io.Source
-import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
-import com.twitter.conversions.time._
-import com.twitter.logging.Logger
-import com.twitter.util.{Duration, Time, Return, Throw}
+import java.util.concurrent.Executors
 import java.util.Properties
-import stats.{StatsCollection, Stats}
+import scala.io.Source
 
 /**
  * Custom handler interface for the admin web site. The standard `render` calls are implemented in
@@ -64,7 +65,7 @@ abstract class CustomHttpHandler extends HttpHandler {
     try {
       Source.fromInputStream(stream).mkString
     } catch {
-      case e =>
+      case e: Throwable =>
         log.error(e, "Unable to load Resource from Classpath: %s", name)
         throw e
     }
@@ -153,7 +154,7 @@ abstract class CgiRequestHandler extends CustomHttpHandler {
 
       handle(exchange, path, parameters)
     } catch {
-      case e =>
+      case NonFatal(e) =>
         render("exception while processing request: " + e, exchange, 500)
         log.error(e, "Exception processing admin http request")
     }
@@ -303,7 +304,7 @@ class TracingHandler extends CgiRequestHandler {
         return
       }
     } catch {
-      case _ =>
+      case NonFatal(_) =>
         render("Could not initialize Finagle tracing classes. Possibly old version of Finagle.",
           exchange)
         return
@@ -365,11 +366,16 @@ class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHa
         render("no such command\n", exchange, 404)
       case e: InvalidCommandOptionError =>
         render(e.getMessage + '\n', exchange, 400)
-      case unknownException =>
+      case NonFatal(unknownException) =>
         render("error processing command: " + unknownException, exchange, 500)
         unknownException.printStackTrace()
     }
   }
+}
+
+object AdminHttpService {
+  private val defaultExecutor = Executors.newCachedThreadPool(
+    new NamedPoolThreadFactory("ostrichAdmin", makeDaemons = true))
 }
 
 class AdminHttpService(
@@ -402,7 +408,18 @@ class AdminHttpService(
   addContext("/quitquitquit", mesosHandler)
   addContext("/abortabortabort", mesosHandler)
 
-  httpServer.setExecutor(null)
+  private[this] def setPropertyIfNull(property: String, value: Int): Unit = {
+    if (System.getProperty(property) == null)
+      System.setProperty(property, value.toString)
+  }
+  // See meaning of those properties here:
+  // http://www.docjar.com/html/api/sun/net/httpserver/ServerConfig.java.html
+  setPropertyIfNull("sun.net.httpserver.clockTick", 1000)
+  setPropertyIfNull("sun.net.httpserver.timerMillis", 1000)
+  setPropertyIfNull("sun.net.httpserver.maxReqTime", 25)
+  setPropertyIfNull("sun.net.httpserver.maxIdleConnections", 10)
+  setPropertyIfNull("sun.net.httpserver.maxRspTime", 60)
+  httpServer.setExecutor(AdminHttpService.defaultExecutor)
 
   def addContext(path: String, handler: HttpHandler) = httpServer.createContext(path, handler)
 
@@ -423,7 +440,11 @@ class AdminHttpService(
     log.info("Admin HTTP interface started on port %d.", address.getPort)
   }
 
-  override def shutdown() = httpServer.stop(0) // argument is in seconds
+  override def shutdown(): Unit = {
+    httpServer.stop(0) // argument is in seconds
+  }
 
-  override def quiesce() = httpServer.stop(1) // argument is in seconds
+  override def quiesce(): Unit = {
+    httpServer.stop(1) // argument is in seconds
+  }
 }
