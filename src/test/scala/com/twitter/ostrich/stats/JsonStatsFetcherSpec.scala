@@ -8,7 +8,7 @@ import org.specs.util.TimeConversions._
 
 /*
 
-	Currently disabled because it's probably a bad idea to test 
+	Currently disabled because it's probably a bad idea to test
 	a ruby script this way. (Eg. it doesn't work with Travis-CI).
 
 class JsonStatsFetcherSpec extends SpecificationWithJUnit {

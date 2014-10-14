@@ -78,6 +78,10 @@ class RuntimeEnvironment(obj: AnyRef) {
   val jarBuildBranchName = buildProperties.getProperty("build_branch_name", "unknown")
   val jarBuildLastFewCommits = buildProperties.getProperty("build_last_few_commits", "unknown")
 
+  val jarBuildScmMergeBase = buildProperties.getProperty("merge_base", "unknown")
+  val jarBuildScmMergeTimestamp = buildProperties.getProperty("merge_base_commit_date", "unknown")
+  val jarBuildScmRepository = buildProperties.getProperty("scm_repository", "unknown")
+
   /**
    * Return the path this jar was executed from. Depends on the presence of
    * a valid `build.properties` file. Will return `None` if it couldn't

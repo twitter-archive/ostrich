@@ -140,6 +140,9 @@ class CommandHandler(
           "build" -> runtime.jarBuild,
           "build_revision" -> runtime.jarBuildRevision,
           "build_branch_name" -> runtime.jarBuildBranchName,
+          "build_scm_merge_base" -> runtime.jarBuildScmMergeBase,
+          "build_scm_merge_timestamp" -> runtime.jarBuildScmMergeTimestamp,
+          "build_scm_repository" -> runtime.jarBuildScmRepository,
           "build_last_few_commits" -> runtime.jarBuildLastFewCommits.split("\n"),
           "start_time" -> (new Date(mxRuntime.getStartTime())).toString,
           "uptime" -> mxRuntime.getUptime()

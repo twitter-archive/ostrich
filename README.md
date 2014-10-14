@@ -1,4 +1,4 @@
-# Ostrich [![Build Status](https://travis-ci.org/twitter/ostrich.png)](http://travis-ci.org/twitter/ostrich)
+# Ostrich [![Build Status](https://travis-ci.org/twitter/ostrich.png)](https://travis-ci.org/twitter/ostrich)
 
 Ostrich is a library for scala servers that makes it easy to:
 
@@ -83,7 +83,7 @@ There are four kinds of statistics that ostrich captures:
 ## RuntimeEnvironment
 
 If you build with standard-project
-<http://github.com/twitter/standard-project>, `RuntimeEnvironment` can pull
+<https://github.com/twitter/standard-project>, `RuntimeEnvironment` can pull
 build and environment info out of the `build.properties` file that's tucked
 into your jar. Typical use is to pass your server object (or any object from
 your jar) and any command-line arguments you haven't already parsed:
@@ -106,7 +106,7 @@ that are located nearby.
 ## Quick Start
 
 A good example server is created by the scala-bootstrapper project here:
-<http://github.com/twitter/scala-bootstrapper>
+<https://github.com/twitter/scala-bootstrapper>
 
 Define a server config class:
 
@@ -335,7 +335,7 @@ generated in javascript using flot.
 ## Profiling
 
 If you're using [heapster](https://github.com/mariusaeriksen/heapster), you can generate a profile
-suitable for reading with [google perftools](http://code.google.com/p/google-perftools/)
+suitable for reading with [google perftools](https://code.google.com/p/google-perftools/)
 
 Example use:
 

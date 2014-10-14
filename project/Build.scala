@@ -3,14 +3,14 @@ import Keys._
 import Tests._
 
 object Ostrich extends Build {
-  val libVersion = "9.5.6"
-  val utilVersion = "6.19.0"
+  val libVersion = "9.6.0"
+  val utilVersion = "6.22.0"
 
   val sharedSettings = Seq(
     name := "ostrich",
     version := libVersion,
     organization := "com.twitter",
-    crossScalaVersions := Seq("2.9.2", "2.10.0"),
+    crossScalaVersions := Seq("2.10.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
     parallelExecution in Test := false,
