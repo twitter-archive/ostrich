@@ -1,3 +1,10 @@
+9.6.0
+-----
+release: 13 October 2014
+
+- bump util to 6.22.0
+- ostrich: Change the underlying httpServer executor to a multi-threaded one
+
 9.5.6
 -----
 release: 05 August 2014
