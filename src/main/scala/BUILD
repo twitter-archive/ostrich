@@ -9,5 +9,10 @@ scala_library(name='scala',
   sources=rglobs('*.scala'),
   resources=[
     'ostrich/src/main/resources'
-  ]
+  ],
+  provides = scala_artifact(
+    org = 'com.twitter',
+    name = 'ostrich',
+    repo = artifactory,
+  ),
 )
