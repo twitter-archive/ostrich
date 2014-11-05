@@ -22,6 +22,7 @@ import java.util.Properties
 import scala.collection.mutable
 import com.twitter.conversions.string._
 import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.{DeathRattleExceptionHandler, Stats}
 import com.twitter.util.{Config, Eval}
 
 object RuntimeEnvironment {
@@ -241,7 +242,11 @@ class RuntimeEnvironment(obj: AnyRef) {
       val eval = new Eval(getConfigTarget)
       val config = eval[Config[T]](configFile)
       config.validate()
-      config()
+      val conf = config()
+      val c = Stats.getCounter("unhandled_thread_deaths")
+      val ohNoIDidntKnowAboutThis = new DeathRattleExceptionHandler(c)
+      Thread.setDefaultUncaughtExceptionHandler(ohNoIDidntKnowAboutThis)
+      conf
     } catch {
       case e: Eval.CompilerException =>
         initLogs()
