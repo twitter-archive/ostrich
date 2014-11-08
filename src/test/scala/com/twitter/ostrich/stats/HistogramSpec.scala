@@ -211,7 +211,7 @@ class HistogramSpec extends SpecificationWithJUnit {
       histogram.getPercentile(0.1) must beGreaterThan(0)
     }
 
-    "Substracting two histograms must never have negative count" in {
+    "Subtracting two histograms must never have negative count" in {
       histogram.add(1)
       histogram2.add(1)
       histogram2.add(10)
@@ -221,7 +221,7 @@ class HistogramSpec extends SpecificationWithJUnit {
       h.getPercentile(0.9999) mustEqual 0
     }
 
-    "Substracting two histograms must work" in {
+    "Subtracting two histograms must work" in {
       val n = 10
       (1 to 2*n) foreach { i => histogram.add(i) }
       (1 to n) foreach { i => histogram2.add(i) }
