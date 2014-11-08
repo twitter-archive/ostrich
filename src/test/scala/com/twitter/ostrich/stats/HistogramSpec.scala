@@ -170,7 +170,7 @@ class HistogramSpec extends SpecificationWithJUnit {
 
     "maximum" in {
       histogram.add(95)
-      histogram.minimum mustEqual 95
+      histogram.maximum mustEqual 95
     }
 
     "maximum with no values" in {
