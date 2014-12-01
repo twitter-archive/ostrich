@@ -22,7 +22,7 @@ import java.util.Properties
 import scala.collection.mutable
 import com.twitter.conversions.string._
 import com.twitter.logging.Logger
-import com.twitter.util.{Config, Eval}
+import com.twitter.util.{Config, Eval, NonFatal}
 
 object RuntimeEnvironment {
   /**
@@ -60,11 +60,11 @@ class RuntimeEnvironment(obj: AnyRef) {
   try {
     buildProperties.load(obj.getClass.getResource("build.properties").openStream)
   } catch {
-    case _ =>
+    case NonFatal(_) =>
       try {
         buildProperties.load(obj.getClass.getResource("/build.properties").openStream)
       } catch {
-        case _ =>
+        case NonFatal(_) =>
       }
   }
 
@@ -255,7 +255,7 @@ class RuntimeEnvironment(obj: AnyRef) {
         Logger.get("").fatal(e.getMessage)
         System.exit(1)
         throw new Exception("which will never execute because of the System.exit above me.")
-      case e =>
+      case e: Throwable =>
         initLogs()
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         System.exit(1)
@@ -267,7 +267,7 @@ class RuntimeEnvironment(obj: AnyRef) {
     try {
       loadConfig[RuntimeEnvironment => T]()(this)
     } catch {
-      case e =>
+      case e: Throwable =>
         initLogs()
         Logger.get("").fatal(e, "Error in config file: %s", configFile)
         System.exit(1)

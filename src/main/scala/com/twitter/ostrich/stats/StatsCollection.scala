@@ -18,7 +18,7 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
 import com.twitter.json.JsonSerializable
-import com.twitter.util.{Local, Try}
+import com.twitter.util.{Local, NonFatal, Try}
 import java.lang.management._
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
@@ -206,7 +206,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     if (gauge != null) {
       try {
         Some(gauge())
-      } catch { case e =>
+      } catch { case NonFatal(e) =>
         log.error(e, "Gauge error: %s", name)
         None
       }
@@ -236,7 +236,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     for ((key, gauge) <- gaugeMap.asScala) {
       try {
         gauges += (key -> gauge())
-      } catch { case e =>
+      } catch { case NonFatal(e) =>
         log.error(e, "Gauge error: %s", key)
       }
     }
