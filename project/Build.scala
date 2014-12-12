@@ -3,8 +3,8 @@ import Keys._
 import Tests._
 
 object Ostrich extends Build {
-  val libVersion = "9.6.3"
-  val utilVersion = "6.22.2"
+  val libVersion = "9.7.0"
+  val utilVersion = "6.23.0"
 
   val sharedSettings = Seq(
     name := "ostrich",
