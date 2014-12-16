@@ -10,7 +10,7 @@ object Ostrich extends Build {
     name := "ostrich",
     version := libVersion,
     organization := "com.twitter",
-    crossScalaVersions := Seq("2.10.4"),
+    crossScalaVersions := Seq("2.10.4", "2.11.4"),
     javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
     javacOptions in doc := Seq("-source", "1.6"),
     parallelExecution in Test := false,
@@ -20,21 +20,13 @@ object Ostrich extends Build {
       "com.twitter" %% "util-eval" % utilVersion,
       "com.twitter" %% "util-logging" % utilVersion,
       "com.twitter" %% "util-jvm" % utilVersion,
-      "com.twitter" %% "scala-json" % "3.0.1"
+      "com.twitter" %% "scala-json" % "3.0.2"
     ),
 
     libraryDependencies ++= Seq(
-      "org.scala-tools.testing" %% "specs" % "1.6.9" % "test" cross CrossVersion.binaryMapped {
-        case "2.9.2" => "2.9.1"
-        case "2.10.0" => "2.10"
-        case x => x
-      },
-      "junit" % "junit" % "4.8.1" % "test",
-      "cglib" % "cglib" % "2.1_3" % "test",
-      "asm" % "asm" % "1.5.3" % "test",
-      "org.objenesis" % "objenesis" % "1.1" % "test",
-      "org.hamcrest" % "hamcrest-all" % "1.1" % "test",
-      "org.jmock" % "jmock" % "2.4.0" % "test"
+      "junit" % "junit" % "4.10" % "test",
+      "org.mockito" % "mockito-all" % "1.9.5" % "test",
+      "org.scalatest" %% "scalatest" % "2.2.2" % "test"
     ),
     publishMavenStyle := true,
     publishTo <<= version { (v: String) =>

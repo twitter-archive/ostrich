@@ -1,10 +1,8 @@
 junit_tests(name='scala',
   dependencies=[
-    '3rdparty:cglib',
-    '3rdparty:jmock',
     '3rdparty:junit',
     '3rdparty:mockito-all',
-    '3rdparty:specs',
+    '3rdparty:scalatest',
     'ostrich',
     'util/util-core',
     'util/util-logging',
