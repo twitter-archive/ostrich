@@ -1,4 +1,4 @@
-# Ostrich [![Build Status](https://travis-ci.org/twitter/ostrich.png)](https://travis-ci.org/twitter/ostrich)
+# Ostrich [![Build Status](https://travis-ci.org/twitter/ostrich.png?branch=master)](https://travis-ci.org/twitter/ostrich)
 
 Ostrich is a library for scala servers that makes it easy to:
 
