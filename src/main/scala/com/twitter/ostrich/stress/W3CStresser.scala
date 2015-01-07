@@ -17,7 +17,6 @@
 package com.twitter.ostrich
 package stress
 
-import java.text.SimpleDateFormat
 import java.util.Date
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
 import stats.W3CStats

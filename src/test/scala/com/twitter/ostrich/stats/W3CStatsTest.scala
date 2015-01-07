@@ -18,7 +18,6 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
 import com.twitter.logging.{BareFormatter, Level, Logger, StringHandler}
-import java.text.SimpleDateFormat
 import java.util.Date
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

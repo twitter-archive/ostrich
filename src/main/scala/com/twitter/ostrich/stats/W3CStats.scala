@@ -18,14 +18,13 @@ package com.twitter.ostrich
 package stats
 
 import java.net.InetAddress
-import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
 import java.util.zip.CRC32
 import scala.collection.Map
 import scala.collection.mutable
 import com.twitter.conversions.time._
 import com.twitter.logging.Logger
-import com.twitter.util.Time
+import com.twitter.util.{Time, TwitterDateFormat}
 
 /**
  * Dump "w3c" style stats to a logger.
@@ -36,7 +35,7 @@ import com.twitter.util.Time
 class W3CStats(logger: Logger, fields: Array[String], val printCrc: Boolean)
 extends TransactionalStatsCollection {
   private val crcGenerator = new CRC32()
-  private val formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss")
+  private val formatter = TwitterDateFormat("dd-MMM-yyyy HH:mm:ss")
   formatter.setTimeZone(TimeZone.getTimeZone("GMT+0000"))
 
   private var headerCrc = 0L  // Crc at the last call to generateHeader.
