@@ -11,8 +11,8 @@ object Ostrich extends Build {
     version := libVersion,
     organization := "com.twitter",
     crossScalaVersions := Seq("2.10.4", "2.11.4"),
-    javacOptions ++= Seq("-source", "1.6", "-target", "1.6"),
-    javacOptions in doc := Seq("-source", "1.6"),
+    javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
+    javacOptions in doc := Seq("-source", "1.7"),
     parallelExecution in Test := false,
     resolvers += "twitter repo" at "http://maven.twttr.com",
     libraryDependencies ++= Seq(
