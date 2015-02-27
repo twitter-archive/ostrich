@@ -121,18 +121,21 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
 
   test("start and stop") {
     val port = service.address.getPort
-    assert(new Socket("localhost", port) !== null)
+    val socket = new Socket("localhost", port)
+    socket.close()
     service.shutdown()
-    intercept[SocketException] { new Socket("localhost", port) }
+    eventually {
+      intercept[SocketException] { new Socket("localhost", port) }
+    }
   }
 
   test("answer pings") {
     val port = service.address.getPort
-    val socket = new Socket("localhost", port)
     assert(get("/ping.json").trim === """{"response":"pong"}""")
-
     service.shutdown()
-    intercept[SocketException] { new Socket("localhost", port) }
+    eventually {
+      intercept[SocketException] { new Socket("localhost", port) }
+    }
   }
 
   test("shutdown") {
