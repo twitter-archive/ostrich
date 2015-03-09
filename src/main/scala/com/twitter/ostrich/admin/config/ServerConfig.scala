@@ -18,19 +18,28 @@ package com.twitter.ostrich
 package admin
 package config
 
-import com.twitter.logging.Logger
+import com.twitter.logging.{Logger, LoggerFactory}
 import com.twitter.logging.config.LoggerConfig
 import com.twitter.util.Config
 
 @deprecated("no direct replacement")
 abstract class ServerConfig[T <: Service] extends Config[RuntimeEnvironment => T] {
   var loggers: List[LoggerConfig] = Nil
+  protected def loggerFactories: List[LoggerFactory] = Nil
   var admin = new AdminServiceConfig()
 
   protected var httpServer: Option[AdminHttpService] = None
 
+  private[config] def configureLogging(): Unit = {
+    if (loggerFactories.isEmpty) {
+      Logger.configure(loggers)
+    } else {
+      Logger.configure(loggerFactories)
+    }
+  }
+
   def apply() = { (runtime: RuntimeEnvironment) =>
-    Logger.configure(loggers)
+    configureLogging()
     httpServer = admin()(runtime)
     val service = apply(runtime)
     ServiceTracker.register(service)
