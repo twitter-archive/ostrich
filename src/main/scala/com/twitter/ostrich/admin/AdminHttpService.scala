@@ -19,9 +19,11 @@ package com.twitter.ostrich.admin
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.concurrent.NamedPoolThreadFactory
 import com.twitter.conversions.time._
+import com.twitter.json.Json
 import com.twitter.ostrich.stats.{StatsCollection, Stats}
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, NonFatal, Return, Throw}
+import com.twitter.util.registry.{GlobalRegistry, Formatter, Registry}
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI}
 import java.util.concurrent.Executors
@@ -328,6 +330,17 @@ class TracingHandler extends CgiRequestHandler {
   }
 }
 
+/**
+ * Displays registry data for the service.
+ */
+class RegistryHandler(registry: Registry) extends CgiRequestHandler {
+  def handle(exchange: HttpExchange, path: List[String], params: List[(String, String)]) {
+    val obj = Formatter.asMap(registry)
+    val json = Json.build(obj).toString + "\n"
+    render(json, exchange, 200, "application/json")
+  }
+}
+
 class CommandRequestHandler(commandHandler: CommandHandler) extends CgiRequestHandler {
   def handle(exchange: HttpExchange, path: List[String], parameters: List[(String, String)]) {
     if (path == Nil) {
@@ -378,14 +391,25 @@ object AdminHttpService {
     new NamedPoolThreadFactory("ostrichAdmin", makeDaemons = true))
 }
 
-class AdminHttpService(
+class AdminHttpService private[ostrich](
   val port: Int,
   backlog: Int,
   statsCollection: StatsCollection,
   runtime: RuntimeEnvironment,
-  statsListenerMinPeriod: Duration = 1.minute,
-  systemExitImpl: MesosRequestHandler.SystemExitImpl = MesosRequestHandler.SystemExitImpl.Default
+  statsListenerMinPeriod: Duration,
+  systemExitImpl: MesosRequestHandler.SystemExitImpl,
+  registry: Registry
 ) extends Service {
+
+  def this(
+    port: Int,
+    backlog: Int,
+    statsCollection: StatsCollection,
+    runtime: RuntimeEnvironment,
+    statsListenerMinPeriod: Duration = 1.minute,
+    systemExitImpl: MesosRequestHandler.SystemExitImpl = MesosRequestHandler.SystemExitImpl.Default
+  ) = this(port, backlog, statsCollection, runtime, statsListenerMinPeriod, systemExitImpl, GlobalRegistry.get)
+
   def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
     this(port, backlog, Stats, runtime)
 
@@ -404,6 +428,7 @@ class AdminHttpService(
   addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
   addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
   addContext("/tracing", new TracingHandler)
+  addContext("/registry", new RegistryHandler(registry))
   addContext("/health", mesosHandler)
   addContext("/quitquitquit", mesosHandler)
   addContext("/abortabortabort", mesosHandler)

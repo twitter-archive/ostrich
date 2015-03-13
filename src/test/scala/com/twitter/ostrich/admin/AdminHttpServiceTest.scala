@@ -20,6 +20,7 @@ import com.twitter.conversions.time._
 import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import com.twitter.ostrich.stats.{Stats, StatsListener}
+import com.twitter.util.registry.{SimpleRegistry, GlobalRegistry}
 import java.net.{Socket, SocketException, URI, URL}
 import java.util.regex.Pattern
 import org.junit.runner.RunWith
@@ -52,6 +53,8 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
 
   var service: AdminHttpService = null
 
+  val registry = new SimpleRegistry
+
   before {
     service =
       new AdminHttpService(
@@ -60,7 +63,8 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
         Stats,
         new RuntimeEnvironment(getClass),
         30.seconds,
-        { code => /* system-exit is a noop here */ }
+        { code => /* system-exit is a noop here */ },
+        registry
       )
     service.start()
   }
@@ -434,4 +438,12 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
     }
   }
 
+  test("provide basic registry information") {
+    registry.put(Seq("foo", "bar"), "baz")
+    registry.put(Seq("foo", "qux"), "quux")
+
+    val actual = get("/registry")
+    val expected = """{"registry":{"foo":{"bar":"baz","qux":"quux"}}}"""
+    assert(actual == expected)
+  }
 }
