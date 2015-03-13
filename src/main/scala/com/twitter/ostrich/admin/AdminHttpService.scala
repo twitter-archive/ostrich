@@ -472,7 +472,7 @@ class AdminHttpService private[ostrich](
   addContext("/pprof/profile", new ProfileResourceHandler(Thread.State.RUNNABLE))
   addContext("/pprof/contention", new ProfileResourceHandler(Thread.State.BLOCKED))
   addContext("/tracing", new TracingHandler)
-  addContext("/registry", new RegistryHandler(registry))
+  addContext("/admin/registry", new RegistryHandler(registry))
   addContext("/health", mesosHandler)
   addContext("/quitquitquit", mesosHandler)
   addContext("/abortabortabort", mesosHandler)

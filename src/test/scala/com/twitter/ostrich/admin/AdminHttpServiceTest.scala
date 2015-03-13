@@ -442,7 +442,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
     registry.put(Seq("foo", "bar"), "baz")
     registry.put(Seq("foo", "qux"), "quux")
 
-    val actual = get("/registry")
+    val actual = get("/admin/registry")
     val expected = """{"registry":{"foo":{"bar":"baz","qux":"quux"}}}"""
     assert(actual == expected)
   }
