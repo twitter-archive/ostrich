@@ -61,7 +61,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
         0,
         20,
         Stats,
-        new RuntimeEnvironment(getClass),
+        new ServerInfoHandler(getClass),
         30.seconds,
         { code => /* system-exit is a noop here */ },
         registry

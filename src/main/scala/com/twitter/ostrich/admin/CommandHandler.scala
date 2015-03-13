@@ -46,10 +46,17 @@ object Format {
 }
 
 class CommandHandler(
-  runtime: RuntimeEnvironment,
+  serverInfo: ServerInfoHandler,
   statsCollection: StatsCollection,
   statsListenerMinPeriod: Duration
 ) {
+
+  def this(
+    runtime: RuntimeEnvironment,
+    statsCollection: StatsCollection,
+    statsListenerMinPeriod: Duration
+  ) = this(runtime.serverInfo, statsCollection, statsListenerMinPeriod)
+
   private def build(obj: Any): List[String] = {
     obj match {
       case m: Map[_, _] =>
@@ -133,19 +140,19 @@ class CommandHandler(
           statsCollection.get()
         }.toMap
       case "server_info" =>
-        val mxRuntime = ManagementFactory.getRuntimeMXBean()
+        val info = serverInfo()
         immutable.Map(
-          "name" -> runtime.jarName,
-          "version" -> runtime.jarVersion,
-          "build" -> runtime.jarBuild,
-          "build_revision" -> runtime.jarBuildRevision,
-          "build_branch_name" -> runtime.jarBuildBranchName,
-          "build_scm_merge_base" -> runtime.jarBuildScmMergeBase,
-          "build_scm_merge_timestamp" -> runtime.jarBuildScmMergeTimestamp,
-          "build_scm_repository" -> runtime.jarBuildScmRepository,
-          "build_last_few_commits" -> runtime.jarBuildLastFewCommits.split("\n"),
-          "start_time" -> (new Date(mxRuntime.getStartTime())).toString,
-          "uptime" -> mxRuntime.getUptime()
+          "name" -> info.name,
+          "version" -> info.version,
+          "build" -> info.build,
+          "build_revision" -> info.build_revision,
+          "build_branch_name" -> info.build_branch_name,
+          "build_last_few_commits" -> info.build_last_few_commits,
+          "start_time" -> info.start_time,
+          "build_scm_merge_base" -> info.merge_base,
+          "build_scm_merge_timestamp" -> info.merge_base_commit_date,
+          "build_scm_repository" -> info.scm_repository,
+          "uptime" -> info.uptime
         )
       case "threads" =>
         getThreadStacks()

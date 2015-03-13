@@ -395,7 +395,7 @@ class AdminHttpService private[ostrich](
   val port: Int,
   backlog: Int,
   statsCollection: StatsCollection,
-  runtime: RuntimeEnvironment,
+  serverInfo: ServerInfoHandler,
   statsListenerMinPeriod: Duration,
   systemExitImpl: MesosRequestHandler.SystemExitImpl,
   registry: Registry
@@ -405,17 +405,61 @@ class AdminHttpService private[ostrich](
     port: Int,
     backlog: Int,
     statsCollection: StatsCollection,
+    serverInfo: ServerInfoHandler
+  ) = this(
+    port,
+    backlog,
+    statsCollection,
+    serverInfo,
+    1.minute,
+    MesosRequestHandler.SystemExitImpl.Default,
+    GlobalRegistry.get
+  )
+
+  def this(
+    port: Int,
+    backlog: Int,
+    statsCollection: StatsCollection,
+    serverInfo: ServerInfoHandler,
+    statsListenerMinPeriod: Duration,
+    systemExitImpl: MesosRequestHandler.SystemExitImpl
+  ) = this(
+    port,
+    backlog,
+    statsCollection,
+    serverInfo,
+    statsListenerMinPeriod,
+    systemExitImpl,
+    GlobalRegistry.get
+  )
+
+  @deprecated("Runtime evaluation of scala code will not be supported going forward. " +
+    "Please switch to flags for configuration.", "2015-03-12")
+  def this(
+    port: Int,
+    backlog: Int,
+    statsCollection: StatsCollection,
     runtime: RuntimeEnvironment,
     statsListenerMinPeriod: Duration = 1.minute,
     systemExitImpl: MesosRequestHandler.SystemExitImpl = MesosRequestHandler.SystemExitImpl.Default
-  ) = this(port, backlog, statsCollection, runtime, statsListenerMinPeriod, systemExitImpl, GlobalRegistry.get)
+  ) = this(
+    port,
+    backlog,
+    statsCollection,
+    runtime.serverInfo,
+    statsListenerMinPeriod,
+    systemExitImpl,
+    GlobalRegistry.get
+  )
 
+  @deprecated("Runtime evaluation of scala code will not be supported going forward. " +
+    "Please switch to flags for configuration.", "2015-03-12")
   def this(port: Int, backlog: Int, runtime: RuntimeEnvironment) =
     this(port, backlog, Stats, runtime)
 
   val log = Logger(getClass)
   val httpServer: HttpServer = HttpServer.create(new InetSocketAddress(port), backlog)
-  val commandHandler = new CommandHandler(runtime, statsCollection, statsListenerMinPeriod)
+  val commandHandler = new CommandHandler(serverInfo, statsCollection, statsListenerMinPeriod)
   val mesosHandler = new MesosRequestHandler(systemExitImpl)
 
   def address = httpServer.getAddress

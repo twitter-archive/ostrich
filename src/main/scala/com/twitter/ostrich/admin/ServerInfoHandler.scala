@@ -1,0 +1,60 @@
+package com.twitter.ostrich.admin
+
+import com.twitter.util.Future
+import java.lang.management.ManagementFactory
+import java.util.{Date, Properties}
+
+/**
+ * A simple http service for serving up information pulled from a build.properties
+ * file. The ClassLoader for the given object is used to load the buid.properties file,
+ * which is first searched for relative to the given object's class's package
+ * (class-package-name/build.properties), and if not found there, then it is searched for
+ * with an absolute path ("/build.properties").
+ */
+class ServerInfoHandler(obj: AnyRef) {
+  private[this] val clazz = obj.getClass
+  private[this] val mxRuntime = ManagementFactory.getRuntimeMXBean
+  private[this] val buildProperties = new Properties
+
+  try {
+    buildProperties.load(clazz.getResource("build.properties").openStream)
+  } catch {
+    case _: Throwable =>
+      try {
+        buildProperties.load(clazz.getResource("/build.properties").openStream)
+      } catch {
+        case _: Throwable =>
+      }
+  }
+
+  case class ServerInfo(
+    name: String,
+    version: String,
+    build: String,
+    build_revision: String,
+    build_branch_name: String,
+    build_last_few_commits: Seq[String],
+    merge_base: String,
+    merge_base_commit_date: String,
+    scm_repository: String,
+    start_time: String,
+    var uptime: Long = 0)
+
+  private[this] val serverInfo =
+    ServerInfo(
+      buildProperties.getProperty("name", "unknown"),
+      buildProperties.getProperty("version", "0.0"),
+      buildProperties.getProperty("build_name", "unknown"),
+      buildProperties.getProperty("build_revision", "unknown"),
+      buildProperties.getProperty("build_branch_name", "unknown"),
+      buildProperties.getProperty("build_last_few_commits", "unknown").split("\n"),
+      buildProperties.getProperty("merge_base", "unknown"),
+      buildProperties.getProperty("merge_base_commit_date", "unknown"),
+      buildProperties.getProperty("scm_repository", "unknown"),
+      (new Date(mxRuntime.getStartTime())).toString)
+
+  def apply(): ServerInfo = {
+    serverInfo.uptime = mxRuntime.getUptime
+    serverInfo
+  }
+}

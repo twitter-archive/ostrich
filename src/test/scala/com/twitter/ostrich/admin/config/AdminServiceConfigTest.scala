@@ -22,6 +22,7 @@ import com.twitter.logging.{Level, Logger}
 import com.twitter.ostrich.admin.{
   AdminHttpService,
   RuntimeEnvironment,
+  ServerInfoHandler,
   ServiceTracker,
   TimeSeriesCollector
 }
@@ -41,7 +42,9 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
     val port = 9990
     var service: AdminHttpService = null
     val runtime = mock[RuntimeEnvironment]
-    when(runtime.arguments) thenReturn Map.empty[String, String]
+    val serverInfo = new ServerInfoHandler(new Object)
+    when(runtime.arguments).thenReturn(Map.empty[String, String])
+    when(runtime.serverInfo).thenReturn(serverInfo)
   }
 
   before {

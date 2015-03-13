@@ -24,6 +24,8 @@ import com.twitter.conversions.string._
 import com.twitter.logging.Logger
 import com.twitter.util.{Config, Eval, NonFatal}
 
+@deprecated("Runtime evaluation of scala code will not be supported going forward. " +
+  "Please switch to flags for configuration.", "9.5.6")
 object RuntimeEnvironment {
   /**
    * Use the given class to find the `build.properties` file, parse any
@@ -52,35 +54,27 @@ object RuntimeEnvironment {
  * then it is searched for with an absolute path ("/build.properties").
  */
 class RuntimeEnvironment(obj: AnyRef) {
-  private val buildProperties = new Properties
-  /** the directory in which we'll try to compile configs */
-  private var configTarget: Option[String] = Some("target")
+  val serverInfo: ServerInfoHandler = new ServerInfoHandler(obj)
   var arguments: Map[String, String] = Map()
 
-  try {
-    buildProperties.load(obj.getClass.getResource("build.properties").openStream)
-  } catch {
-    case NonFatal(_) =>
-      try {
-        buildProperties.load(obj.getClass.getResource("/build.properties").openStream)
-      } catch {
-        case NonFatal(_) =>
-      }
-  }
+  /** the directory in which we'll try to compile configs */
+  private var configTarget: Option[String] = Some("target")
 
-  val jarName = buildProperties.getProperty("name", "unknown")
-  val jarVersion = buildProperties.getProperty("version", "0.0")
-  val jarBuild = buildProperties.getProperty("build_name", "unknown")
-  val jarBuildRevision = buildProperties.getProperty("build_revision", "unknown")
+  private[this] val nfo = serverInfo()
+
+  val jarName = nfo.name
+  val jarVersion = nfo.version
+  val jarBuild = nfo.build
+  val jarBuildRevision = nfo.build_revision
   val stageName = System.getProperty("stage", "production")
 
   // require standard-project >= 0.12.4:
-  val jarBuildBranchName = buildProperties.getProperty("build_branch_name", "unknown")
-  val jarBuildLastFewCommits = buildProperties.getProperty("build_last_few_commits", "unknown")
+  val jarBuildBranchName = nfo.build_branch_name
+  val jarBuildLastFewCommits = nfo.build_last_few_commits
 
-  val jarBuildScmMergeBase = buildProperties.getProperty("merge_base", "unknown")
-  val jarBuildScmMergeTimestamp = buildProperties.getProperty("merge_base_commit_date", "unknown")
-  val jarBuildScmRepository = buildProperties.getProperty("scm_repository", "unknown")
+  val jarBuildScmMergeBase = nfo.merge_base
+  val jarBuildScmMergeTimestamp = nfo.merge_base_commit_date
+  val jarBuildScmRepository = nfo.scm_repository
 
   /**
    * Return the path this jar was executed from. Depends on the presence of
