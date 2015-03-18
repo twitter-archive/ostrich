@@ -39,8 +39,6 @@ import scala.io.Source
 class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSugar {
 
   class Context {
-    val port = 9990
-    var service: AdminHttpService = null
     val runtime = mock[RuntimeEnvironment]
     val serverInfo = new ServerInfoHandler(new Object)
     when(runtime.arguments).thenReturn(Map.empty[String, String])
@@ -55,78 +53,50 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
     ServiceTracker.shutdown()
   }
 
-  // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
-  if (!sys.props.contains("SKIP_FLAKY"))
-    test("start up") {
-      val context = new Context
-      import context._
+  test("configure a json stats logger") {
+    val context = new Context
+    import context._
 
-      intercept[SocketException] {
-        new Socket("localhost", port)
+    val config = new AdminServiceConfig {
+      httpPort = Some(0)
+      statsNodes = new StatsConfig {
+        reporters = new JsonStatsLoggerConfig {
+          loggerName = "json"
+          period = 1.second
+          serviceName = "hello"
+        } :: new TimeSeriesCollectorConfig()
       }
-
-      val config = new AdminServiceConfig {
-        httpPort = 9990
-      }
-      val service = config()(runtime)
-      assert(new Socket("localhost", port) !== null)
-      ServiceTracker.shutdown()
-
-      intercept[SocketException] {
-        new Socket("localhost", port)
-      }
-
-      verify(runtime, times(1)).arguments
     }
 
-  // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
-  if (!sys.props.contains("SKIP_FLAKY"))
-    test("configure a json stats logger") {
-      val context = new Context
-      import context._
+    val service = config()(runtime)
+    val jsonStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[JsonStatsLogger])
+    assert(jsonStatsLoggerConfig.isDefined &&
+      jsonStatsLoggerConfig.get.asInstanceOf[JsonStatsLogger].serviceName === Some("hello"))
+    assert(ServiceTracker.peek.find(_.isInstanceOf[TimeSeriesCollector]).isDefined)
 
-      val config = new AdminServiceConfig {
-        httpPort = 9990
-        statsNodes = new StatsConfig {
-          reporters = new JsonStatsLoggerConfig {
-            loggerName = "json"
-            period = 1.second
-            serviceName = "hello"
-          } :: new TimeSeriesCollectorConfig()
+    verify(runtime, times(1)).arguments
+  }
+
+  test("configure a w3c stats logger") {
+    val context = new Context
+    import context._
+
+    val config = new AdminServiceConfig {
+      httpPort = Some(0)
+      statsNodes = new StatsConfig {
+        reporters = new W3CStatsLoggerConfig {
+          loggerName = "w3c"
+          period = 1.second
         }
       }
-
-      val service = config()(runtime)
-      val jsonStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[JsonStatsLogger])
-      assert(jsonStatsLoggerConfig.isDefined &&
-        jsonStatsLoggerConfig.get.asInstanceOf[JsonStatsLogger].serviceName === Some("hello"))
-      assert(ServiceTracker.peek.find(_.isInstanceOf[TimeSeriesCollector]).isDefined)
-
-      verify(runtime, times(1)).arguments
     }
+    val service = config()(runtime)
+    val w3cStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[W3CStatsLogger])
+    assert(w3cStatsLoggerConfig.isDefined &&
+      w3cStatsLoggerConfig.get.asInstanceOf[W3CStatsLogger].logger.name == "w3c")
 
-  // Flaky test, see https://jira.twitter.biz/browse/CSL-1004
-  if (!sys.props.contains("SKIP_FLAKY"))
-    test("configure a w3c stats logger") {
-      val context = new Context
-      import context._
-
-      val config = new AdminServiceConfig {
-        httpPort = 9990
-        statsNodes = new StatsConfig {
-          reporters = new W3CStatsLoggerConfig {
-            loggerName = "w3c"
-            period = 1.second
-          }
-        }
-      }
-      val service = config()(runtime)
-      val w3cStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[W3CStatsLogger])
-      assert(w3cStatsLoggerConfig.isDefined &&
-        w3cStatsLoggerConfig.get.asInstanceOf[W3CStatsLogger].logger.name == "w3c")
-
-      verify(runtime, times(1)).arguments
-    }
+    verify(runtime, times(1)).arguments
+  }
 
   test("configure filtered stats") {
     val context = new Context
@@ -157,6 +127,4 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
 
     verify(runtime, times(1)).arguments
   }
-
-
 }
