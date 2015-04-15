@@ -30,7 +30,7 @@ object Ostrich extends Build {
     libraryDependencies ++= Seq(
       "junit" % "junit" % "4.10" % "test",
       "org.mockito" % "mockito-all" % "1.9.5" % "test",
-      "org.scalatest" %% "scalatest" % "2.2.2" % "test"
+      "org.scalatest" %% "scalatest" % "2.2.4" % "test"
     ),
     publishMavenStyle := true,
     publishTo <<= version { (v: String) =>
