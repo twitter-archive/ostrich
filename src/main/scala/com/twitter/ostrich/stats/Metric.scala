@@ -42,7 +42,7 @@ class Metric {
     if (n > -1) {
       histogram.add(n)
     } else {
-      log.warning("Tried to add a negative data point.")
+      log.debug("Tried to add a negative data point.")
       histogram.count
     }
   }
