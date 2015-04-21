@@ -1,3 +1,10 @@
+9.8.0
+-----
+release: 12 April 2015
+
+- bumped dependency versions
+- added /admin/registry.json endpoint for exporting runtime configuration
+
 9.6.3
 -----
 release: 30 October 2014
