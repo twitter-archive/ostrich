@@ -46,4 +46,9 @@ trait Service {
   def reload() {
     // default is to do nothing.
   }
+
+  var timeListener: TimeListener = new TimeListenerNoop 
+
+  def hookTime(name: String, value: Int) =  timeListener.time(name, value)
+
 }

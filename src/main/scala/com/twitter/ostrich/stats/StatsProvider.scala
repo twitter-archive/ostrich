@@ -20,6 +20,7 @@ import scala.util.matching.Regex
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
 import com.twitter.util.{Duration, Future, Stopwatch}
+import com.twitter.ostrich.admin.ServiceTracker
 import com.twitter.logging.Logger
 
 /**
@@ -195,6 +196,7 @@ trait StatsProvider {
   def time[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inMilliseconds(f)
     addMetric(name + "_msec", duration.inMilliseconds.toInt)
+    ServiceTracker.hookTime(name + "_msec", duration.inMilliseconds.toInt)
     rv
   }
 
@@ -206,6 +208,7 @@ trait StatsProvider {
     val elapsed = Stopwatch.start()
     f.respond { _ =>
       addMetric(name + "_usec", elapsed().inMicroseconds.toInt)
+      ServiceTracker.hookTime(name + "_usec", elapsed().inMicroseconds.toInt)
     }
     f
   }
@@ -227,6 +230,7 @@ trait StatsProvider {
     val elapsed = Stopwatch.start()
     f.ensure {
       addMetric(name + "_msec", elapsed().inMilliseconds.toInt)
+      ServiceTracker.hookTime(name + "_msec", elapsed().inMilliseconds.toInt)
     }
   }
 
@@ -238,6 +242,7 @@ trait StatsProvider {
     val elapsed = Stopwatch.start()
     f.respond { _ =>
       addMetric(name + "_nsec", elapsed().inNanoseconds.toInt)
+      ServiceTracker.hookTime(name + "_nsec", elapsed().inNanoseconds.toInt)
     }
     f
   }
@@ -248,6 +253,7 @@ trait StatsProvider {
   def timeMicros[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inNanoseconds(f)
     addMetric(name + "_usec", duration.inMicroseconds.toInt)
+    ServiceTracker.hookTime(name + "_usec", duration.inMicroseconds.toInt)
     rv
   }
 
@@ -257,6 +263,7 @@ trait StatsProvider {
   def timeNanos[T](name: String)(f: => T): T = {
     val (rv, duration) = Duration.inNanoseconds(f)
     addMetric(name + "_nsec", duration.inNanoseconds.toInt)
+    ServiceTracker.hookTime(name + "_nsec", duration.inNanoseconds.toInt)
     rv
   }
 }

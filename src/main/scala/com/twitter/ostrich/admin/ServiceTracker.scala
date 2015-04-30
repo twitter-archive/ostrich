@@ -53,4 +53,8 @@ object ServiceTracker {
   def reload() {
     synchronized { services.toList }.foreach { _.reload() }
   }
+
+  def hookTime(name: String, value: Int) = {
+    synchronized { services.toList }.foreach { _.hookTime(name, value) }
+  }
 }
