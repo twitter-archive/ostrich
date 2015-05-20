@@ -1,12 +1,12 @@
 maven_layout()
 
-jar_library(name='ostrich',
+target(name='ostrich',
   dependencies=[
     'ostrich/src/main/scala'
   ]
 )
 
-jar_library(name='tests',
+target(name='tests',
   dependencies=[
     'ostrich/src/test/scala'
   ]
