@@ -1,3 +1,9 @@
+9.9.0
+-----
+release: 22 June 2015
+
+- Add output language support in scrooge-sbt-plugin
+
 9.8.0
 -----
 release: 12 April 2015
