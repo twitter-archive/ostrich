@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import Tests._
+import scoverage.ScoverageSbtPlugin
 
 object Ostrich extends Build {
   val branch = Process("git" :: "rev-parse" :: "--abbrev-ref" :: "HEAD" :: Nil).!!.trim
@@ -32,6 +33,14 @@ object Ostrich extends Build {
       "org.mockito" % "mockito-all" % "1.9.5" % "test",
       "org.scalatest" %% "scalatest" % "2.2.4" % "test"
     ),
+
+    ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := (
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 10)) => false
+        case _ => true
+      }
+    ),
+
     publishMavenStyle := true,
     publishTo <<= version { (v: String) =>
       val nexus = "https://oss.sonatype.org/"

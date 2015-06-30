@@ -1,4 +1,8 @@
-# Ostrich [![Build Status](https://travis-ci.org/twitter/ostrich.png?branch=master)](https://travis-ci.org/twitter/ostrich)
+# Ostrich
+
+[![Build status](https://travis-ci.org/twitter/ostrich.svg?branch=develop)](https://travis-ci.org/twitter/ostrich)
+[![Coverage status](https://img.shields.io/coveralls/twitter/ostrich/develop.svg)](https://coveralls.io/r/twitter/ostrich?branch=develop)
+[![Project status](https://img.shields.io/badge/status-deprecated-orange.svg)](#status)
 
 Ostrich is a library for scala servers that makes it easy to:
 
@@ -11,9 +15,11 @@ Ostrich is a library for scala servers that makes it easy to:
 The idea is that it should be simple and straightforward, allowing you to
 plug it in and get started quickly.
 
-This library is released under the Apache Software License, version 2, which
-should be included with the source in a file named `LICENSE`.
+## Status
 
+This library is deprecated, and users should migrate to
+[Commons Metrics](https://github.com/twitter/commons/tree/master/src/java/com/twitter/common/metrics). Please see
+[TwitterServer's migration guide](https://twitter.github.io/twitter-server/Migration.html) for details.
 
 ## Building
 
@@ -361,3 +367,8 @@ them. Major contributers include, in alphabetical order:
 - Steve Jenson
 
 If you make a significant change, please add your name to the list!
+
+## License
+
+This library is released under the Apache Software License, version 2, which
+should be included with the source in a file named `LICENSE`.

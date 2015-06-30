@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -xe
+
+# Publish local dependencies when not in a master branch
+OSTRICH_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$OSTRICH_BRANCH" != "master" ]; then
+  OSTRICH_DIR=$(pwd)
+   # TODO try to use ./sbt of each project instead of scrooge's sbt
+  OSTRICH_SBT=$OSTRICH_DIR/sbt
+  OSTRICH_TMP_DIR=$(mktemp -d -t ostrich.XXXXXXXXXX.tmp)
+  # util
+  cd $OSTRICH_TMP_DIR
+  git clone https://github.com/twitter/util.git --branch develop
+  cd util
+  $OSTRICH_SBT ++$TRAVIS_SCALA_VERSION publishLocal
+  # clean up
+  cd $OSTRICH_DIR
+  rm -rf $OSTRICH_TMP_DIR
+fi
+
