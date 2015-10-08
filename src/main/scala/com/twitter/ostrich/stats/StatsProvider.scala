@@ -19,7 +19,7 @@ package com.twitter.ostrich.stats
 import scala.util.matching.Regex
 import scala.collection.{Map, mutable, immutable}
 import com.twitter.json.Json
-import com.twitter.util.{Duration, Future, Stopwatch}
+import com.twitter.util.{Future, Stopwatch}
 import com.twitter.logging.Logger
 
 /**
@@ -193,8 +193,9 @@ trait StatsProvider {
    * Runs the function f and logs that duration, in milliseconds, with the given name.
    */
   def time[T](name: String)(f: => T): T = {
-    val (rv, duration) = Duration.inMilliseconds(f)
-    addMetric(name + "_msec", duration.inMilliseconds.toInt)
+    val duration = Stopwatch.start()
+    val rv: T = f 
+    addMetric(name + "_msec", duration().inMilliseconds.toInt)
     rv
   }
 
@@ -246,8 +247,9 @@ trait StatsProvider {
    * Runs the function f and logs that duration, in microseconds, with the given name.
    */
   def timeMicros[T](name: String)(f: => T): T = {
-    val (rv, duration) = Duration.inNanoseconds(f)
-    addMetric(name + "_usec", duration.inMicroseconds.toInt)
+    val duration = Stopwatch.start()
+    val rv: T = f
+    addMetric(name + "_usec", duration().inMicroseconds.toInt)
     rv
   }
 
@@ -255,8 +257,9 @@ trait StatsProvider {
    * Runs the function f and logs that duration, in nanoseconds, with the given name.
    */
   def timeNanos[T](name: String)(f: => T): T = {
-    val (rv, duration) = Duration.inNanoseconds(f)
-    addMetric(name + "_nsec", duration.inNanoseconds.toInt)
+    val duration = Stopwatch.start()
+    val rv: T = f
+    addMetric(name + "_nsec", duration().inNanoseconds.toInt)
     rv
   }
 }
