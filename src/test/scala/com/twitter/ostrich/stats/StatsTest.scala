@@ -26,11 +26,11 @@ import org.scalatest.FunSuite
 class StatsTest extends FunSuite {
 
   test("delta") {
-    assert(Stats.delta(0, 5) === 5)
-    assert(Stats.delta(Long.MaxValue - 10, Long.MaxValue) === 10)
-    assert(Stats.delta(-4000, -3000) === 1000)
-    assert(Stats.delta(Long.MaxValue, Long.MinValue) === 1)
-    assert(Stats.delta(Long.MaxValue - 5, Long.MinValue + 3) === 9)
+    assert(Stats.delta(0, 5) == 5)
+    assert(Stats.delta(Long.MaxValue - 10, Long.MaxValue) == 10)
+    assert(Stats.delta(-4000, -3000) == 1000)
+    assert(Stats.delta(Long.MaxValue, Long.MinValue) == 1)
+    assert(Stats.delta(Long.MaxValue - 5, Long.MinValue + 3) == 9)
   }
 
 }

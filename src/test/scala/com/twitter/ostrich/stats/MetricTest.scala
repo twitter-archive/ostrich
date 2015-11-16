@@ -27,28 +27,28 @@ class MetricTest extends FunSuite {
     val metric = new Metric()
     metric.add(10)
     metric.add(20)
-    assert(metric() === Distribution(Histogram(10, 20)))
+    assert(metric() == Distribution(Histogram(10, 20)))
     metric.add(60)
-    assert(metric() === Distribution(Histogram(10, 20, 60)))
+    assert(metric() == Distribution(Histogram(10, 20, 60)))
 
-    assert(metric().histogram.get(false) === Histogram(10, 20, 60).get(false))
+    assert(metric().histogram.get(false) == Histogram(10, 20, 60).get(false))
   }
 
   test("add distribution") {
     val metric = new Metric()
     metric.add(Distribution(Histogram(10, 20)))
     metric.add(60)
-    assert(metric() === Distribution(Histogram(10, 20, 60)))
+    assert(metric() == Distribution(Histogram(10, 20, 60)))
   }
 
   test("clear") {
     val metric = new Metric()
     metric.add(10)
     metric.add(20)
-    assert(metric() === Distribution(Histogram(10, 20)))
-    assert(metric() === Distribution(Histogram(10, 20)))
+    assert(metric() == Distribution(Histogram(10, 20)))
+    assert(metric() == Distribution(Histogram(10, 20)))
     metric.clear()
-    assert(metric() === Distribution(Histogram()))
+    assert(metric() == Distribution(Histogram()))
   }
 
 }

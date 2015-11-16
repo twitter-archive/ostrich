@@ -27,22 +27,22 @@ class RuntimeEnvironmentTest extends FunSuite {
 
   test("find executable jar path") {
     val runtime = new RuntimeEnvironment(classOf[Histogram])
-    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1.jar"), "flockdb", "1.4.1") ===
+    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1.jar"), "flockdb", "1.4.1") ==
     Some("./dist/flockdb/flockdb-1.4.1.jar"))
-    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"), "flockdb", "1.4.1") ===
+    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"), "flockdb", "1.4.1") ==
     Some("./dist/flockdb/flockdb_2.7.7-1.4.1.jar"))
-    assert(runtime.findCandidateJar(List("./dist/flockdb/wrong-1.4.1.jar"), "flockdb", "1.4.1") ===
+    assert(runtime.findCandidateJar(List("./dist/flockdb/wrong-1.4.1.jar"), "flockdb", "1.4.1") ==
     None)
-    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"), "flockdb", "1.4.1-SNAPSHOT") ===
+    assert(runtime.findCandidateJar(List("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"), "flockdb", "1.4.1-SNAPSHOT") ==
     Some("./dist/flockdb/flockdb-1.4.1-SNAPSHOT.jar"))
   }
 
   test("parse custom args") {
     val runtime = new RuntimeEnvironment(classOf[Object])
-    assert(System.getProperty("foo") === null)
+    assert(System.getProperty("foo") == null)
     runtime.parseArgs(List("-D", "foo=bar"))
-    assert(runtime.arguments.get("foo") === Some("bar"))
-    assert(System.getProperty("foo") === "bar")
+    assert(runtime.arguments.get("foo") == Some("bar"))
+    assert(System.getProperty("foo") == "bar")
     System.clearProperty("foo")  // allow this test to be run multiple times
   }
 
@@ -51,7 +51,7 @@ class RuntimeEnvironmentTest extends FunSuite {
     val runtime = new RuntimeEnvironment(classOf[Object])
     runtime.parseArgs(List("-f", config))
     val res: String = runtime.loadConfig()
-    assert(res === "foo")
+    assert(res == "foo")
   }
 
 }

@@ -71,7 +71,7 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
     val service = config()(runtime)
     val jsonStatsLoggerConfig = ServiceTracker.peek.find(_.isInstanceOf[JsonStatsLogger])
     assert(jsonStatsLoggerConfig.isDefined &&
-      jsonStatsLoggerConfig.get.asInstanceOf[JsonStatsLogger].serviceName === Some("hello"))
+      jsonStatsLoggerConfig.get.asInstanceOf[JsonStatsLogger].serviceName == Some("hello"))
     assert(ServiceTracker.peek.find(_.isInstanceOf[TimeSeriesCollector]).isDefined)
 
     verify(runtime, times(1)).arguments
@@ -120,7 +120,7 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
       val url = new URL("http://localhost:%s%s".format(port, path))
       val data = Source.fromURL(url).getLines().mkString("\n")
       val json = Json.parse(data).asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(json("counters") === Map.empty[String, Map[String, AnyRef]])
+      assert(json("counters") == Map.empty[String, Map[String, AnyRef]])
     } finally {
       service.shutdown()
     }

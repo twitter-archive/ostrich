@@ -68,7 +68,7 @@ class W3CStatsTest extends FunSuite {
     val metrics = Map("backend-response-time_msec" -> new Distribution(Histogram(10)))
     val labels = Map("request-uri" -> "/home")
     w3c.write(StatsSummary(counters, metrics, gauges, labels))
-    assert(getLine() === "10 - /home - - - 3 3.5")
+    assert(getLine() == "10 - /home - - - 3 3.5")
   }
 
   test("can be called transactionally") {
@@ -81,23 +81,23 @@ class W3CStatsTest extends FunSuite {
         stats.setLabel("request-uri", "/home")
         1 + 1
       }
-      assert(response === 2)
+      assert(response == 2)
 
       val response2: Int = stats.timeNanos[Int]("backend-response-time") {
         1 + 2
       }
-      assert(response2 === 3)
+      assert(response2 == 3)
 
       stats.setGauge("wodgets", 3.5)
     }
 
     val entries: Array[String] = getLine().split(" ")
     assert(entries(0).toInt >= 0)
-    assert(entries(1) === "GET")
-    assert(entries(2) === "/home")
+    assert(entries(1) == "GET")
+    assert(entries(2) == "/home")
     assert(entries(3).toInt >= 10)  //must take at least 10 ns!
-    assert(entries(4) === "-")
-    assert(entries(7) === "3.5")
+    assert(entries(4) == "-")
+    assert(entries(7) == "3.5")
   }
 
   test("empty stats returns the empty string") {
@@ -106,7 +106,7 @@ class W3CStatsTest extends FunSuite {
 
     w3c { stats => () }
     // strip out all unfound entries, and remove all whitespace. after that, it should be empty.
-    assert(getLine().replaceAll("-", "").trim() === "")
+    assert(getLine().replaceAll("-", "").trim() == "")
   }
 
   test("logging a field not tracked in the fields member shouldn't show up in the logfile") {
@@ -127,7 +127,7 @@ class W3CStatsTest extends FunSuite {
       stats.incr("widgets", 8)
       stats.incr("widgets", 8)
     }
-    assert(getLine() === "- - - - - - 16 -")
+    assert(getLine() == "- - - - - - 16 -")
   }
 
   test("logs metrics only once") {
@@ -138,11 +138,11 @@ class W3CStatsTest extends FunSuite {
       stats.addMetric("backend-response-time_msec", 9)
       stats.addMetric("backend-response-time_msec", 13)
     }
-    assert(getLine() === "11 - - - - - - -")
+    assert(getLine() == "11 - - - - - - -")
     w3c { stats =>
       stats.addMetric("backend-response-time_msec", 9)
     }
-    assert(getLine() === "9 - - - - - - -")
+    assert(getLine() == "9 - - - - - - -")
   }
 
 }

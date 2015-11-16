@@ -57,7 +57,7 @@ class W3CStatsLoggerTest extends FunSuite {
     collection.incr("cats")
     collection.incr("dogs", 3)
     statsLogger.periodic()
-    assert(getLines() === "#Fields: cats dogs" :: "948200938 1 3" :: Nil)
+    assert(getLines() == "#Fields: cats dogs" :: "948200938 1 3" :: Nil)
   }
 
   test("log timings") {
@@ -68,7 +68,7 @@ class W3CStatsLoggerTest extends FunSuite {
       collection.time("zzz") { time advance 10.milliseconds }
       collection.time("zzz") { time advance 20.milliseconds }
       statsLogger.periodic()
-      assert(getLines() === List(
+      assert(getLines() == List(
         "#Fields: zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum zzz_msec_sum",
         "1176525931 15 2 19 10 30"
       ))
@@ -87,7 +87,7 @@ class W3CStatsLoggerTest extends FunSuite {
       collection.incr("cats")
       collection.time("zzz") { time advance 20.milliseconds }
       statsLogger.periodic()
-      assert(getLines() === List(
+      assert(getLines() == List(
         "#Fields: cats dogs zzz_msec_average zzz_msec_count zzz_msec_maximum zzz_msec_minimum zzz_msec_sum",
         "2826312472 1 3 10 1 10 10 10",
         "2826312472 1 0 20 1 19 19 20"
@@ -102,14 +102,14 @@ class W3CStatsLoggerTest extends FunSuite {
     Time.withCurrentTimeFrozen { time =>
       collection.incr("cats")
       statsLogger.periodic()
-      assert(getLines() === "#Fields: cats" :: "2001103910 1" :: Nil)
+      assert(getLines() == "#Fields: cats" :: "2001103910 1" :: Nil)
       collection.incr("cats")
       statsLogger.periodic()
-      assert(getLines() === "2001103910 1" :: Nil)
+      assert(getLines() == "2001103910 1" :: Nil)
       time advance 10.minutes
       collection.incr("cats")
       statsLogger.periodic()
-      assert(getLines() === "#Fields: cats" :: "2001103910 1" :: Nil)
+      assert(getLines() == "#Fields: cats" :: "2001103910 1" :: Nil)
     }
   }
 
@@ -119,14 +119,14 @@ class W3CStatsLoggerTest extends FunSuite {
 
     collection.incr("cats")
     statsLogger.periodic()
-    assert(getLines() === "#Fields: cats" :: "2001103910 1" :: Nil)
+    assert(getLines() == "#Fields: cats" :: "2001103910 1" :: Nil)
     collection.incr("cats")
     statsLogger.periodic()
-    assert(getLines() === "2001103910 1" :: Nil)
+    assert(getLines() == "2001103910 1" :: Nil)
     collection.incr("cats")
     collection.incr("dogs")
     statsLogger.periodic()
-    assert(getLines() === "#Fields: cats dogs" :: "948200938 1 1" :: Nil)
+    assert(getLines() == "#Fields: cats dogs" :: "948200938 1 1" :: Nil)
   }
 
 }

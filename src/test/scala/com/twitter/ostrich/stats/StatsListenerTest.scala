@@ -35,16 +35,16 @@ class StatsListenerTest extends FunSuite {
     val context = new StatsListenerObjectContext
     import context._
 
-    assert(StatsListener.listeners.size() === 0)
+    assert(StatsListener.listeners.size() == 0)
     val listener = StatsListener(1.minute, collection)
     val listener2 = StatsListener(1.minute, collection)
-    assert(listener === listener2)
-    assert(StatsListener.listeners.size() === 1)
+    assert(listener == listener2)
+    assert(StatsListener.listeners.size() == 1)
     assert(StatsListener(500.millis, collection) !== listener)
-    assert(StatsListener.listeners.size() === 2)
+    assert(StatsListener.listeners.size() == 2)
     val key = ("period:%d".format(1.minute.inMillis), collection)
     assert(StatsListener.listeners.containsKey(key))
-    assert(StatsListener.listeners.get(key) === listener)
+    assert(StatsListener.listeners.get(key) == listener)
   }
 
   test("tracks named listeners") {
@@ -53,7 +53,7 @@ class StatsListenerTest extends FunSuite {
 
     val monkeyListener = StatsListener("monkey", collection)
     assert(StatsListener("donkey", collection) !== monkeyListener)
-    assert(StatsListener("monkey", collection) === monkeyListener)
+    assert(StatsListener("monkey", collection) == monkeyListener)
   }
 
   class StatsListenerInstanceContext {
@@ -71,16 +71,16 @@ class StatsListenerTest extends FunSuite {
     collection.incr("b", 4)
     collection.incr("a", 3)
 
-    assert(listener.getCounters() === Map("a" -> 3, "b" -> 4))
+    assert(listener.getCounters() == Map("a" -> 3, "b" -> 4))
     collection.incr("a", 2)
-    assert(listener.getCounters() === Map("a" -> 2, "b" -> 0))
+    assert(listener.getCounters() == Map("a" -> 2, "b" -> 0))
 
     info("metrics")
     collection.addMetric("beans", 3)
     collection.addMetric("beans", 4)
-    assert(collection.getMetrics() === Map("beans" -> Distribution(Histogram(3, 4))))
-    assert(listener.getMetrics() === Map("beans" -> Histogram(3, 4)))
-    assert(listener2.getMetrics() === Map("beans" -> Histogram(3, 4)))
+    assert(collection.getMetrics() == Map("beans" -> Distribution(Histogram(3, 4))))
+    assert(listener.getMetrics() == Map("beans" -> Histogram(3, 4)))
+    assert(listener2.getMetrics() == Map("beans" -> Histogram(3, 4)))
   }
 
   test("independently tracks deltas") {
@@ -89,24 +89,24 @@ class StatsListenerTest extends FunSuite {
 
     info("counters")
     collection.incr("a", 3)
-    assert(listener.getCounters() === Map("a" -> 3))
+    assert(listener.getCounters() == Map("a" -> 3))
     collection.incr("a", 5)
-    assert(listener2.getCounters() === Map("a" -> 8))
+    assert(listener2.getCounters() == Map("a" -> 8))
     collection.incr("a", 1)
-    assert(listener.getCounters() === Map("a" -> 6))
+    assert(listener.getCounters() == Map("a" -> 6))
 
     info("metrics")
     collection.addMetric("timing", 10)
     collection.addMetric("timing", 20)
-    assert(listener.getMetrics() === Map("timing" -> Histogram(10, 20)))
+    assert(listener.getMetrics() == Map("timing" -> Histogram(10, 20)))
     collection.addMetric("timing", 10)
-    assert(listener2.getMetrics() === Map("timing" -> Histogram(10, 20, 10)))
+    assert(listener2.getMetrics() == Map("timing" -> Histogram(10, 20, 10)))
     collection.addMetric("timing", 10)
-    assert(listener.getMetrics() === Map("timing" -> Histogram(10, 10)))
-    assert(listener2.getMetrics() === Map("timing" -> Histogram(10)))
+    assert(listener.getMetrics() == Map("timing" -> Histogram(10, 10)))
+    assert(listener2.getMetrics() == Map("timing" -> Histogram(10)))
 
-    assert(listener.getMetrics() === Map("timing" -> Histogram()))
-    assert(listener2.getMetrics() === Map("timing" -> Histogram()))
+    assert(listener.getMetrics() == Map("timing" -> Histogram()))
+    assert(listener2.getMetrics() == Map("timing" -> Histogram()))
   }
 
   test("master stats always increase, even with listeners connected") {
@@ -115,19 +115,19 @@ class StatsListenerTest extends FunSuite {
 
     info("counters")
     collection.incr("a", 3)
-    assert(listener.getCounters() === Map("a" -> 3))
+    assert(listener.getCounters() == Map("a" -> 3))
     collection.incr("a", 5)
-    assert(listener.getCounters() === Map("a" -> 5))
+    assert(listener.getCounters() == Map("a" -> 5))
 
-    assert(collection.getCounters() === Map("a" -> 8))
+    assert(collection.getCounters() == Map("a" -> 8))
 
     info("metrics")
     collection.addMetric("timing", 10)
     collection.addMetric("timing", 20)
-    assert(listener.getMetrics() === Map("timing" -> Histogram(10, 20)))
+    assert(listener.getMetrics() == Map("timing" -> Histogram(10, 20)))
     collection.addMetric("timing", 10)
 
-    assert(collection.getMetrics() === Map("timing" -> Distribution(Histogram(10, 20, 10))))
+    assert(collection.getMetrics() == Map("timing" -> Distribution(Histogram(10, 20, 10))))
   }
 
 
@@ -143,8 +143,8 @@ class StatsListenerTest extends FunSuite {
     collection.incr("a", 70)
     collection.incr("a", 300)
     collection.addMetric("beans", 3)
-    assert(listener3.getCounters() === Map("a" -> 370, "b" -> 0))
-    assert(listener3.getMetrics() ===
+    assert(listener3.getCounters() == Map("a" -> 370, "b" -> 0))
+    assert(listener3.getMetrics() ==
     Map("beans" -> Histogram(3),
       "rice" -> Histogram()))
   }
@@ -163,34 +163,34 @@ class StatsListenerTest extends FunSuite {
     collection.setLabel("label", "HIMYNAMEISBRAK")
     collection.addMetric("metric", Distribution(Histogram(1, 2)))
 
-    assert(listener.getCounters() === Map())
-    assert(listener.getGauges() === Map())
-    assert(listener.getLabels() === Map())
-    assert(listener.getMetrics() === Map())
+    assert(listener.getCounters() == Map())
+    assert(listener.getGauges() == Map())
+    assert(listener.getLabels() == Map())
+    assert(listener.getMetrics() == Map())
 
     listener.nextLatch()
 
-    assert(listener.getCounters() === Map("counter" -> 5))
-    assert(listener.getGauges() === Map("gauge" -> 0))
-    assert(listener.getLabels() === Map("label" -> "HIMYNAMEISBRAK"))
-    assert(listener.getMetrics() === Map("metric" -> Histogram(1, 2)))
+    assert(listener.getCounters() == Map("counter" -> 5))
+    assert(listener.getGauges() == Map("gauge" -> 0))
+    assert(listener.getLabels() == Map("label" -> "HIMYNAMEISBRAK"))
+    assert(listener.getMetrics() == Map("metric" -> Histogram(1, 2)))
 
     collection.incr("counter", 3)
     synchronized { gauge = 37 }
     collection.setLabel("label", "EEPEEPIAMAMONKEY")
     collection.addMetric("metric", Distribution(Histogram(3, 4, 5)))
 
-    assert(listener.getCounters() === Map("counter" -> 5))
-    assert(listener.getGauges() === Map("gauge" -> 0))
-    assert(listener.getLabels() === Map("label" -> "HIMYNAMEISBRAK"))
-    assert(listener.getMetrics() === Map("metric" -> Histogram(1, 2)))
+    assert(listener.getCounters() == Map("counter" -> 5))
+    assert(listener.getGauges() == Map("gauge" -> 0))
+    assert(listener.getLabels() == Map("label" -> "HIMYNAMEISBRAK"))
+    assert(listener.getMetrics() == Map("metric" -> Histogram(1, 2)))
 
     listener.nextLatch()
 
-    assert(listener.getCounters() === Map("counter" -> 3))
-    assert(listener.getGauges() === Map("gauge" -> 37))
-    assert(listener.getLabels() === Map("label" -> "EEPEEPIAMAMONKEY"))
-    assert(listener.getMetrics() === Map("metric" -> Histogram(3, 4, 5)))
+    assert(listener.getCounters() == Map("counter" -> 3))
+    assert(listener.getGauges() == Map("gauge" -> 37))
+    assert(listener.getLabels() == Map("label" -> "EEPEEPIAMAMONKEY"))
+    assert(listener.getMetrics() == Map("metric" -> Histogram(3, 4, 5)))
   }
 
 }

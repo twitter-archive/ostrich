@@ -79,13 +79,13 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
     val staticHandler = new FolderResourceHandler("/nested")
 
     info("split a URI")
-    assert(staticHandler.getRelativePath("/nested/1level.txt") === "1level.txt")
-    assert(staticHandler.getRelativePath("/nested/2level/2level.txt") === "2level/2level.txt")
+    assert(staticHandler.getRelativePath("/nested/1level.txt") == "1level.txt")
+    assert(staticHandler.getRelativePath("/nested/2level/2level.txt") == "2level/2level.txt")
 
 
     info("build paths correctly")
-    assert(staticHandler.buildPath("1level.txt") === "/nested/1level.txt")
-    assert(staticHandler.buildPath("2level/2level.txt") === "/nested/2level/2level.txt")
+    assert(staticHandler.buildPath("1level.txt") == "/nested/1level.txt")
+    assert(staticHandler.buildPath("2level/2level.txt") == "/nested/2level/2level.txt")
 
     info("load resources")
     intercept[Exception] { staticHandler.loadResource("nested/1level.txt") }
@@ -135,7 +135,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
 
   test("answer pings") {
     val port = service.address.getPort
-    assert(get("/ping.json").trim === """{"response":"pong"}""")
+    assert(get("/ping.json").trim == """{"response":"pong"}""")
     service.shutdown()
     eventually {
       intercept[SocketException] { new Socket("localhost", port) }
@@ -201,7 +201,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
 
     // specified properly
     logLevels = get("/logging?name=%s&level=FATAL".format(name))
-    assert(Logger.get(name).getLevel() === Level.FATAL)
+    assert(Logger.get(name).getLevel() == Level.FATAL)
     assert(logLevels.contains("Successfully changed the level of the following logger"))
 
     // made up level
@@ -256,7 +256,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       assert(stats("metrics").get("kangaroo_time_msec").isDefined)
 
       val timing = stats("metrics")("kangaroo_time_msec").asInstanceOf[Map[String, Int]]
-      assert(timing("count") === 1)
+      assert(timing("count") == 1)
       assert(timing("minimum") >= 0)
       assert(timing("maximum") >= timing("minimum"))
     }
@@ -268,30 +268,30 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       Stats.addMetric("oranges", 5)
 
       var absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(absStats("counters")("apples") === 10)
-      assert(absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 1)
+      assert(absStats("counters")("apples") == 10)
+      assert(absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
       var namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
         .asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(namespaceStats("counters")("apples") === 10)
-      assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 1)
+      assert(namespaceStats("counters")("apples") == 10)
+      assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
       var periodicStats = Json.parse(get("/stats.json?period=30"))
         .asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(periodicStats("counters")("apples") === 10)
-      assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 1)
+      assert(periodicStats("counters")("apples") == 10)
+      assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
 
       Stats.incr("apples", 6)
       Stats.addMetric("oranges", 3)
       absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(absStats("counters")("apples") === 16)
-      assert(absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 2)
+      assert(absStats("counters")("apples") == 16)
+      assert(absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 2)
       namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
         .asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(namespaceStats("counters")("apples") === 6)
-      assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 1)
+      assert(namespaceStats("counters")("apples") == 6)
+      assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
       namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
         .asInstanceOf[Map[String, Map[String, AnyRef]]]
-      assert(namespaceStats("counters")("apples") === 0)
-      assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 0)
+      assert(namespaceStats("counters")("apples") == 0)
+      assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 0)
       periodicStats = Json.parse(get("/stats.json?period=30"))
         .asInstanceOf[Map[String, Map[String, AnyRef]]]
       if (periodicStats("counters")("apples") == 6) {
@@ -303,11 +303,11 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
         Stats.addMetric("oranges", 4)
         periodicStats = Json.parse(get("/stats.json?period=30"))
           .asInstanceOf[Map[String, Map[String, AnyRef]]]
-        assert(periodicStats("counters")("apples") === 6)
-        assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 1)
+        assert(periodicStats("counters")("apples") == 6)
+        assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
       } else {
-        assert(periodicStats("counters")("apples") === 10)
-        assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") === 1)
+        assert(periodicStats("counters")("apples") == 10)
+        assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
       }
     }
 
@@ -328,22 +328,22 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 
       assert(timings.get("count").isDefined)
-      assert(timings("count") === 6)
+      assert(timings("count") == 6)
 
       assert(timings.get("average").isDefined)
-      assert(timings("average") === 3)
+      assert(timings("average") == 3)
 
       assert(timings.get("p50").isDefined)
-      assert(timings("p50") === 3)
+      assert(timings("p50") == 3)
 
       assert(timings.get("p99").isDefined)
-      assert(timings("p99") === 6)
+      assert(timings("p99") == 6)
 
       assert(timings.get("p999").isDefined)
-      assert(timings("p999") === 6)
+      assert(timings("p999") == 6)
 
       assert(timings.get("p9999").isDefined)
-      assert(timings("p9999") === 6)
+      assert(timings("p9999") == 6)
     }
 
     new Context {
@@ -363,25 +363,25 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 
       assert(timings.get("count").isDefined)
-      assert(timings("count") === 6)
+      assert(timings("count") == 6)
 
       assert(timings.get("average").isDefined)
-      assert(timings("average") === 3)
+      assert(timings("average") == 3)
 
       assert(timings.get("p50").isDefined)
-      assert(timings("p50") === 3)
+      assert(timings("p50") == 3)
 
       assert(timings.get("p95").isDefined)
-      assert(timings("p95") === 6)
+      assert(timings("p95") == 6)
 
       assert(timings.get("p99").isDefined)
-      assert(timings("p99") === 6)
+      assert(timings("p99") == 6)
 
       assert(timings.get("p999").isDefined)
-      assert(timings("p999") === 6)
+      assert(timings("p999") == 6)
 
       assert(timings.get("p9999").isDefined)
-      assert(timings("p9999") === 6)
+      assert(timings("p9999") == 6)
     }
 
 
@@ -434,7 +434,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       )
 
     forAll (parametersTable) { (uriStr: String, result: List[(String, String)]) =>
-      assert(CgiRequestHandler.uriToParameters(new URI(uriStr)) === result)
+      assert(CgiRequestHandler.uriToParameters(new URI(uriStr)) == result)
     }
   }
 

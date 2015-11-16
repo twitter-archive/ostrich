@@ -33,7 +33,7 @@ class DistributionTest extends FunSuite {
     val context = new Context
     import context._
 
-    assert(Distribution(histogram1.clone()) === Distribution(histogram1.clone()))
+    assert(Distribution(histogram1.clone()) == Distribution(histogram1.clone()))
     assert(Distribution(histogram1) !== Distribution(histogram2))
   }
 
@@ -41,17 +41,17 @@ class DistributionTest extends FunSuite {
     val context = new Context
     import context._
 
-    assert(Distribution(histogram2).toMap ===
+    assert(Distribution(histogram2).toMap ==
     Map("count" -> 2, "maximum" -> 19, "minimum" -> 10, "average" -> 15, "sum" -> 30,
       "p50" -> 10, "p90" -> 19, "p95" -> 19, "p99" -> 19, "p999" -> 19, "p9999" -> 19))
-    assert(Distribution(histogram0).toMap === Map("count" -> 0))
+    assert(Distribution(histogram0).toMap == Map("count" -> 0))
   }
 
   test("toJson") {
     val context = new Context
     import context._
 
-    assert(Distribution(histogram2).toJson ===
+    assert(Distribution(histogram2).toJson ==
       "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
       "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}")
   }

@@ -57,9 +57,9 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
 
       val json = collector.get("counter:dogs", Nil)
       val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
-      assert(data("counter:dogs")(57) === List(2.minutes.ago.inSeconds, 0))
-      assert(data("counter:dogs")(58) === List(1.minute.ago.inSeconds, 3))
-      assert(data("counter:dogs")(59) === List(Time.now.inSeconds, 60000))
+      assert(data("counter:dogs")(57) == List(2.minutes.ago.inSeconds, 0))
+      assert(data("counter:dogs")(58) == List(1.minute.ago.inSeconds, 3))
+      assert(data("counter:dogs")(59) == List(Time.now.inSeconds, 60000))
     }
   }
 
@@ -73,9 +73,9 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
 
       val json = collector.get("counter:whales.tps", Nil)
       val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
-      assert(data("counter:whales.tps")(57) === List(2.minutes.ago.inSeconds, 0))
-      assert(data("counter:whales.tps")(58) === List(1.minute.ago.inSeconds, 10))
-      assert(data("counter:whales.tps")(59) === List(Time.now.inSeconds, 5))
+      assert(data("counter:whales.tps")(57) == List(2.minutes.ago.inSeconds, 0))
+      assert(data("counter:whales.tps")(58) == List(1.minute.ago.inSeconds, 10))
+      assert(data("counter:whales.tps")(59) == List(Time.now.inSeconds, 5))
     }
   }
 
@@ -90,9 +90,9 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
 
       val json = collector.get("counter:whales.tps", Nil)
       val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
-      assert(data("counter:whales.tps")(57) === List(2.minutes.ago.inSeconds, 0))
-      assert(data("counter:whales.tps")(58) === List(1.minute.ago.inSeconds, 10))
-      assert(data("counter:whales.tps")(59) === List(Time.now.inSeconds, 5))
+      assert(data("counter:whales.tps")(57) == List(2.minutes.ago.inSeconds, 0))
+      assert(data("counter:whales.tps")(58) == List(1.minute.ago.inSeconds, 10))
+      assert(data("counter:whales.tps")(59) == List(Time.now.inSeconds, 5))
     }
   }
 
@@ -114,9 +114,9 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
         keys("keys").contains("counter:dogs")
         keys("keys").contains("counter:cats")
         val data = getJson(port, "/graph_data/counter:dogs").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-        assert(data("counter:dogs")(57) === List(2.minutes.ago.inSeconds, 0))
-        assert(data("counter:dogs")(58) === List(1.minute.ago.inSeconds, 3))
-        assert(data("counter:dogs")(59) === List(Time.now.inSeconds, 1))
+        assert(data("counter:dogs")(57) == List(2.minutes.ago.inSeconds, 0))
+        assert(data("counter:dogs")(58) == List(1.minute.ago.inSeconds, 3))
+        assert(data("counter:dogs")(59) == List(Time.now.inSeconds, 1))
       } finally {
         service.shutdown()
       }
@@ -137,11 +137,11 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       val port = service.address.getPort
       try {
         var data = getJson(port, "/graph_data/metric:run").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-        assert(data("metric:run")(59) === List(Time.now.inSeconds, 5, 10, 15, 19, 19, 19, 19, 19))
+        assert(data("metric:run")(59) == List(Time.now.inSeconds, 5, 10, 15, 19, 19, 19, 19, 19))
         data = getJson(port, "/graph_data/metric:run?p=0,2").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-        assert(data("metric:run")(59) === List(Time.now.inSeconds, 5, 15))
+        assert(data("metric:run")(59) == List(Time.now.inSeconds, 5, 15))
         data = getJson(port, "/graph_data/metric:run?p=1,7").asInstanceOf[Map[String, Seq[Seq[Number]]]]
-        assert(data("metric:run")(59) === List(Time.now.inSeconds, 10, 19))
+        assert(data("metric:run")(59) == List(Time.now.inSeconds, 10, 19))
       } finally {
         service.shutdown()
       }
@@ -155,8 +155,8 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
 
       var json = collector.get("counter:whales.tps", Nil)
       var data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
-      assert(data("counter:whales.tps")(58) === List(1.minute.ago.inSeconds, 0))
-      assert(data("counter:whales.tps")(59) === List(Time.now.inSeconds, 10))
+      assert(data("counter:whales.tps")(58) == List(1.minute.ago.inSeconds, 0))
+      assert(data("counter:whales.tps")(59) == List(Time.now.inSeconds, 10))
 
       time.advance(1.minute)
       Stats.removeCounter("whales.tps")
@@ -168,7 +168,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
         fail("Expected counter to be removed by pruneStats()")
       } catch {
         case e: NoSuchElementException => {
-          assert(e.getMessage === "key not found: counter:whales.tps")
+          assert(e.getMessage == "key not found: counter:whales.tps")
         }
       }
     }
@@ -181,7 +181,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
 
       var json = collector.get("metric:run", Nil)
       var data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
-      assert(data("metric:run")(59) === List(Time.now.inSeconds, 5, 5, 5, 5, 5, 5, 5, 5))
+      assert(data("metric:run")(59) == List(Time.now.inSeconds, 5, 5, 5, 5, 5, 5, 5, 5))
 
       time.advance(1.minute)
       Stats.removeMetric("run")
@@ -193,7 +193,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
         fail("Expected metric to be removed by pruneStats()")
       } catch {
         case e: NoSuchElementException => {
-          assert(e.getMessage === "key not found: metric:run")
+          assert(e.getMessage == "key not found: metric:run")
         }
       }
     }

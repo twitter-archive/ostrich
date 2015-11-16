@@ -23,8 +23,8 @@ class LocalStatsCollectionTest extends FunSuite with BeforeAndAfter {
 
     localStats.addMetric("whateva", 5)
     localStats.addMetric("whateva", 15)
-    assert(Stats.getMetric("whateva")() === Distribution(Histogram(5, 15)))
-    assert(localStats.getMetric("whateva")() === Distribution(Histogram(5, 15)))
+    assert(Stats.getMetric("whateva")() == Distribution(Histogram(5, 15)))
+    assert(localStats.getMetric("whateva")() == Distribution(Histogram(5, 15)))
   }
 
   test("flush") {
@@ -33,16 +33,16 @@ class LocalStatsCollectionTest extends FunSuite with BeforeAndAfter {
 
     localStats.incr("tflock")
     localStats.incr("tflock")
-    assert(localStats.getCounter("tflock")() === 2)
+    assert(localStats.getCounter("tflock")() == 2)
     localStats.addMetric("timing", 900)
-    assert(localStats.getMetric("timing")() === Distribution(Histogram(900)))
+    assert(localStats.getMetric("timing")() == Distribution(Histogram(900)))
 
     localStats.flushInto(Stats)
 
-    assert(Stats.getCounter(jobClassName + ".tflock")() === 2)
-    assert(Stats.getMetric(jobClassName + ".timing")() === Distribution(Histogram(900)))
-    assert(localStats.getCounter("tflock")() === 0)
-    assert(localStats.getMetric("timing")() === Distribution(Histogram()))
+    assert(Stats.getCounter(jobClassName + ".tflock")() == 2)
+    assert(Stats.getMetric(jobClassName + ".timing")() == Distribution(Histogram(900)))
+    assert(localStats.getCounter("tflock")() == 0)
+    assert(localStats.getMetric("timing")() == Distribution(Histogram()))
   }
 
 }

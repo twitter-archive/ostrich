@@ -35,16 +35,16 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(0)
-    assert(histogram.get(true)(0) === 1)
+    assert(histogram.get(true)(0) == 1)
     histogram.add(Int.MaxValue)
-    assert(histogram.get(true).last === 1)
+    assert(histogram.get(true).last == 1)
     histogram.add(1)
-    assert(histogram.get(true)(1) === 1) // offset 2
+    assert(histogram.get(true)(1) == 1) // offset 2
     histogram.add(2)
-    assert(histogram.get(true)(2) === 1) // offset 3
+    assert(histogram.get(true)(2) == 1) // offset 3
     histogram.add(10)
     histogram.add(11)
-    assert(histogram.get(true)(10) === 2) // offset 12
+    assert(histogram.get(true)(10) == 2) // offset 12
   }
 
   test("add value buckets.last") {
@@ -52,7 +52,7 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Histogram.buckets.last.toInt)
-    assert(histogram.get(true).last === 1)
+    assert(histogram.get(true).last == 1)
   }
 
   test("add value buckets.last+1") {
@@ -60,7 +60,7 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Histogram.buckets.last.toInt + 1)
-    assert(histogram.get(true).last === 1)
+    assert(histogram.get(true).last == 1)
   }
 
   test("add value Int.MaxValue") {
@@ -68,7 +68,7 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Int.MaxValue)
-    assert(histogram.get(true).last === 1)
+    assert(histogram.get(true).last == 1)
   }
 
   test("add value Int.MinValue") {
@@ -76,7 +76,7 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Int.MinValue)
-    assert(histogram.get(true).head === 1)
+    assert(histogram.get(true).head == 1)
   }
 
   test("find histogram cutoffs for various percentages") {
@@ -115,12 +115,12 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     }
     val origTotal = histogram.count
     histogram.merge(histogram2)
-    assert(histogram.count === origTotal + histogram2.count)
+    assert(histogram.count == origTotal + histogram2.count)
     val stats = histogram.get(true)
     val stats2 = histogram2.get(true)
     for (i <- 0 until 50) {
       val bucket = Histogram.bucketIndex(i * 10)
-      assert(stats(bucket) === 2 * stats2(bucket))
+      assert(stats(bucket) == 2 * stats2(bucket))
     }
   }
 
@@ -132,9 +132,9 @@ class HistogramTest extends FunSuite with ShouldMatchers {
       histogram.add(i * 10)
     }
     val histClone = histogram.clone()
-    assert(histogram.buckets.toList === histClone.buckets.toList)
-    assert(histClone.buckets.toList === histogram.buckets.toList)
-    assert(histogram.count === histClone.count)
+    assert(histogram.buckets.toList == histClone.buckets.toList)
+    assert(histClone.buckets.toList == histogram.buckets.toList)
+    assert(histogram.count == histClone.count)
   }
 
   test("handle a very large timing") {
@@ -142,20 +142,20 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Int.MaxValue)
-    assert(histogram.getPercentile(0.0) === Int.MaxValue)
-    assert(histogram.getPercentile(0.1) === Int.MaxValue)
-    assert(histogram.getPercentile(0.9) === Int.MaxValue)
-    assert(histogram.getPercentile(1.0) === Int.MaxValue)
+    assert(histogram.getPercentile(0.0) == Int.MaxValue)
+    assert(histogram.getPercentile(0.1) == Int.MaxValue)
+    assert(histogram.getPercentile(0.9) == Int.MaxValue)
+    assert(histogram.getPercentile(1.0) == Int.MaxValue)
   }
 
   test("handle an empty histogram") {
     val context = new Context
     import context._
 
-    assert(histogram.getPercentile(0.0) === 0)
-    assert(histogram.getPercentile(0.1) === 0)
-    assert(histogram.getPercentile(0.9) === 0)
-    assert(histogram.getPercentile(1.0) === 0)
+    assert(histogram.getPercentile(0.0) == 0)
+    assert(histogram.getPercentile(0.1) == 0)
+    assert(histogram.getPercentile(0.9) == 0)
+    assert(histogram.getPercentile(1.0) == 0)
   }
 
   test("track count and sum") {
@@ -166,8 +166,8 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     histogram.add(15)
     histogram.add(20)
     histogram.add(20)
-    assert(histogram.count === 4)
-    assert(histogram.sum === 65)
+    assert(histogram.count == 4)
+    assert(histogram.sum == 65)
   }
 
   test("getPercentile") {
@@ -176,18 +176,18 @@ class HistogramTest extends FunSuite with ShouldMatchers {
 
     histogram.add(95)
     // bucket covers [91, 99], midpoint is 95
-    assert(histogram.getPercentile(0.0) === 95)
-    assert(histogram.getPercentile(0.5) === 95)
-    assert(histogram.getPercentile(1.0) === 95)
+    assert(histogram.getPercentile(0.0) == 95)
+    assert(histogram.getPercentile(0.5) == 95)
+    assert(histogram.getPercentile(1.0) == 95)
   }
 
   test("getPercentile with no values") {
     val context = new Context
     import context._
 
-    assert(histogram.getPercentile(0.0) === 0)
-    assert(histogram.getPercentile(0.5) === 0)
-    assert(histogram.getPercentile(1.0) === 0)
+    assert(histogram.getPercentile(0.0) == 0)
+    assert(histogram.getPercentile(0.5) == 0)
+    assert(histogram.getPercentile(1.0) == 0)
   }
 
   test("getPercentile with infinity") {
@@ -195,7 +195,7 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Int.MaxValue)
-    assert(histogram.getPercentile(0.5) === Int.MaxValue)
+    assert(histogram.getPercentile(0.5) == Int.MaxValue)
   }
 
   test("minimum") {
@@ -203,14 +203,14 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(95)
-    assert(histogram.minimum === 95)
+    assert(histogram.minimum == 95)
   }
 
   test("minimum with no values") {
     val context = new Context
     import context._
 
-    assert(histogram.minimum === 0)
+    assert(histogram.minimum == 0)
   }
 
   test("minimum with infinity") {
@@ -218,7 +218,7 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Int.MaxValue)
-    assert(histogram.minimum === Int.MaxValue)
+    assert(histogram.minimum == Int.MaxValue)
   }
 
   test("maximum") {
@@ -226,14 +226,14 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(95)
-    assert(histogram.maximum === 95)
+    assert(histogram.maximum == 95)
   }
 
   test("maximum with no values") {
     val context = new Context
     import context._
 
-    assert(histogram.maximum === 0)
+    assert(histogram.maximum == 0)
   }
 
   test("maximum with infinity") {
@@ -241,18 +241,18 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     import context._
 
     histogram.add(Int.MaxValue)
-    assert(histogram.maximum === Int.MaxValue)
+    assert(histogram.maximum == Int.MaxValue)
   }
 
   test("equals") {
     val context = new Context
     import context._
 
-    assert(histogram === histogram2)
+    assert(histogram == histogram2)
     histogram.add(10)
     assert(histogram !== histogram2)
     histogram2.add(10)
-    assert(histogram === histogram2)
+    assert(histogram == histogram2)
     histogram.add(5)
     histogram.add(10)
     histogram2.add(15)
@@ -288,8 +288,8 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     histogram2.add(10)
 
     val h = (histogram - histogram2)
-    assert(h.count === 0L)
-    assert(h.getPercentile(0.9999) === 0)
+    assert(h.count == 0L)
+    assert(h.getPercentile(0.9999) == 0)
   }
 
   test("Substracting two histograms must work") {
@@ -302,8 +302,8 @@ class HistogramTest extends FunSuite with ShouldMatchers {
     val histogram3 = new Histogram
       (n+1 to 2*n) foreach { i => histogram3.add(i) }
 
-    assert((histogram - histogram2) === histogram3)
-    assert((histogram2 - histogram) === (new Histogram))
+    assert((histogram - histogram2) == histogram3)
+    assert((histogram2 - histogram) == (new Histogram))
   }
 
 }
