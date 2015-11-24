@@ -1,5 +1,3 @@
-maven_layout()
-
 target(name='ostrich',
   dependencies=[
     'ostrich/src/main/scala'
