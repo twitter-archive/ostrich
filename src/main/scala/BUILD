@@ -15,4 +15,8 @@ scala_library(name='scala',
     name = 'ostrich',
     repo = artifactory,
   ),
+  tags = {
+    # Prefer TwitterServer and finagle-stats.
+    'deprecated',
+  },
 )
