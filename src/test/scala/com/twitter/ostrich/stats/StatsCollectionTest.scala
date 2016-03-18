@@ -19,7 +19,7 @@ package com.twitter.ostrich.stats
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
-import com.twitter.util.{Time, Future}
+import com.twitter.util.{Await, Time, Future}
 import org.junit.runner.RunWith
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.junit.JUnitRunner
@@ -133,7 +133,7 @@ class StatsCollectionTest extends FunSuite with BeforeAndAfter {
         info("time future")
         val future = Future({ Thread.sleep(10); 100 })
 
-        assert(collection.timeFutureMillis("latency")(future)() == 100)
+        assert(Await.result(collection.timeFutureMillis("latency")(future)) == 100)
 
         val timings = collection.getMetrics()
         assert(timings("latency_msec").count == 1)
