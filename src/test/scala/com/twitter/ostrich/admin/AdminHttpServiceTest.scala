@@ -56,17 +56,18 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
   val registry = new SimpleRegistry
 
   before {
-    service =
-      new AdminHttpService(
-        0,
-        20,
-        Stats,
-        new ServerInfoHandler(getClass),
-        30.seconds,
-        { code => /* system-exit is a noop here */ },
-        registry
-      )
-    service.start()
+    GlobalRegistry.withRegistry(registry) {
+      service =
+        new AdminHttpService(
+          0,
+          20,
+          Stats,
+          new ServerInfoHandler(getClass),
+          30.seconds, { code => /* system-exit is a noop here */},
+          registry
+        )
+      service.start()
+    }
   }
 
   after {
@@ -443,7 +444,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
     registry.put(Seq("foo", "qux"), "quux")
 
     val actual = get("/admin/registry")
-    val expected = """{"registry":{"foo":{"bar":"baz","qux":"quux"}}}"""
+    val expected = """{"registry":{"foo":{"bar":"baz","qux":"quux"},"library":{"ostrich":"__registered"}}}"""
     assert(actual == expected)
   }
 }

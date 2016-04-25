@@ -23,7 +23,7 @@ import com.twitter.json.Json
 import com.twitter.ostrich.stats.{StatsCollection, Stats}
 import com.twitter.logging.Logger
 import com.twitter.util.{Duration, NonFatal, Return, Throw}
-import com.twitter.util.registry.{GlobalRegistry, Formatter, Registry}
+import com.twitter.util.registry.{Library, GlobalRegistry, Formatter, Registry}
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI}
 import java.util.concurrent.Executors
@@ -507,6 +507,7 @@ class AdminHttpService private[ostrich](
     ServiceTracker.register(this)
     httpServer.start()
     log.info("Admin HTTP interface started on port %d.", address.getPort)
+    Library.register("ostrich", Map.empty)
   }
 
   override def shutdown(): Unit = {
