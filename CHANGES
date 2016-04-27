@@ -1,3 +1,7 @@
+9.18.0
+-----
+release: 26 April 2016
+
 - Register Ostrich as a Library in the /admin/registry.json. ``RB_ID=825129``
 
 9.17.0
