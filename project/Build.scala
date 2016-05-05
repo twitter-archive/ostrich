@@ -14,10 +14,9 @@ object Ostrich extends Build {
     name := "ostrich",
     version := libVersion,
     organization := "com.twitter",
-    scalaVersion := "2.11.7",
-    crossScalaVersions := Seq("2.10.6", "2.11.7"),
-    javacOptions ++= Seq("-source", "1.7", "-target", "1.7"),
-    javacOptions in doc := Seq("-source", "1.7"),
+    scalaVersion := "2.11.8",
+    javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+    javacOptions in doc := Seq("-source", "1.8"),
     parallelExecution in Test := false,
     resolvers += "twitter repo" at "https://maven.twttr.com",
     libraryDependencies ++= Seq(
@@ -34,12 +33,7 @@ object Ostrich extends Build {
       "org.scalatest" %% "scalatest" % "2.2.4" % "test"
     ),
 
-    ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := (
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, 10)) => false
-        case _ => true
-      }
-    ),
+    ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := true,
 
     publishMavenStyle := true,
     publishTo <<= version { (v: String) =>
