@@ -23,8 +23,6 @@ import com.twitter.jvm.ContentionSnapshot
 import com.twitter.logging.Logger
 import com.twitter.util.Duration
 import java.io._
-import java.lang.management.ManagementFactory
-import java.util.Date
 import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 import scala.collection.Map

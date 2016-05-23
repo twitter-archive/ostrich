@@ -17,8 +17,7 @@
 package com.twitter.ostrich
 package stats
 
-import java.net.InetAddress
-import java.util.{Date, TimeZone}
+import java.util.TimeZone
 import java.util.zip.CRC32
 import scala.collection.Map
 import scala.collection.mutable

@@ -1,6 +1,5 @@
 package com.twitter.ostrich.admin
 
-import com.twitter.util.Future
 import java.lang.management.ManagementFactory
 import java.util.{Date, Properties}
 

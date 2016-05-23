@@ -18,9 +18,8 @@ package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
 import com.twitter.json.JsonSerializable
-import com.twitter.util.{Local, NonFatal, Try}
+import com.twitter.util.{Local, NonFatal}
 import java.lang.management._
-import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable

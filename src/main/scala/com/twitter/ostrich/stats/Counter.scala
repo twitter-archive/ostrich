@@ -17,7 +17,6 @@
 package com.twitter.ostrich.stats
 
 import java.util.concurrent.atomic.AtomicLong
-import scala.collection.mutable
 
 /**
  * A Counter simply keeps track of how many times an event occurred.

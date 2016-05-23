@@ -18,11 +18,8 @@ package com.twitter.ostrich
 package admin
 
 import java.io.File
-import java.util.Properties
-import scala.collection.mutable
-import com.twitter.conversions.string._
 import com.twitter.logging.Logger
-import com.twitter.util.{Config, Eval, NonFatal}
+import com.twitter.util.{Config, Eval}
 
 @deprecated("Runtime evaluation of scala code will not be supported going forward. " +
   "Please switch to flags for configuration.", "9.5.6")

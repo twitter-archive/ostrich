@@ -18,10 +18,8 @@ package com.twitter.ostrich
 package stats
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.{JavaConversions, Map, mutable, immutable}
+import scala.collection.{Map, mutable}
 import scala.util.matching.Regex
-import com.twitter.conversions.time._
-import com.twitter.json.{Json, JsonSerializable}
 import com.twitter.util.Duration
 import admin.{ServiceTracker, PeriodicBackgroundProcess}
 

@@ -17,8 +17,6 @@
 package com.twitter.ostrich.stats
 
 import scala.collection.Map
-import scala.collection.immutable
-import scala.util.Sorting
 import com.twitter.json.{Json, JsonSerializable}
 
 /**

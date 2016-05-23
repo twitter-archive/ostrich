@@ -17,7 +17,6 @@
 package com.twitter.ostrich
 package stats
 
-import scala.collection.mutable
 import com.twitter.logging.Logger
 
 /**

@@ -17,7 +17,6 @@
 package com.twitter.ostrich.admin
 
 import scala.collection.mutable
-import com.sun.net.httpserver.{HttpHandler, HttpExchange}
 
 /**
  * Single server object that can track multiple Service implementations and multiplex the

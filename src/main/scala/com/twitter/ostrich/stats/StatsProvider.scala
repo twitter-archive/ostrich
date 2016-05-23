@@ -17,7 +17,7 @@
 package com.twitter.ostrich.stats
 
 import scala.util.matching.Regex
-import scala.collection.{Map, mutable, immutable}
+import scala.collection.Map
 import com.twitter.json.Json
 import com.twitter.util.{Future, Stopwatch}
 import com.twitter.logging.Logger
