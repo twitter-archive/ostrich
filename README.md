@@ -340,7 +340,7 @@ generated in javascript using flot.
 
 ## Profiling
 
-If you're using [heapster](https://github.com/mariusaeriksen/heapster), you can generate a profile
+If you're using [heapster](https://github.com/mariusae/heapster), you can generate a profile
 suitable for reading with [google perftools](https://code.google.com/p/google-perftools/)
 
 Example use:
