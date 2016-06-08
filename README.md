@@ -1,7 +1,7 @@
 # Ostrich
 
 [![Build status](https://travis-ci.org/twitter/ostrich.svg?branch=develop)](https://travis-ci.org/twitter/ostrich)
-[![Coverage status](https://img.shields.io/coveralls/twitter/ostrich/develop.svg)](https://coveralls.io/r/twitter/ostrich?branch=develop)
+[![Codecov branch](https://img.shields.io/codecov/c/github/twitter/ostrich/develop.svg)](http://codecov.io/github/twitter/ostrich?branch=develop)
 [![Project status](https://img.shields.io/badge/status-deprecated-orange.svg)](#status)
 
 Ostrich is a library for scala servers that makes it easy to:
