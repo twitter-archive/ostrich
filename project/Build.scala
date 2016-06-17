@@ -15,6 +15,7 @@ object Ostrich extends Build {
     version := libVersion,
     organization := "com.twitter",
     scalaVersion := "2.11.8",
+    crossScalaVersions := Seq("2.11.8", "2.12.0-M4"),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     javacOptions in doc := Seq("-source", "1.8"),
     parallelExecution in Test := false,
@@ -42,6 +43,17 @@ object Ostrich extends Build {
         Some("sonatype-snapshots" at nexus + "content/repositories/snapshots")
       else
         Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+
+    libraryDependencies := {
+      libraryDependencies.value.map {
+        case moduleId: ModuleID
+          if moduleId.organization == "org.scoverage"
+            && scalaVersion.value.startsWith("2.12") =>
+          moduleId.copy(name = moduleId.name.replace(scalaVersion.value, "2.11"))
+        case moduleId =>
+          moduleId
+      }
     },
 
     publishArtifact in Test := false,
