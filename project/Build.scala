@@ -44,7 +44,9 @@ object Ostrich extends Build {
       else
         Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
     },
-
+    
+    // scoverage automatically brings in libraries on our behalf, but it hasn't
+    // been updated for 2.12 yet
     libraryDependencies := {
       libraryDependencies.value.map {
         case moduleId: ModuleID
