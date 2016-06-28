@@ -16,15 +16,17 @@
 
 package com.twitter.ostrich.stats
 
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.databind.{JsonSerializer, SerializerProvider}
 import scala.collection.Map
-import com.twitter.json.{Json, JsonSerializable}
 
 /**
  * A set of data points summarized into a histogram, mean, min, and max.
  * Distributions are immutable.
  */
-case class Distribution(histogram: Histogram)
-extends JsonSerializable {
+@JsonSerialize(using=classOf[DistributionJsonSerializer])
+case class Distribution(histogram: Histogram) {
   def this() = this(Histogram())
 
   def count = histogram.count
@@ -35,8 +37,6 @@ extends JsonSerializable {
     val count = histogram.count
     if (count > 0) histogram.sum / count else 0.0
   }
-
-  def toJson() = Json.build(toMap).toString
 
   override def equals(other: Any) = other match {
     case t: Distribution => t.histogram == histogram
@@ -84,5 +84,20 @@ extends JsonSerializable {
       } else {
         Map.empty[String, Long]
       })
+  }
+}
+
+private[stats] class DistributionJsonSerializer
+  extends JsonSerializer[Distribution] {
+  override def serialize(
+    distribution: Distribution,
+    jsonGenerator: JsonGenerator,
+    serializerProvider: SerializerProvider
+  ): Unit = {
+    jsonGenerator.writeStartObject()
+    // sorting might not be necessary
+    // https://github.com/twitter/ostrich/issues/78
+    distribution.toMap.toList.sorted.foreach(Function.tupled(jsonGenerator.writeObjectField))
+    jsonGenerator.writeEndObject()
   }
 }

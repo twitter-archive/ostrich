@@ -17,7 +17,6 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
-import com.twitter.json.JsonSerializable
 import com.twitter.util.{Local, NonFatal}
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
@@ -27,7 +26,7 @@ import scala.collection.mutable
 /**
  * Concrete StatsProvider that tracks counters and timings.
  */
-class StatsCollection extends StatsProvider with JsonSerializable {
+class StatsCollection extends StatsProvider {
   import scala.collection.JavaConverters._
 
   protected val counterMap = new ConcurrentHashMap[String, Counter]()
@@ -254,7 +253,7 @@ class StatsCollection extends StatsProvider with JsonSerializable {
     listeners.clear()
   }
 
-  def toJson = get().toJson
+  def toJson() = get().toJson()
 }
 
 /**

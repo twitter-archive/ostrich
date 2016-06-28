@@ -17,17 +17,17 @@
 package com.twitter.ostrich
 package admin
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.jvm.ContentionSnapshot
 import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.{StatsCollection, StatsListener}
 import com.twitter.util.Duration
 import java.io._
 import java.util.regex.Pattern
 import scala.collection.JavaConverters._
-import scala.collection.Map
-import scala.collection.immutable
-import stats.{StatsListener, StatsCollection}
+import scala.collection.{Map, immutable}
 
 class UnknownCommandError(command: String) extends IOException("Unknown command: " + command)
 class InvalidCommandOptionError(
@@ -80,6 +80,8 @@ class CommandHandler(
 
   def flatten(obj: Any): String = build(obj).mkString("\n") + "\n"
 
+  private[this] val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+
   def apply(command: String, parameters: Map[String, String], format: Format): String = {
     val rv = handleCommand(command, parameters)
     format match {
@@ -87,10 +89,10 @@ class CommandHandler(
         flatten(rv)
       case Format.Json =>
         // force it into a map because some json clients expect the top-level object to be a map.
-        Json.build(rv match {
+        objectMapper.writeValueAsString(rv match {
           case x: Map[_, _] => x
           case _ => immutable.Map("response" -> rv)
-        }).toString + "\n"
+        }) + "\n"
     }
   }
 

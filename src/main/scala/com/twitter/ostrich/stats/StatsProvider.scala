@@ -16,11 +16,13 @@
 
 package com.twitter.ostrich.stats
 
-import scala.util.matching.Regex
-import scala.collection.Map
-import com.twitter.json.Json
-import com.twitter.util.{Future, Stopwatch}
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.databind.{JsonSerializer, ObjectMapper, SerializerProvider}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.logging.Logger
+import com.twitter.util.{Future, Stopwatch}
+import scala.collection.Map
+import scala.util.matching.Regex
 
 /**
  * Immutable summary of counters, metrics, gauges, and labels.
@@ -46,13 +48,6 @@ case class StatsSummary(
     )
   }
 
-  /**
-   * Dump a json-encoded map of the stats in this collection.
-   */
-  def toJson = {
-    Json.build(toMap).toString
-  }
-
   def filterOut(regex: Regex) = {
     StatsSummary(
       counters.filterKeys { !regex.pattern.matcher(_).matches },
@@ -61,6 +56,14 @@ case class StatsSummary(
       labels.filterKeys { !regex.pattern.matcher(_).matches }
     )
   }
+
+  def toJson(): String = {
+    StatsSummary.objectMapper.writeValueAsString(this)
+  }
+}
+
+object StatsSummary {
+  private[StatsSummary] val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
 }
 
 /**
@@ -194,7 +197,7 @@ trait StatsProvider {
    */
   def time[T](name: String)(f: => T): T = {
     val duration = Stopwatch.start()
-    val rv: T = f 
+    val rv: T = f
     addMetric(name + "_msec", duration().inMilliseconds.toInt)
     rv
   }

@@ -16,18 +16,19 @@
 
 package com.twitter.ostrich.admin
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
 import com.twitter.ostrich.stats.{Stats, StatsListener}
-import com.twitter.util.registry.{SimpleRegistry, GlobalRegistry}
+import com.twitter.util.registry.{GlobalRegistry, SimpleRegistry}
 import java.net.{Socket, SocketException, URI, URL}
 import java.util.regex.Pattern
 import org.junit.runner.RunWith
-import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.concurrent.{Eventually, IntegrationPatience}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.{BeforeAndAfter, FunSuite}
 import scala.collection.JavaConverters._
 import scala.io.Source
 
@@ -43,6 +44,11 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
     val port = service.address.getPort
     val url = new URL(f"http://localhost:$port%d$path%s")
     Source.fromURL(url).getLines().mkString("\n")
+  }
+
+  private[this] def parseJsonAsMap(json: String): Map[String, Map[String, AnyRef]] = {
+    val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+    objectMapper.readValue(json, classOf[Map[String, Map[String, AnyRef]]])
   }
 
   def getHeaders(path: String): Map[String, List[String]] = {
@@ -250,7 +256,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       Stats.clearAll()
       Stats.time("kangaroo_time") { Stats.incr("kangaroos", 1) }
 
-      val stats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      val stats = parseJsonAsMap(get("/stats.json"))
       assert(stats("gauges").get("jvm_uptime").isDefined)
       assert(stats("gauges").get("jvm_heap_used").isDefined)
       assert(stats("counters").get("kangaroos").isDefined)
@@ -268,33 +274,28 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       Stats.incr("apples", 10)
       Stats.addMetric("oranges", 5)
 
-      var absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      var absStats = parseJsonAsMap(get("/stats.json"))
       assert(absStats("counters")("apples") == 10)
       assert(absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
-      var namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
-        .asInstanceOf[Map[String, Map[String, AnyRef]]]
+      var namespaceStats = parseJsonAsMap(get("/stats.json?namespace=monkey"))
       assert(namespaceStats("counters")("apples") == 10)
       assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
-      var periodicStats = Json.parse(get("/stats.json?period=30"))
-        .asInstanceOf[Map[String, Map[String, AnyRef]]]
+      var periodicStats = parseJsonAsMap(get("/stats.json?period=30"))
       assert(periodicStats("counters")("apples") == 10)
       assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
 
       Stats.incr("apples", 6)
       Stats.addMetric("oranges", 3)
-      absStats = Json.parse(get("/stats.json")).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      absStats = parseJsonAsMap(get("/stats.json"))
       assert(absStats("counters")("apples") == 16)
       assert(absStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 2)
-      namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
-        .asInstanceOf[Map[String, Map[String, AnyRef]]]
+      namespaceStats = parseJsonAsMap(get("/stats.json?namespace=monkey"))
       assert(namespaceStats("counters")("apples") == 6)
       assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
-      namespaceStats = Json.parse(get("/stats.json?namespace=monkey"))
-        .asInstanceOf[Map[String, Map[String, AnyRef]]]
+      namespaceStats = parseJsonAsMap(get("/stats.json?namespace=monkey"))
       assert(namespaceStats("counters")("apples") == 0)
       assert(namespaceStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 0)
-      periodicStats = Json.parse(get("/stats.json?period=30"))
-        .asInstanceOf[Map[String, Map[String, AnyRef]]]
+      periodicStats = parseJsonAsMap(get("/stats.json?period=30"))
       if (periodicStats("counters")("apples") == 6) {
         // PeriodicBackgroundProcess aligns the first event to the multiple
         // of the period + 1 so the first event can happen as soon as in two
@@ -302,8 +303,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
         // check the stats, we retry the test.
         Stats.incr("apples", 8)
         Stats.addMetric("oranges", 4)
-        periodicStats = Json.parse(get("/stats.json?period=30"))
-          .asInstanceOf[Map[String, Map[String, AnyRef]]]
+        periodicStats = parseJsonAsMap(get("/stats.json?period=30"))
         assert(periodicStats("counters")("apples") == 6)
         assert(periodicStats("metrics")("oranges").asInstanceOf[Map[String, AnyRef]]("count") == 1)
       } else {
@@ -324,8 +324,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       Stats.addMetric("kangaroo_time", 5)
       Stats.addMetric("kangaroo_time", 6)
 
-      val stats = get("/stats.json")
-      val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      val json = parseJsonAsMap(get("/stats.json"))
       val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 
       assert(timings.get("count").isDefined)
@@ -359,8 +358,7 @@ class AdminHttpServiceTest extends FunSuite with BeforeAndAfter
       Stats.addMetric("kangaroo_time", 6)
 
 
-      val stats = get("/stats.json?reset")
-      val json = Json.parse(stats).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      val json = parseJsonAsMap(get("/stats.json?reset"))
       val timings = json("metrics")("kangaroo_time").asInstanceOf[Map[String, Int]]
 
       assert(timings.get("count").isDefined)

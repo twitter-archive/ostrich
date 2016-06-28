@@ -16,6 +16,8 @@
 
 package com.twitter.ostrich.stats
 
+import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FunSuite
@@ -47,13 +49,18 @@ class DistributionTest extends FunSuite {
     assert(Distribution(histogram0).toMap == Map("count" -> 0))
   }
 
-  test("toJson") {
+  test("json serialization") {
     val context = new Context
     import context._
 
-    assert(Distribution(histogram2).toJson ==
+    val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+
+    val json = mapper.writeValueAsString(Distribution(histogram2))
+
+    assert(json ==
       "{\"average\":15,\"count\":2,\"maximum\":19,\"minimum\":10,\"p50\":10," +
       "\"p90\":19,\"p95\":19,\"p99\":19,\"p999\":19,\"p9999\":19,\"sum\":30}")
+
   }
 
 }

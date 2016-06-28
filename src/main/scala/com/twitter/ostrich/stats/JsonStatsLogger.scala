@@ -17,11 +17,12 @@
 package com.twitter.ostrich
 package stats
 
-import java.net.InetAddress
-import com.twitter.json.Json
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.logging.Logger
+import com.twitter.ostrich.admin.PeriodicBackgroundProcess
 import com.twitter.util.{Duration, Time}
-import admin.PeriodicBackgroundProcess
+import java.net.InetAddress
 
 /**
  * Log all collected stats as a json line to a java logger at a regular interval.
@@ -33,6 +34,8 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
 
   val listener = new StatsListener(collection)
   val hostname = InetAddress.getLocalHost().getCanonicalHostName()
+
+  private[this] val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   def periodic() {
     val stats = listener.get()
@@ -53,7 +56,7 @@ extends PeriodicBackgroundProcess("JsonStatsLogger", period) {
       )
     val cleanedKeysStatMap = statMap.map { case (key, value) => (key.replaceAll(":", "_"), value) }
 
-    logger.info(Json.build(Map(cleanedKeysStatMap.toSeq: _*)).toString)
+    logger.info(objectMapper.writeValueAsString(Map(cleanedKeysStatMap.toSeq: _*)))
   }
 
   // Try and flush the stats when we're shutting down.

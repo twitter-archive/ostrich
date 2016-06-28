@@ -16,18 +16,19 @@
 
 package com.twitter.ostrich.admin
 
+import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.sun.net.httpserver.{HttpExchange, HttpHandler, HttpServer}
 import com.twitter.concurrent.NamedPoolThreadFactory
 import com.twitter.conversions.time._
-import com.twitter.json.Json
-import com.twitter.ostrich.stats.{StatsCollection, Stats}
 import com.twitter.logging.Logger
+import com.twitter.ostrich.stats.{Stats, StatsCollection}
+import com.twitter.util.registry.{Formatter, GlobalRegistry, Library, Registry}
 import com.twitter.util.{Duration, NonFatal, Return, Throw}
-import com.twitter.util.registry.{Library, GlobalRegistry, Formatter, Registry}
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI}
-import java.util.concurrent.Executors
 import java.util.Properties
+import java.util.concurrent.Executors
 import scala.io.Source
 
 /**
@@ -334,9 +335,15 @@ class TracingHandler extends CgiRequestHandler {
  * Displays registry data for the service.
  */
 class RegistryHandler(registry: Registry) extends CgiRequestHandler {
+  private[this] val mapper = new ObjectMapper()
+    .registerModule(DefaultScalaModule)
+    // sorting might not be necessary
+    // https://github.com/twitter/ostrich/issues/78
+    .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+
   def handle(exchange: HttpExchange, path: List[String], params: List[(String, String)]) {
     val obj = Formatter.asMap(registry)
-    val json = Json.build(obj).toString + "\n"
+    val json = mapper.writeValueAsString(obj) + "\n"
     render(json, exchange, 200, "application/json")
   }
 }

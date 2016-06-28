@@ -9,6 +9,7 @@ object Ostrich extends Build {
 
   val libVersion = "9.18.0" + suffix
   val utilVersion = "6.34.0" + suffix
+  val jacksonVersion = "2.6.5"
 
   val sharedSettings = Seq(
     name := "ostrich",
@@ -23,14 +24,16 @@ object Ostrich extends Build {
       "com.twitter" %% "util-core" % utilVersion,
       "com.twitter" %% "util-eval" % utilVersion,
       "com.twitter" %% "util-logging" % utilVersion,
-      "com.twitter" %% "util-jvm" % utilVersion,
-      "com.twitter" %% "scala-json" % "3.0.2"
+      "com.twitter" %% "util-jvm" % utilVersion
     ),
 
     libraryDependencies ++= Seq(
       "junit" % "junit" % "4.10" % "test",
       "org.mockito" % "mockito-all" % "1.9.5" % "test",
-      "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
+      "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
     ),
 
     ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := true,

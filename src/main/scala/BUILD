@@ -1,6 +1,8 @@
 scala_library(name='scala',
   dependencies=[
-    'scala-json',
+    '3rdparty/jvm/com/fasterxml/jackson/core:jackson-annotations',
+    '3rdparty/jvm/com/fasterxml/jackson/core:jackson-databind',
+    '3rdparty/jvm/com/fasterxml/jackson/module:jackson-module-scala',
     'util/util-core',
     'util/util-eval',
     'util/util-logging',

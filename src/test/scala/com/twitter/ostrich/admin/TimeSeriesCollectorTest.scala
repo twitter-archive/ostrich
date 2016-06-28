@@ -16,15 +16,15 @@
 
 package com.twitter.ostrich.admin
 
-import com.twitter.conversions.string._
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.ostrich.stats.Stats
 import com.twitter.util.Time
 import java.net.URL
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FunSuite, BeforeAndAfter}
+import org.scalatest.{BeforeAndAfter, FunSuite}
 import scala.io.Source
 
 @RunWith(classOf[JUnitRunner])
@@ -41,9 +41,16 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
     collector.shutdown()
   }
 
-  def getJson(port: Int, path: String) = {
+  def getJson[T](port: Int, path: String, valueType: Class[T]): T = {
     val url = new URL("http://localhost:%d%s".format(port, path))
-    Json.parse(Source.fromURL(url).getLines.mkString("\n"))
+    val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+    objectMapper.readValue(Source.fromURL(url).getLines.mkString("\n"), valueType)
+  }
+
+  def getCounterData(name: String): Map[String, Seq[Seq[Number]]] = {
+    val json = collector.get(name, Nil)
+    val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+    objectMapper.readValue(json, classOf[Map[String, Seq[Seq[Number]]]])
   }
 
   test("Stats.incr") {
@@ -55,8 +62,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       Stats.incr("dogs", 60000)
       collector.collector.periodic()
 
-      val json = collector.get("counter:dogs", Nil)
-      val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      val data = getCounterData("counter:dogs")
       assert(data("counter:dogs")(57) == List(2.minutes.ago.inSeconds, 0))
       assert(data("counter:dogs")(58) == List(1.minute.ago.inSeconds, 3))
       assert(data("counter:dogs")(59) == List(Time.now.inSeconds, 60000))
@@ -71,8 +77,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       Stats.getCounter("whales.tps").incr(5)
       collector.collector.periodic()
 
-      val json = collector.get("counter:whales.tps", Nil)
-      val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      val data = getCounterData("counter:whales.tps")
       assert(data("counter:whales.tps")(57) == List(2.minutes.ago.inSeconds, 0))
       assert(data("counter:whales.tps")(58) == List(1.minute.ago.inSeconds, 10))
       assert(data("counter:whales.tps")(59) == List(Time.now.inSeconds, 5))
@@ -88,8 +93,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       whales.incr(5)
       collector.collector.periodic()
 
-      val json = collector.get("counter:whales.tps", Nil)
-      val data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      val data = getCounterData("counter:whales.tps")
       assert(data("counter:whales.tps")(57) == List(2.minutes.ago.inSeconds, 0))
       assert(data("counter:whales.tps")(58) == List(1.minute.ago.inSeconds, 10))
       assert(data("counter:whales.tps")(59) == List(Time.now.inSeconds, 5))
@@ -110,10 +114,10 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       service.start()
       val port = service.address.getPort
       try {
-        val keys = getJson(port, "/graph_data").asInstanceOf[Map[String, Seq[String]]]
+        val keys = getJson(port, "/graph_data", classOf[Map[String, Seq[String]]])
         keys("keys").contains("counter:dogs")
         keys("keys").contains("counter:cats")
-        val data = getJson(port, "/graph_data/counter:dogs").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        val data = getJson(port, "/graph_data/counter:dogs", classOf[Map[String, Seq[Seq[Number]]]])
         assert(data("counter:dogs")(57) == List(2.minutes.ago.inSeconds, 0))
         assert(data("counter:dogs")(58) == List(1.minute.ago.inSeconds, 3))
         assert(data("counter:dogs")(59) == List(Time.now.inSeconds, 1))
@@ -136,11 +140,11 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       service.start()
       val port = service.address.getPort
       try {
-        var data = getJson(port, "/graph_data/metric:run").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        var data = getJson(port, "/graph_data/metric:run", classOf[Map[String, Seq[Seq[Number]]]])
         assert(data("metric:run")(59) == List(Time.now.inSeconds, 5, 10, 15, 19, 19, 19, 19, 19))
-        data = getJson(port, "/graph_data/metric:run?p=0,2").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        data = getJson(port, "/graph_data/metric:run?p=0,2", classOf[Map[String, Seq[Seq[Number]]]])
         assert(data("metric:run")(59) == List(Time.now.inSeconds, 5, 15))
-        data = getJson(port, "/graph_data/metric:run?p=1,7").asInstanceOf[Map[String, Seq[Seq[Number]]]]
+        data = getJson(port, "/graph_data/metric:run?p=1,7", classOf[Map[String, Seq[Seq[Number]]]])
         assert(data("metric:run")(59) == List(Time.now.inSeconds, 10, 19))
       } finally {
         service.shutdown()
@@ -153,8 +157,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       Stats.getCounter("whales.tps").incr(10)
       collector.collector.periodic()
 
-      var json = collector.get("counter:whales.tps", Nil)
-      var data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      val data = getCounterData("counter:whales.tps")
       assert(data("counter:whales.tps")(58) == List(1.minute.ago.inSeconds, 0))
       assert(data("counter:whales.tps")(59) == List(Time.now.inSeconds, 10))
 
@@ -179,8 +182,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
       Stats.addMetric("run", 5)
       collector.collector.periodic()
 
-      var json = collector.get("metric:run", Nil)
-      var data = Json.parse(json).asInstanceOf[Map[String, Seq[Seq[Number]]]]
+      val data = getCounterData("metric:run")
       assert(data("metric:run")(59) == List(Time.now.inSeconds, 5, 5, 5, 5, 5, 5, 5, 5))
 
       time.advance(1.minute)

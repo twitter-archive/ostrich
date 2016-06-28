@@ -16,16 +16,11 @@
 
 package com.twitter.ostrich.admin
 
-import com.twitter.json.Json
-import com.twitter.logging.{Level, Logger}
-import com.twitter.ostrich.stats.Stats
-import java.net.{Socket, SocketException, URL}
 import org.junit.runner.RunWith
-import org.mockito.Mockito.{verify, times}
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.mockito.Mockito.{times, verify}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.mock.MockitoSugar
-import scala.io.Source
+import org.scalatest.{BeforeAndAfter, FunSuite}
 
 @RunWith(classOf[JUnitRunner])
 class ServiceTrackerTest extends FunSuite with BeforeAndAfter with MockitoSugar {

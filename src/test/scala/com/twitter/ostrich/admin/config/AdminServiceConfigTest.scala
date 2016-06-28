@@ -16,23 +16,18 @@
 
 package com.twitter.ostrich.admin.config
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.twitter.conversions.time._
-import com.twitter.json.Json
 import com.twitter.logging.{Level, Logger}
-import com.twitter.ostrich.admin.{
-  AdminHttpService,
-  RuntimeEnvironment,
-  ServerInfoHandler,
-  ServiceTracker,
-  TimeSeriesCollector
-}
+import com.twitter.ostrich.admin.{RuntimeEnvironment, ServerInfoHandler, ServiceTracker, TimeSeriesCollector}
 import com.twitter.ostrich.stats.{JsonStatsLogger, Stats, StatsListener, W3CStatsLogger}
-import java.net.{Socket, SocketException, URL}
+import java.net.URL
 import org.junit.runner.RunWith
-import org.mockito.Mockito.{verify, times, when}
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.mock.MockitoSugar
+import org.scalatest.{BeforeAndAfter, FunSuite}
 import scala.io.Source
 
 @RunWith(classOf[JUnitRunner])
@@ -119,7 +114,8 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
       val path = "/stats.json?period=60&filtered=1"
       val url = new URL("http://localhost:%s%s".format(port, path))
       val data = Source.fromURL(url).getLines().mkString("\n")
-      val json = Json.parse(data).asInstanceOf[Map[String, Map[String, AnyRef]]]
+      val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+      val json = mapper.readValue(data, classOf[Map[String, Map[String, AnyRef]]])
       assert(json("counters") == Map.empty[String, Map[String, AnyRef]])
     } finally {
       service.shutdown()
