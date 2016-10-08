@@ -19,7 +19,6 @@ object Ostrich extends Build {
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     javacOptions in doc := Seq("-source", "1.8"),
     parallelExecution in Test := false,
-    resolvers += "twitter repo" at "https://maven.twttr.com",
     libraryDependencies ++= Seq(
       "com.twitter" %% "util-core" % utilVersion,
       "com.twitter" %% "util-eval" % utilVersion,
