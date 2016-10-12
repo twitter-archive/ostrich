@@ -8,6 +8,7 @@ import org.junit.runner.RunWith
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.junit.JUnitRunner
 import java.util.{logging => javalog}
+import scala.util.Random
 
 @RunWith(classOf[JUnitRunner])
 class ServerConfigSpec extends FunSuite with BeforeAndAfter {
@@ -15,6 +16,11 @@ class ServerConfigSpec extends FunSuite with BeforeAndAfter {
 
   private val logger = Logger.get("")
   private var oldLevel: javalog.Level = _
+
+  // we need to ensure the name is unique to avoid clobbering the same test run again on the same JVM
+  val uniq = (new Random()).nextString(10)
+  val fromFactoryName = "fromFactory" + uniq
+  val fromConfigName = "fromConfig" + uniq
 
   before {
     oldLevel = logger.getLevel()
@@ -37,18 +43,18 @@ class ServerConfigSpec extends FunSuite with BeforeAndAfter {
   }
 
   val sampleFactory = List(LoggerFactory(
-    node = "fromFactory",
+    node = fromFactoryName,
     level = Some(Level.INFO),
     handlers = List(ScribeHandler(
-      category = "fromFactory"
+      category = fromFactoryName
     ))
   ))
 
   val sampleConfig = List(new LoggerConfig {
-    node = "fromConfig"
+    node = fromConfigName
     level = Some(Level.INFO)
     handlers = new FileHandlerConfig {
-      filename = "fromConfig"
+      filename = fromConfigName
     }
   })
 
@@ -59,8 +65,8 @@ class ServerConfigSpec extends FunSuite with BeforeAndAfter {
     }
     Logger.clearHandlers()
     serverConfig.configureLogging()
-    assert(Logger.get("fromFactory").getHandlers().size == 0)
-    assert(Logger.get("fromConfig").getHandlers().size == 1)
+    assert(Logger.get(fromFactoryName).getHandlers().size == 0)
+    assert(Logger.get(fromConfigName).getHandlers().size == 1)
   }
 
   test("configure Logger with loggerFactories when LoggerFactories specified") {
@@ -70,7 +76,7 @@ class ServerConfigSpec extends FunSuite with BeforeAndAfter {
     }
     Logger.clearHandlers()
     serverConfig.configureLogging()
-    assert(Logger.get("fromFactory").getHandlers().size == 1)
-    assert(Logger.get("fromConfig").getHandlers().size == 0)
+    assert(Logger.get(fromFactoryName).getHandlers().size == 1)
+    assert(Logger.get(fromConfigName).getHandlers().size == 0)
   }
 }

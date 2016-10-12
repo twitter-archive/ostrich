@@ -16,6 +16,7 @@ object Ostrich extends Build {
     version := libVersion,
     organization := "com.twitter",
     scalaVersion := "2.11.8",
+    crossScalaVersions := Seq("2.11.8", "2.12.0-M4"),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     javacOptions in doc := Seq("-source", "1.8"),
     parallelExecution in Test := false,
@@ -31,9 +32,15 @@ object Ostrich extends Build {
       "org.mockito" % "mockito-all" % "1.9.5" % "test",
       "org.scalatest" %% "scalatest" % "2.2.6" % "test",
       "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
-      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
-      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion
     ),
+    libraryDependencies <+= scalaVersion {
+      case version if version.startsWith("2.12") =>
+        // they don't publish new jackson versions for 2.12.0-M4 which we can't move off of for scalatest reasons
+        "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.0.rc2"
+      case _ =>
+        "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
+    },
 
     ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := true,
 
@@ -44,6 +51,19 @@ object Ostrich extends Build {
         Some("sonatype-snapshots" at nexus + "content/repositories/snapshots")
       else
         Some("sonatype-releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+    
+    // scoverage automatically brings in libraries on our behalf, but it hasn't
+    // been updated for 2.12 yet
+    libraryDependencies := {
+      libraryDependencies.value.map {
+        case moduleId: ModuleID
+          if moduleId.organization == "org.scoverage"
+            && scalaVersion.value.startsWith("2.12") =>
+          moduleId.copy(name = moduleId.name.replace(scalaVersion.value, "2.11"))
+        case moduleId =>
+          moduleId
+      }
     },
 
     publishArtifact in Test := false,
