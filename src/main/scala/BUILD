@@ -1,4 +1,4 @@
-scala_library(name='scala',
+scala_library(
   dependencies=[
     '3rdparty/jvm/com/fasterxml/jackson/core:jackson-annotations',
     '3rdparty/jvm/com/fasterxml/jackson/core:jackson-databind',

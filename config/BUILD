@@ -1,3 +1,3 @@
-resources(name='config',
+resources(
   sources=rglobs('*', exclude=[rglobs('BUILD*', '*.pyc')])
 )

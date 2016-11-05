@@ -1,4 +1,4 @@
-target(name='ostrich',
+target(
   dependencies=[
     'ostrich/src/main/scala'
   ]
