@@ -19,11 +19,11 @@ package com.twitter.ostrich.stats
 import org.junit.runner.RunWith
 import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.matchers.MatchResult
-import org.scalatest.matchers.{Matcher, ShouldMatchers}
+import org.scalatest.matchers.{MatchResult, Matcher}
+import org.scalatest.Matchers
 
 @RunWith(classOf[JUnitRunner])
-class HistogramTest extends FunSuite with ShouldMatchers {
+class HistogramTest extends FunSuite with Matchers {
 
   class Context {
     val histogram = new Histogram()
