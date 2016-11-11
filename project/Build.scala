@@ -9,7 +9,7 @@ object Ostrich extends Build {
 
   val libVersion = "9.22.0" + suffix
   val utilVersion = "6.38.0" + suffix
-  val jacksonVersion = "2.8.3"
+  val jacksonVersion = "2.8.4"
 
   val sharedSettings = Seq(
     name := "ostrich",
