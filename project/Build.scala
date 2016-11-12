@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
 import Tests._
-import scoverage.ScoverageSbtPlugin
+import scoverage.ScoverageKeys
 
 object Ostrich extends Build {
   val branch = Process("git" :: "rev-parse" :: "--abbrev-ref" :: "HEAD" :: Nil).!!.trim
@@ -16,7 +16,7 @@ object Ostrich extends Build {
     version := libVersion,
     organization := "com.twitter",
     scalaVersion := "2.11.8",
-    crossScalaVersions := Seq("2.11.8", "2.12.0-M4"),
+    crossScalaVersions := Seq("2.11.8", "2.12.0"),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     javacOptions in doc := Seq("-source", "1.8"),
     parallelExecution in Test := false,
@@ -30,19 +30,13 @@ object Ostrich extends Build {
     libraryDependencies ++= Seq(
       "junit" % "junit" % "4.10" % "test",
       "org.mockito" % "mockito-all" % "1.9.5" % "test",
-      "org.scalatest" %% "scalatest" % "2.2.6" % "test",
+      "org.scalatest" %% "scalatest" % "3.0.0" % "test",
       "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
-      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion
+      "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+      "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
     ),
-    libraryDependencies <+= scalaVersion {
-      case version if version.startsWith("2.12") =>
-        // they don't publish new jackson versions for 2.12.0-M4 which we can't move off of for scalatest reasons
-        "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.0.rc2"
-      case _ =>
-        "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion
-    },
 
-    ScoverageSbtPlugin.ScoverageKeys.coverageHighlighting := true,
+    ScoverageKeys.coverageHighlighting := true,
 
     publishMavenStyle := true,
     publishTo <<= version { (v: String) =>
