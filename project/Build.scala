@@ -7,8 +7,8 @@ object Ostrich extends Build {
   val branch = Process("git" :: "rev-parse" :: "--abbrev-ref" :: "HEAD" :: Nil).!!.trim
   val suffix = if (branch == "master") "" else "-SNAPSHOT"
 
-  val libVersion = "9.22.0" + suffix
-  val utilVersion = "6.38.0" + suffix
+  val libVersion = "9.23.0" + suffix
+  val utilVersion = "6.39.0" + suffix
   val jacksonVersion = "2.8.4"
 
   val sharedSettings = Seq(
