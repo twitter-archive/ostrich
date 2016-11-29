@@ -17,11 +17,12 @@
 package com.twitter.ostrich.stats
 
 import com.twitter.conversions.string._
-import com.twitter.util.{Local, NonFatal}
+import com.twitter.util.Local
 import java.lang.management._
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 /**
  * Concrete StatsProvider that tracks counters and timings.

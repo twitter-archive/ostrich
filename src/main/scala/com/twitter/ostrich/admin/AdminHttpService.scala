@@ -24,12 +24,13 @@ import com.twitter.conversions.time._
 import com.twitter.logging.Logger
 import com.twitter.ostrich.stats.{Stats, StatsCollection}
 import com.twitter.util.registry.{Formatter, GlobalRegistry, Library, Registry}
-import com.twitter.util.{Duration, NonFatal, Return, Throw}
+import com.twitter.util.{Duration, Return, Throw}
 import java.io.{InputStream, OutputStream}
 import java.net.{InetSocketAddress, Socket, URI}
 import java.util.Properties
 import java.util.concurrent.Executors
 import scala.io.Source
+import scala.util.control.NonFatal
 
 /**
  * Custom handler interface for the admin web site. The standard `render` calls are implemented in
