@@ -6,13 +6,11 @@ junit_tests(
     '3rdparty/jvm/org/mockito:mockito-all',
     '3rdparty/jvm/org/scalatest',
     'ostrich',
-    'util/util-logging',
+    'ostrich/config',
+    'ostrich/src/test/resources',
     'util/util-core/src/main/scala:scala',
+    'util/util-logging',
     'util/util-registry/src/main/scala:scala',
   ],
-  sources=rglobs('*.scala'),
-  resources=[
-    'ostrich/src/test/resources',
-    'ostrich/config'
-  ]
+  sources=rglobs('*.scala')
 )
