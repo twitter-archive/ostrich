@@ -3,7 +3,7 @@
 # json_stats_fetcher.rb - Publish Ostrich stats to Ganglia.
 #
 # The latest version is always available at:
-# http://github.com/twitter/ostrich/blob/master/src/scripts/json_stats_fetcher.rb
+# https://github.com/twitter/ostrich/blob/master/src/scripts/json_stats_fetcher.rb
 #
 
 require 'rubygems'
@@ -103,7 +103,7 @@ begin
         # Ostrich 4.2 uses namespace for similar functionality
         args += "&reset=1&namespace=ganglia"
       end
-      url = "http://#{hostname}:#{port}/stats.json?#{args}"
+      url = "https://#{hostname}:#{port}/stats.json?#{args}"
       open(url).read
     else
       socket = TCPSocket.new(hostname, port)

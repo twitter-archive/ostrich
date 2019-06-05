@@ -5,7 +5,7 @@
  * not use this file except in compliance with the License. You may obtain
  * a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -112,7 +112,7 @@ class AdminServiceConfigTest extends FunSuite with BeforeAndAfter with MockitoSu
 
       val port = service.address.getPort
       val path = "/stats.json?period=60&filtered=1"
-      val url = new URL("http://localhost:%s%s".format(port, path))
+      val url = new URL("https://localhost:%s%s".format(port, path))
       val data = Source.fromURL(url).getLines().mkString("\n")
       val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
       val json = mapper.readValue(data, classOf[Map[String, Map[String, AnyRef]]])

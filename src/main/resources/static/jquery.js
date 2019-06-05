@@ -1,10 +1,10 @@
 /*!
  * jQuery JavaScript Library v1.3.2
- * http://jquery.com/
+ * https://jquery.com/
  *
  * Copyright (c) 2009 John Resig
  * Dual licensed under the MIT and GPL licenses.
- * http://docs.jquery.com/License
+ * https://docs.jquery.com/License
  *
  * Date: 2009-02-19 17:34:21 -0500 (Thu, 19 Feb 2009)
  * Revision: 6246
@@ -646,7 +646,7 @@ jQuery.extend({
 	globalEval: function( data ) {
 		if ( data && /\S/.test(data) ) {
 			// Inspired by code by Andrea Giammarchi
-			// http://webreflection.blogspot.com/2007/08/global-scope-evaluation-and-dom.html
+			// https://webreflection.blogspot.com/2007/08/global-scope-evaluation-and-dom.html
 			var head = document.getElementsByTagName("head")[0] || document.documentElement,
 				script = document.createElement("script");
 
@@ -822,7 +822,7 @@ jQuery.extend({
 			ret = elem.currentStyle[ name ] || elem.currentStyle[ camelCase ];
 
 			// From the awesome hack by Dean Edwards
-			// http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+			// https://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
 
 			// If we're not dealing with a regular pixel number
 			// but a number that has a weird ending, we need to convert it to pixels
@@ -1003,7 +1003,7 @@ jQuery.extend({
 					return elem.getAttributeNode( name ).nodeValue;
 
 				// elem.tabIndex doesn't always return the correct value when it hasn't been explicitly set
-				// http://fluidproject.org/blog/2008/01/09/getting-setting-and-removing-tabindex-values-with-javascript/
+				// https://fluidproject.org/blog/2008/01/09/getting-setting-and-removing-tabindex-values-with-javascript/
 				if ( name == "tabIndex" ) {
 					var attributeNode = elem.getAttributeNode( "tabIndex" );
 					return attributeNode && attributeNode.specified
@@ -1414,7 +1414,7 @@ jQuery.fn.extend({
  * Sizzle CSS Selector Engine - v0.9.3
  *  Copyright 2009, The Dojo Foundation
  *  Released under the MIT, BSD, and GPL Licenses.
- *  More information: http://sizzlejs.com/
+ *  More information: https://sizzlejs.com/
  */
 (function(){
 
@@ -2825,7 +2825,7 @@ function returnTrue(){
 }
 
 // jQuery.Event is based on DOM3 Events as specified by the ECMAScript Language Binding
-// http://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html
+// https://www.w3.org/TR/2003/WD-DOM-Level-3-Events-20030331/ecma-script-binding.html
 jQuery.Event.prototype = {
 	preventDefault: function() {
 		this.isDefaultPrevented = returnTrue;
@@ -3074,7 +3074,7 @@ function bindReady(){
 
 			try {
 				// If IE is used, use the trick by Diego Perini
-				// http://javascript.nwbox.com/IEContentLoaded/
+				// https://javascript.nwbox.com/IEContentLoaded/
 				document.documentElement.doScroll("left");
 			} catch( error ) {
 				setTimeout( arguments.callee, 0 );

@@ -5,7 +5,7 @@
  * not use this file except in compliance with the License. You may obtain
  * a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -490,7 +490,7 @@ class AdminHttpService private[ostrich](
       System.setProperty(property, value.toString)
   }
   // See meaning of those properties here:
-  // http://www.docjar.com/html/api/sun/net/httpserver/ServerConfig.java.html
+  // https://www.docjar.com/html/api/sun/net/httpserver/ServerConfig.java.html
   setPropertyIfNull("sun.net.httpserver.clockTick", 1000)
   setPropertyIfNull("sun.net.httpserver.timerMillis", 1000)
   setPropertyIfNull("sun.net.httpserver.maxReqTime", 25)

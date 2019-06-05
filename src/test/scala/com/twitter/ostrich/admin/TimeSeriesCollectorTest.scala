@@ -5,7 +5,7 @@
  * not use this file except in compliance with the License. You may obtain
  * a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -42,7 +42,7 @@ class TimeSeriesCollectorTest extends FunSuite with BeforeAndAfter {
   }
 
   def getJson[T](port: Int, path: String, valueType: Class[T]): T = {
-    val url = new URL("http://localhost:%d%s".format(port, path))
+    val url = new URL("https://localhost:%d%s".format(port, path))
     val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
     objectMapper.readValue(Source.fromURL(url).getLines.mkString("\n"), valueType)
   }

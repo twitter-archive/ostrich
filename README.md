@@ -1,7 +1,7 @@
 # Ostrich
 
 [![Build status](https://travis-ci.org/twitter/ostrich.svg?branch=develop)](https://travis-ci.org/twitter/ostrich)
-[![Codecov branch](https://img.shields.io/codecov/c/github/twitter/ostrich/develop.svg)](http://codecov.io/github/twitter/ostrich?branch=develop)
+[![Codecov branch](https://img.shields.io/codecov/c/github/twitter/ostrich/develop.svg)](https://codecov.io/github/twitter/ostrich?branch=develop)
 [![Project status](https://img.shields.io/badge/status-deprecated-orange.svg)](#status)
 
 Ostrich is a library for scala servers that makes it easy to:
@@ -264,12 +264,12 @@ Commands over the admin interface take the form of an HTTP "get" request:
 
 which can be performed using 'curl' or 'wget':
 
-    $ curl http://localhost:PPPP/shutdown
+    $ curl https://localhost:PPPP/shutdown
 
 The result body may be json or plain-text, depending on <type>. The default is
 json, but you can ask for text like so:
 
-    $ curl http://localhost:PPPP/stats.txt
+    $ curl https://localhost:PPPP/stats.txt
 
 For simple commands like `shutdown`, the response body may simply be the JSON
 encoding of the string "ok". For others like `stats`, it may be a nested
@@ -331,7 +331,7 @@ data on collected stats.
 
 The url
 
-    http://localhost:PPPP/graph/
+    https://localhost:PPPP/graph/
 
 (where PPPP is your admin `httpPort`) will give a list of currently-collected
 stats, and links to the current hourly graph for each stat. The graphs are
@@ -348,7 +348,7 @@ Example use:
     curl -s 'localhost:9990/pprof/heap?pause=10' >| /tmp/prof
 
 This will result in a file that you can be read with
-[pprof](http://goog-perftools.sourceforge.net/doc/cpu_profiler.html)
+[pprof](https://goog-perftools.sourceforge.net/doc/cpu_profiler.html)
 
 
 ## Credits
