@@ -490,7 +490,7 @@ class AdminHttpService private[ostrich](
       System.setProperty(property, value.toString)
   }
   // See meaning of those properties here:
-  // http://www.docjar.com/html/api/sun/net/httpserver/ServerConfig.java.html
+  // https://www.docjar.com/html/api/sun/net/httpserver/ServerConfig.java.html
   setPropertyIfNull("sun.net.httpserver.clockTick", 1000)
   setPropertyIfNull("sun.net.httpserver.timerMillis", 1000)
   setPropertyIfNull("sun.net.httpserver.maxReqTime", 25)

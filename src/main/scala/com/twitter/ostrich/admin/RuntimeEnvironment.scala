@@ -42,7 +42,7 @@ object RuntimeEnvironment {
  * relative to the executable jar.
  *
  * An example of how to generate a `build.properties` file is included in
- * sbt standard-project: <http://github.com/twitter/standard-project>
+ * sbt standard-project: <https://github.com/twitter/standard-project>
  *
  * You have to pass in an object from your package in order to identify the
  * location of the `build.properties` file.  The ClassLoader for the given object
